@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -31,26 +31,41 @@ const Appointment = () => {
   const getTutors = async () => {
     try {
       setLoadingProfiles(true);
-      const response = await axios.get(`http://localhost:5000/users/tutor`);
-      setTutors(response.data);
+      // Get all tutors (users with role = 'tutor')
+      const { data: tutorsData, error: tutorsError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("role", "tutor");
 
-      // The profile data is already included in the response, no need for separate API calls
-      const profilesMap = {};
-      response.data.forEach((tutor) => {
-        if (tutor.subject || tutor.specialization || tutor.college) {
-          profilesMap[tutor.user_id] = {
-            subject: tutor.subject,
-            specialization: tutor.specialization,
-            college: tutor.college,
-            program: tutor.program,
-            year_level: tutor.year_level,
-            profile_image: tutor.profile_image,
-            online_link: tutor.online_link
+      if (tutorsError) throw tutorsError;
+
+      setTutors(tutorsData || []);
+
+      // Get tutor profiles
+      const tutorIds = (tutorsData || []).map(t => t.user_id);
+      if (tutorIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profile")
+          .select("*")
+          .in("user_id", tutorIds);
+
+        if (profilesError) throw profilesError;
+
+        const profilesMap = {};
+        (profilesData || []).forEach((profile) => {
+          profilesMap[profile.user_id] = {
+            subject: profile.subject,
+            specialization: profile.specialization,
+            college: profile.college,
+            program: profile.program,
+            year_level: profile.year_level,
+            profile_image: profile.profile_image,
+            online_link: profile.online_link
           };
-        }
-      });
+        });
 
-      setTutorDetails(profilesMap);
+        setTutorDetails(profilesMap);
+      }
     } catch (err) {
       console.error(err.message);
     } finally {
@@ -60,13 +75,18 @@ const Appointment = () => {
 
   const getTutorDetails = async (tutorId) => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/profile/${tutorId}`
-      );
-      if (response.data && response.data.length > 0) {
+      const { data, error } = await supabase
+        .from("profile")
+        .select("*")
+        .eq("user_id", tutorId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data) {
         setTutorDetails((prev) => ({
           ...prev,
-          [tutorId]: response.data[0],
+          [tutorId]: data,
         }));
       }
     } catch (err) {
@@ -76,12 +96,27 @@ const Appointment = () => {
 
   const getTutorSchedules = async (tutorId) => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/dashboard/schedule/${tutorId}`
-      );
+      // Get profile_id first
+      const { data: profileData } = await supabase
+        .from("profile")
+        .select("profile_id")
+        .eq("user_id", tutorId)
+        .single();
+
+      if (!profileData) return;
+
+      const { data, error } = await supabase
+        .from("schedule")
+        .select("*")
+        .eq("profile_id", profileData.profile_id)
+        .order("day", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
       setTutorSchedules((prev) => ({
         ...prev,
-        [tutorId]: response.data,
+        [tutorId]: data || [],
       }));
     } catch (err) {
       console.error(err.message);
@@ -238,19 +273,29 @@ const Appointment = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const appointmentData = {
-        tutor_id: selectedTutor.user_id,
-        ...formData,
-      };
-      
-      const response = await axios.post(
-        "http://localhost:5000/appointment",
-        appointmentData,
-        {
-          headers: { token },
-        }
-      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to create an appointment");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("appointment")
+        .insert([
+          {
+            user_id: session.user.id,
+            tutor_id: selectedTutor.user_id,
+            subject: formData.subject,
+            topic: formData.topic,
+            mode_of_session: formData.mode_of_session,
+            date: formData.date,
+            start_time: formData.start_time,
+            end_time: formData.end_time,
+            status: "pending",
+          },
+        ]);
+
+      if (error) throw error;
 
       toast.success("Appointment created successfully!");
       setFormData({
@@ -265,7 +310,7 @@ const Appointment = () => {
       setSelectedSubject("");
     } catch (err) {
       console.error(err.message);
-      toast.error(`Error creating appointment: ${err.response?.data || err.message}`);
+      toast.error(`Error creating appointment: ${err.message}`);
     } finally {
       setLoading(false);
     }

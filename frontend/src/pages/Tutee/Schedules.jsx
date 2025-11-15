@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 // Modal component for appointment details
@@ -301,14 +301,28 @@ const Schedules = () => {
 
   const getAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutee",
-        {
-          headers: { token },
-        }
-      );
-      setAppointments(response.data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          tutor:users!tutor_id(name)
+        `)
+        .eq("user_id", session.user.id)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      // Format data to match expected structure
+      const formattedData = (data || []).map(appointment => ({
+        ...appointment,
+        tutor_name: appointment.tutor?.name || null
+      }));
+
+      setAppointments(formattedData);
     } catch (err) {
       console.error(err.message);
       toast.error("Error loading appointments");
@@ -327,10 +341,13 @@ const Schedules = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/appointment/${appointmentId}`, {
-        headers: { token },
-      });
+      const { error } = await supabase
+        .from("appointment")
+        .delete()
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
       getAppointments(); // Refresh the list
       toast.success("Appointment deleted successfully");
     } catch (err) {
@@ -341,14 +358,13 @@ const Schedules = () => {
 
   const handleAppointmentUpdate = async (appointmentId, updatedFields) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/appointment/${appointmentId}`,
-        updatedFields,
-        {
-          headers: { token },
-        }
-      );
+      const { error } = await supabase
+        .from("appointment")
+        .update(updatedFields)
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
       toast.success("Appointment updated successfully");
       await getAppointments();
       setIsModalOpen(false);

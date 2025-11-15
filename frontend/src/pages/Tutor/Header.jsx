@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -16,14 +16,18 @@ const Header = () => {
   // Fetch pending appointments count
   const getPendingCount = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutor/pending-count",
-        {
-          headers: { token },
-        }
-      );
-      setPendingCount(response.data.pending_count);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { count, error } = await supabase
+        .from("appointment")
+        .select("*", { count: "exact", head: true })
+        .eq("tutor_id", session.user.id)
+        .eq("status", "pending");
+
+      if (error) throw error;
+
+      setPendingCount(count || 0);
     } catch (err) {
       console.error("Error fetching pending count:", err.message);
     }
@@ -32,16 +36,20 @@ const Header = () => {
   // Fetch unread notifications
   const getUnreadNotifications = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/notifications",
-        {
-          headers: { token },
-        }
-      );
-      const unread = response.data.filter(notification => notification.status === 'unread');
-      setUnreadNotifications(unread);
-      setUnreadCount(unread.length);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("notification")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("status", "unread")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setUnreadNotifications(data || []);
+      setUnreadCount((data || []).length);
     } catch (err) {
       console.error("Error fetching notifications:", err.message);
     }
@@ -50,14 +58,13 @@ const Header = () => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/appointment/notifications/${notificationId}/read`,
-        {},
-        {
-          headers: { token },
-        }
-      );
+      const { error } = await supabase
+        .from("notification")
+        .update({ status: "read" })
+        .eq("notification_id", notificationId);
+
+      if (error) throw error;
+
       // Refresh notifications
       getUnreadNotifications();
     } catch (err) {

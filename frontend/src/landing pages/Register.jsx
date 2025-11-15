@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../supabase-client";
 import LAVLogo from "../assets/LAV_image.png";
 
 const Register = ({ setAuth }) => {
@@ -10,6 +10,7 @@ const Register = ({ setAuth }) => {
     password: "",
     role: "student", // default role
   });
+  const [message, setMessage] = useState("");
 
   const { name, email, password, role } = inputs;
 
@@ -20,18 +21,47 @@ const Register = ({ setAuth }) => {
   const onSubmitForm = async (e) => {
     e.preventDefault();
     try {
-      const body = { name, email, password, role };
-      const response = await axios.post(
-        "http://localhost:5000/auth/register",
-        body
-      );
+      // Sign up with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+            role: role,
+          },
+        },
+      });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("role", response.data.role);
+      if (authError) throw authError;
 
-      setAuth(true);
+      if (authData.user) {
+        // Create user record in users table with role
+        // Password is handled by Supabase Auth (stored in auth.users), not in public.users
+        const { error: userError } = await supabase
+          .from("users")
+          .insert([
+            {
+              user_id: authData.user.id,
+              name: name,
+              email: email,
+              role: role,
+            },
+          ]);
+
+        if (userError) {
+          console.error("Error creating user record:", userError);
+          setMessage("Registration successful, but there was an issue creating your profile. Please try logging in.");
+        } else {
+          // Dispatch role change event so App.jsx can pick it up immediately
+          window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: role } }));
+        }
+
+        setAuth(true);
+      }
     } catch (err) {
-      console.err(err.message);
+      console.error(err.message);
+      setMessage(err.message || "Registration failed. Please try again.");
     }
   };
 
@@ -62,6 +92,12 @@ const Register = ({ setAuth }) => {
           <h2 className="text-3xl font-bold text-blue-600 mb-8 text-center">
             Create an Account
           </h2>
+
+          {message && (
+            <div className="mb-4 p-3 rounded-lg bg-red-100 border border-red-300">
+              <p className="text-red-600 text-sm">{message}</p>
+            </div>
+          )}
 
           <form onSubmit={onSubmitForm} className="space-y-6">
 

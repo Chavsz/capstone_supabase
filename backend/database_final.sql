@@ -1,3 +1,5 @@
+--check supabase if they have feature like uuid-ossp extension
+
 CREATE DATABASE capstone_db;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -19,8 +21,8 @@ CREATE TABLE profile (
   program VARCHAR(100),
   college VARCHAR(100),
   year_level VARCHAR(20),
-  specialization VARCHAR(100), --change name to subject
-  topics TEXT, --change name to specialization
+  subject VARCHAR(100), --change name to subject
+  specialization TEXT, --change name to specialization
   profile_image VARCHAR(255),
   nickname VARCHAR(100),
   online_link VARCHAR(255),
@@ -88,7 +90,7 @@ CREATE TABLE event (
 
 --landing table
 CREATE TABLE landing (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),        
+  landing_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  
   home_image VARCHAR(255) NOT NULL,                       
   home_title VARCHAR(255) NOT NULL,                        
   home_description TEXT NOT NULL,                         

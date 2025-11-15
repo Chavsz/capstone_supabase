@@ -1,33 +1,50 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
 import * as piIcons from "react-icons/pi";
 
 const RouteSelect = () => {
   const [selected, setSelected] = useState(window.location.pathname);
-  const [canSwitchToTutor, setCanSwitchToTutor] = useState(
-    typeof window !== "undefined" && localStorage.getItem("canSwitchToTutor") === "true"
-  );
+  const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
 
   useEffect(() => {
-    const updateFlag = () => {
-      const val = typeof window !== "undefined" && localStorage.getItem("canSwitchToTutor") === "true";
-      setCanSwitchToTutor(Boolean(val));
+    const checkCanSwitch = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data: tutorProfile } = await supabase
+          .from("profile")
+          .select("profile_id")
+          .eq("user_id", session.user.id)
+          .single();
+
+        setCanSwitchToTutor(!!tutorProfile);
+      } catch (err) {
+        console.error("Error checking tutor profile:", err);
+        setCanSwitchToTutor(false);
+      }
     };
 
-    // Update when role or capability flags change
-    const onRoleChanged = () => updateFlag();
-    const onCanSwitchUpdated = () => updateFlag();
+    const updateFlag = (event) => {
+      if (event && event.detail) {
+        setCanSwitchToTutor(event.detail.value === true || event.detail.value === "true");
+      } else {
+        checkCanSwitch();
+      }
+    };
 
-    window.addEventListener("roleChanged", onRoleChanged);
+    // Check on mount
+    checkCanSwitch();
+
+    // Update when capability flags change
+    const onCanSwitchUpdated = (event) => updateFlag(event);
+
     window.addEventListener("canSwitchUpdated", onCanSwitchUpdated);
 
-    // Also run once on mount
-    updateFlag();
-
     return () => {
-      window.removeEventListener("roleChanged", onRoleChanged);
       window.removeEventListener("canSwitchUpdated", onCanSwitchUpdated);
     };
   }, []);

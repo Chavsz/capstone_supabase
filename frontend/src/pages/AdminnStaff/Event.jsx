@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 const Event = () => {
@@ -14,13 +14,22 @@ const Event = () => {
 
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/event");
-      setEvents(response.data);
+      const { data, error } = await supabase
+        .from("event")
+        .select("*")
+        .order("event_date", { ascending: true })
+        .order("event_time", { ascending: true });
+
+      if (error) throw error;
+
+      setEvents(data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
+      toast.error("Error loading events");
     }
   };
 
@@ -38,47 +47,144 @@ const Event = () => {
     setFormData({ ...formData, event_image: e.target.files[0] });
   };
 
+  // Upload image to Supabase Storage
+  const uploadEventImage = async (file, eventId) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${eventId}_${Date.now()}.${fileExt}`;
+      const filePath = `event-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('capstone')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('capstone')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
+  // Delete image from Supabase Storage
+  const deleteEventImage = async (imageUrl) => {
+    try {
+      if (!imageUrl) return;
+      
+      // Extract file path from URL
+      // URL format: https://[project].supabase.co/storage/v1/object/public/capstone/filename
+      const urlObj = new URL(imageUrl);
+      const pathParts = urlObj.pathname.split('/');
+      const bucketIndex = pathParts.indexOf('capstone');
+      
+      if (bucketIndex === -1) {
+        console.warn("Could not extract file path from URL:", imageUrl);
+        return;
+      }
+      
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      
+      const { error } = await supabase.storage
+        .from('capstone')
+        .remove([filePath]);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      // Don't throw - image deletion failure shouldn't block event operations
+    }
+  };
+
   // Event submit
   const handleEventSubmit = async (e) => {
     e.preventDefault();
-    const form = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null) {
-        form.append(key, value);
-      }
-    });
-
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to create/update events");
+        return;
+      }
+
+      let imageUrl = null;
+
+      // Upload image if provided
+      if (formData.event_image) {
+        const eventId = editingEvent?.event_id || crypto.randomUUID();
+        imageUrl = await uploadEventImage(formData.event_image, eventId);
+      }
+
       if (editingEvent) {
-        const response = await axios.put(
-          `http://localhost:5000/event/${editingEvent.event_id}`,
-          form,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              token: localStorage.getItem("token"),
-            },
-          }
-        );
+        // If updating and new image provided, delete old image
+        if (formData.event_image && editingEvent.event_image) {
+          await deleteEventImage(editingEvent.event_image);
+        }
+
+        const updateData = {
+          event_title: formData.event_title,
+          event_description: formData.event_description,
+          event_time: formData.event_time,
+          event_date: formData.event_date,
+          event_location: formData.event_location,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (imageUrl) {
+          updateData.event_image = imageUrl;
+        }
+
+        const { data, error } = await supabase
+          .from("event")
+          .update(updateData)
+          .eq("event_id", editingEvent.event_id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
         setEvents(
           events.map((event) =>
-            event.event_id === editingEvent.event_id
-              ? response.data.event
-              : event
+            event.event_id === editingEvent.event_id ? data : event
           )
         );
         setEditingEvent(null);
         toast.success("Event updated successfully.");
       } else {
-        const response = await axios.post("http://localhost:5000/event", form, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            token: localStorage.getItem("token"),
-          },
-        });
-        setEvents([...events, response.data.event]);
+        if (!imageUrl) {
+          toast.error("Event image is required");
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("event")
+          .insert([
+            {
+              user_id: session.user.id,
+              event_title: formData.event_title,
+              event_description: formData.event_description,
+              event_time: formData.event_time,
+              event_date: formData.event_date,
+              event_location: formData.event_location,
+              event_image: imageUrl,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setEvents([...events, data]);
         toast.success("Event added successfully.");
       }
+
       setFormData({
         event_title: "",
         event_description: "",
@@ -89,15 +195,8 @@ const Event = () => {
       });
       document.getElementById("eventImageInput").value = "";
     } catch (error) {
-      console.error(
-        "Error submitting event:",
-        error.response ? error.response.data : error.message
-      );
-      toast.error(
-        `Failed to submit event: ${
-          error.response ? error.response.data.message : error.message
-        }`
-      );
+      console.error("Error submitting event:", error);
+      toast.error(`Failed to submit event: ${error.message}`);
     }
   };
 
@@ -118,9 +217,22 @@ const Event = () => {
   const handleEventDelete = async (eventId) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
       try {
-        await axios.delete(`http://localhost:5000/event/${eventId}`, {
-          headers: { token: localStorage.getItem("token") },
-        });
+        // Get event to delete image
+        const eventToDelete = events.find(e => e.event_id === eventId);
+        
+        // Delete from database
+        const { error } = await supabase
+          .from("event")
+          .delete()
+          .eq("event_id", eventId);
+
+        if (error) throw error;
+
+        // Delete image from storage if exists
+        if (eventToDelete?.event_image) {
+          await deleteEventImage(eventToDelete.event_image);
+        }
+
         setEvents(events.filter((event) => event.event_id !== eventId));
         toast.success("Event deleted successfully.");
       } catch (error) {
@@ -301,17 +413,23 @@ const Event = () => {
                   key={event.event_id}
                   className="bg-white border border-gray-200 rounded-lg shadow-md flex flex-col hover:shadow-lg transition-shadow duration-200"
                 >
-                  {event.event_image ? (
-                    <img
-                      src={`http://localhost:5000${event.event_image}`}
-                      alt={event.event_title}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center text-gray-400">
-                      No Image
-                    </div>
-                  )}
+                  <div className="w-full h-48 bg-gray-200 rounded-t-lg overflow-hidden relative">
+                    {event.event_image && !failedImages.has(event.event_id) ? (
+                      <img
+                        src={event.event_image}
+                        alt={event.event_title}
+                        className="w-full h-48 object-cover"
+                        onError={() => {
+                          console.error("Error loading image:", event.event_image);
+                          setFailedImages(prev => new Set(prev).add(event.event_id));
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-48 flex items-center justify-center text-gray-400">
+                        {event.event_image ? 'Failed to load image' : 'No Image'}
+                      </div>
+                    )}
+                  </div>
                   <div className="p-5 flex flex-col flex-grow">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">
                       {event.event_title}

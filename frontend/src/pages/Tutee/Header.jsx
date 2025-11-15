@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -17,16 +17,20 @@ const Header = () => {
   // Fetch unread notifications
   const getUnreadNotifications = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/notifications",
-        {
-          headers: { token },
-        }
-      );
-      const unread = response.data.filter(notification => notification.status === 'unread');
-      setUnreadNotifications(unread);
-      setUnreadCount(unread.length);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("notification")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("status", "unread")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setUnreadNotifications(data || []);
+      setUnreadCount((data || []).length);
     } catch (err) {
       console.error("Error fetching notifications:", err.message);
     }
@@ -34,18 +38,25 @@ const Header = () => {
 
   const getUpcomingSessions = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/appointment/tutee", {
-        headers: { token },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          tutor:users!tutor_id(name)
+        `)
+        .eq("user_id", session.user.id)
+        .eq("status", "confirmed")
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
 
       const now = new Date();
-      const upcoming = (response.data || [])
+      const upcoming = (data || [])
         .filter((appointment) => {
-          if (appointment.status !== "confirmed") {
-            return false;
-          }
-
           if (!appointment.date || !appointment.start_time) {
             return false;
           }
@@ -62,7 +73,13 @@ const Header = () => {
           const startDate = new Date(`${appointment.date}T${appointment.start_time}`);
           const diffMs = Math.max(startDate.getTime() - now.getTime(), 0);
           const minutesUntil = Math.max(Math.ceil(diffMs / (60 * 1000)), 0);
-          return { appointment, minutesUntil };
+          return { 
+            appointment: {
+              ...appointment,
+              tutor_name: appointment.tutor?.name || null
+            }, 
+            minutesUntil 
+          };
         })
         .sort((a, b) => a.minutesUntil - b.minutesUntil);
 
@@ -75,14 +92,18 @@ const Header = () => {
   // Fetch confirmed appointments count
   const getConfirmedCount = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutee/confirmed-count",
-        {
-          headers: { token },
-        }
-      );
-      setConfirmedCount(response.data.confirmed_count);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { count, error } = await supabase
+        .from("appointment")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("status", "confirmed");
+
+      if (error) throw error;
+
+      setConfirmedCount(count || 0);
     } catch (err) {
       console.error("Error fetching confirmed count:", err.message);
     }
@@ -91,14 +112,13 @@ const Header = () => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/appointment/notifications/${notificationId}/read`,
-        {},
-        {
-          headers: { token },
-        }
-      );
+      const { error } = await supabase
+        .from("notification")
+        .update({ status: "read" })
+        .eq("notification_id", notificationId);
+
+      if (error) throw error;
+
       // Refresh notifications
       getUnreadNotifications();
     } catch (err) {

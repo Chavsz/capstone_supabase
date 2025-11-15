@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 const Landing = () => {
@@ -17,22 +17,45 @@ const Landing = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/landing")
-      .then((response) => {
-        setLandingData(response.data);
-        setFormData({
-          home_image: response.data.home_image || "",
-          home_title: response.data.home_title || "",
-          home_description: response.data.home_description || "",
-          home_more: response.data.home_more || "",
-          about_image: response.data.about_image || "",
-          about_title: response.data.about_title || "",
-          about_description: response.data.about_description || "",
-          about_link: response.data.about_link || "",
-        });
-      })
-      .catch((error) => {
+    const fetchLandingData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        if (data) {
+          setLandingData(data);
+          setFormData({
+            home_image: data.home_image || "",
+            home_title: data.home_title || "",
+            home_description: data.home_description || "",
+            home_more: data.home_more || "",
+            about_image: data.about_image || "",
+            about_title: data.about_title || "",
+            about_description: data.about_description || "",
+            about_link: data.about_link || "",
+          });
+        } else {
+          // Set default empty values if no data exists
+          setFormData({
+            home_image: "",
+            home_title: "",
+            home_description: "",
+            home_more: "",
+            about_image: "",
+            about_title: "",
+            about_description: "",
+            about_link: "",
+          });
+        }
+      } catch (error) {
         console.error("Error fetching data:", error);
         // Set default empty values if there's an error
         setFormData({
@@ -45,7 +68,10 @@ const Landing = () => {
           about_description: "",
           about_link: "",
         });
-      });
+      }
+    };
+
+    fetchLandingData();
   }, []);
 
   const handleChange = (e) => {
@@ -63,34 +89,138 @@ const Landing = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  // Upload image to Supabase Storage
+  const uploadImage = async (file, imageType) => {
+    if (!file) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${imageType}_${Date.now()}.${fileExt}`;
+      const filePath = `landing-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('capstone')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('capstone')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
+
+  // Delete image from Supabase Storage
+  const deleteImage = async (imageUrl) => {
+    if (!imageUrl) return;
+    
+    try {
+      // Extract file path from URL
+      const urlObj = new URL(imageUrl);
+      const pathParts = urlObj.pathname.split('/');
+      const bucketIndex = pathParts.indexOf('capstone');
+      
+      if (bucketIndex === -1) {
+        console.warn("Could not extract file path from URL:", imageUrl);
+        return;
+      }
+      
+      const filePath = pathParts.slice(bucketIndex + 1).join('/');
+      
+      const { error } = await supabase.storage
+        .from('capstone')
+        .remove([filePath]);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      // Don't throw - image deletion failure shouldn't block operations
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
-    const form = new FormData();
-    form.append("home_image", formData.home_image);
-    form.append("home_title", formData.home_title);
-    form.append("home_description", formData.home_description);
-    form.append("home_more", formData.home_more);
-    form.append("about_image", formData.about_image);
-    form.append("about_title", formData.about_title);
-    form.append("about_description", formData.about_description);
-    form.append("about_link", formData.about_link);
+    try {
+      let homeImageUrl = landingData?.home_image || null;
+      let aboutImageUrl = landingData?.about_image || null;
 
-    axios
-      .post("http://localhost:5000/landing", form)
-      .then((response) => {
-        console.log("Landing data updated:", response.data);
-        setLandingData(response.data);
-        toast.success("Changes saved successfully!");
-      })
-      .catch((error) => {
-        console.error("Error saving data:", error);
-        toast.error("Failed to save changes.");
-      })
-      .finally(() => {
-        setIsSaving(false);
-      });
+      // Upload new images if they are File objects
+      if (formData.home_image instanceof File) {
+        // Delete old image if it exists
+        if (landingData?.home_image) {
+          await deleteImage(landingData.home_image);
+        }
+        homeImageUrl = await uploadImage(formData.home_image, 'home');
+      } else if (formData.home_image && typeof formData.home_image === 'string') {
+        // Keep existing image URL if it's a string
+        homeImageUrl = formData.home_image;
+      }
+
+      if (formData.about_image instanceof File) {
+        // Delete old image if it exists
+        if (landingData?.about_image) {
+          await deleteImage(landingData.about_image);
+        }
+        aboutImageUrl = await uploadImage(formData.about_image, 'about');
+      } else if (formData.about_image && typeof formData.about_image === 'string') {
+        // Keep existing image URL if it's a string
+        aboutImageUrl = formData.about_image;
+      }
+
+      // Prepare data for Supabase
+      const landingDataToSave = {
+        home_title: formData.home_title,
+        home_description: formData.home_description,
+        home_more: formData.home_more,
+        home_image: homeImageUrl,
+        about_title: formData.about_title,
+        about_description: formData.about_description,
+        about_link: formData.about_link,
+        about_image: aboutImageUrl,
+      };
+
+      // Check if landing data already exists
+      if (landingData?.id) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from("landing")
+          .update(landingDataToSave)
+          .eq("id", landingData.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        setLandingData(data);
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from("landing")
+          .insert([landingDataToSave])
+          .select()
+          .single();
+
+        if (error) throw error;
+        setLandingData(data);
+      }
+
+      toast.success("Changes saved successfully!");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      toast.error("Failed to save changes.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -167,9 +297,13 @@ const Landing = () => {
             name="home_image"
             accept="image/*"
             onChange={handleChange}
-            required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {landingData?.home_image && (
+            <p className="text-sm text-gray-500 mt-1">
+              Current image: <a href={landingData.home_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
+            </p>
+          )}
         </div>
 
         <div className="mb-4">
@@ -237,9 +371,13 @@ const Landing = () => {
             name="about_image"
             accept="image/*"
             onChange={handleChange}
-            required
             className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {landingData?.about_image && (
+            <p className="text-sm text-gray-500 mt-1">
+              Current image: <a href={landingData.about_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
+            </p>
+          )}
         </div>
 
         <button

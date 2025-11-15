@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../supabase-client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -13,8 +13,20 @@ function Home() {
 
   const getLandingData = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/landing");
-      setLandingData(response.data);
+      const { data, error } = await supabase
+        .from("landing")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error;
+      }
+
+      if (data) {
+        setLandingData(data);
+      }
     } catch (error) {
       console.error("Error fetching landing data:", error);
     }
@@ -100,11 +112,17 @@ function Home() {
             <div className="relative">
               <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden">
                 <img
-                  src={`http://localhost:5000${
-                    landingData.home_image || "/uploads/landing/placeholder.png"
-                  }`}
+                  src={
+                    landingData.home_image || "/placeholder.png"
+                  }
                   alt="Learning"
                   className="w-full h-auto object-cover rounded-3xl"
+                  onError={(e) => {
+                    console.error("Error loading home image:", landingData.home_image);
+                    if (landingData.home_image) {
+                      e.target.src = "/placeholder.png";
+                    }
+                  }}
                 />
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import {
   LineChart,
   Line,
@@ -24,7 +24,7 @@ import { Cards } from "../../components/cards";
 
 const TutorDashboard = () => {
   const [name, setName] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "");
+  const [role, setRole] = useState("");
   const [userId, setUserId] = useState("");
   const [announcement, setAnnouncement] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -32,27 +32,23 @@ const TutorDashboard = () => {
 
   async function getName() {
     try {
-      const response = await axios.get("http://localhost:5000/dashboard", {
-        headers: { token: localStorage.getItem("token") },
-      });
-      setName(response.data.name);
-      if (response.data.role) {
-        setRole(response.data.role);
-        localStorage.setItem("role", response.data.role);
-      }
-      // Assume user_id is available in the token or fetch separately
-      if (response.data.user_id) {
-        setUserId(response.data.user_id);
-      } else {
-        // fallback: fetch user_id from profile
-        const profileRes = await axios.get(
-          "http://localhost:5000/dashboard/profile",
-          {
-            headers: { token: localStorage.getItem("token") },
-          }
-        );
-        if (profileRes.data && profileRes.data.user_id)
-          setUserId(profileRes.data.user_id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("name, role, user_id")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setName(data.name);
+        if (data.role) {
+          setRole(data.role);
+        }
+        setUserId(data.user_id);
       }
     } catch (err) {
       console.error(err.message);
@@ -61,14 +57,28 @@ const TutorDashboard = () => {
 
   const getAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutor",
-        {
-          headers: { token },
-        }
-      );
-      setAppointments(response.data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          student:users!appointment_user_id_fkey(name)
+        `)
+        .eq("tutor_id", session.user.id)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      // Format data to match expected structure
+      const formattedData = (data || []).map(appointment => ({
+        ...appointment,
+        student_name: appointment.student?.name || null
+      }));
+
+      setAppointments(formattedData);
     } catch (err) {
       console.error(err.message);
     }
@@ -76,13 +86,18 @@ const TutorDashboard = () => {
 
   async function getAnnouncement() {
     try {
-      const response = await axios.get("http://localhost:5000/announcement");
-      // Handle array response - get the first announcement
-      if (response.data && response.data.length > 0) {
-        setAnnouncement(response.data[0]);
-      } else {
-        setAnnouncement(null);
+      const { data, error } = await supabase
+        .from("announcement")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
+
+      setAnnouncement(data || null);
     } catch (err) {
       console.error(err.message);
     }

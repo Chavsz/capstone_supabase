@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 // Modal component for appointment details
@@ -173,14 +173,28 @@ const Schedule = () => {
 
   const getAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutor",
-        {
-          headers: { token },
-        }
-      );
-      setAppointments(response.data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          student:users!appointment_user_id_fkey(name)
+        `)
+        .eq("tutor_id", session.user.id)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      // Format data to match expected structure
+      const formattedData = (data || []).map(appointment => ({
+        ...appointment,
+        student_name: appointment.student?.name || null
+      }));
+
+      setAppointments(formattedData);
     } catch (err) {
       console.error(err.message);
       toast.error("Error loading appointments");
@@ -192,22 +206,17 @@ const Schedule = () => {
   // Get current tutor's user id
   const getUserId = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/dashboard", {
-        headers: { token },
-      });
-      if (response.data.user_id) setUserId(response.data.user_id);
-      else {
-        // fallback: fetch from profile
-        const profileRes = await axios.get(
-          "http://localhost:5000/dashboard/profile",
-          {
-            headers: { token },
-          }
-        );
-        if (profileRes.data && profileRes.data.user_id)
-          setUserId(profileRes.data.user_id);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) setUserId(data.user_id);
     } catch (err) {
       // ignore
     }
@@ -222,12 +231,13 @@ const Schedule = () => {
 
   const handleStatusUpdate = async (appointmentId, status) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/appointment/${appointmentId}/status`,
-        { status },
-        { headers: { token } }
-      );
+      const { error } = await supabase
+        .from("appointment")
+        .update({ status })
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
       getAppointments(); // Refresh the list
       toast.success(`Appointment ${status} successfully`);
     } catch (err) {

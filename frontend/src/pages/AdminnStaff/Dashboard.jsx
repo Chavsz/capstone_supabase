@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import * as fiIcons from "react-icons/fi";
 
 // Components
@@ -15,41 +15,47 @@ function Dashboard() {
   const [evaluatedAppointments, setEvaluatedAppointments] = useState([]);
   const [collegeData, setCollegeData] = useState([]);
 
-  const responses = (response) => {
-    try {
-      response;
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
   async function getAppointments() {
-    const response = await axios.get(
-      "http://localhost:5000/dashboard/appointment/admin",
-      {
-        headers: { token: localStorage.getItem("token") },
-      }
-    );
-    setAppointments(response.data);
+    try {
+      // Fetch all appointments
+      const { data, error } = await supabase
+        .from("appointment")
+        .select("*")
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
 
-    return responses(response);
+      if (error) throw error;
+
+      setAppointments(data || []);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setAppointments([]);
+    }
   }
-
-
-  //   return responses(response);
-  // }
-
 
   async function getCollegeData() {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/dashboard/students",
-        {
-          headers: { token: localStorage.getItem("token") },
-        }
-      );
-      setCollegeData(response.data);
-      return responses(response);
+      // Fetch student profiles to get college data
+      const { data, error } = await supabase
+        .from("student_profile")
+        .select("college");
+
+      if (error) throw error;
+
+      // Count students by college
+      const collegeCounts = {};
+      (data || []).forEach((profile) => {
+        const college = profile.college || "Unknown";
+        collegeCounts[college] = (collegeCounts[college] || 0) + 1;
+      });
+
+      // Format for chart
+      const formattedData = Object.entries(collegeCounts).map(([college, count]) => ({
+        college,
+        count,
+      }));
+
+      setCollegeData(formattedData);
     } catch (error) {
       console.error("Error fetching college data:", error);
       setCollegeData([]);

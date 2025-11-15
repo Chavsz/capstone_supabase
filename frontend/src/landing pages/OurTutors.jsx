@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../supabase-client";
 import { motion } from "framer-motion";
 
 function OurTutors() {
@@ -7,10 +7,37 @@ function OurTutors() {
 
   const fetchTutors = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/landing/tutor_subjects"
-      );
-      setTutors(response.data);
+      // Fetch tutors with their profiles
+      const { data: tutorsData, error: tutorsError } = await supabase
+        .from("users")
+        .select("user_id, name, email")
+        .eq("role", "tutor");
+
+      if (tutorsError) throw tutorsError;
+
+      // Fetch tutor profiles
+      const tutorIds = (tutorsData || []).map(t => t.user_id);
+      if (tutorIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profile")
+          .select("user_id, subject, specialization, profile_image")
+          .in("user_id", tutorIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine user data with profile data
+        const tutorsWithProfiles = (tutorsData || []).map(tutor => {
+          const profile = (profilesData || []).find(p => p.user_id === tutor.user_id);
+          return {
+            ...tutor,
+            subject: profile?.subject || null,
+            specialization: profile?.specialization || null,
+            profile_image: profile?.profile_image || null,
+          };
+        });
+
+        setTutors(tutorsWithProfiles);
+      }
     } catch (error) {
       console.error("Error fetching tutors:", error);
     }
@@ -101,7 +128,7 @@ function OurTutors() {
                         <div className="w-full h-[150px] bg-blue-300 flex items-center justify-center">
                           {tutor.profile_image ? (
                             <img
-                              src={`http://localhost:5000${tutor.profile_image}`}
+                              src={tutor.profile_image}
                               alt={tutor.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {

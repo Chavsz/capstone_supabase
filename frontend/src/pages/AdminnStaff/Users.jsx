@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 
 import { MdDelete } from "react-icons/md";
 
@@ -13,10 +13,14 @@ const Users = () => {
   // Get all users
   const getAllUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/users", {
-        headers: { token: localStorage.getItem("token") },
-      });
-      setAllUsers(response.data);
+      const { data, error } = await supabase
+        .from("users")
+        .select("user_id, name, email, role")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setAllUsers(data || []);
     } catch (err) {
       console.error(err.message);
     }
@@ -26,12 +30,19 @@ const Users = () => {
   const deleteUser = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/users/${id}`, {
-          headers: { token: localStorage.getItem("token") },
-        });
+        // Note: This will also delete the user from auth.users via cascade or trigger
+        // You may need to handle auth user deletion separately if needed
+        const { error } = await supabase
+          .from("users")
+          .delete()
+          .eq("user_id", id);
+
+        if (error) throw error;
+
         getAllUsers();
       } catch (err) {
         console.error(err.message);
+        alert("Error deleting user. They may have related data that needs to be removed first.");
       }
     }
   };

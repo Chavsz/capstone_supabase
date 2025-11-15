@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { supabase } from "../../supabase-client";
 
 //component
 import { CardsOne } from "../../components/cards";
 
 const TuteeDashboard = () => {
   const [name, setName] = useState("");
-  const [role, setRole] = useState(localStorage.getItem("role") || "");
+  const [role, setRole] = useState("");
   const [announcement, setAnnouncement] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,18 +15,33 @@ const TuteeDashboard = () => {
 
   async function getName() {
     try {
-      const response = await axios.get("http://localhost:5000/dashboard", {
-        headers: { token: localStorage.getItem("token") },
-      });
-      setName(response.data.name);
-      if (response.data.role) {
-        setRole(response.data.role);
-        localStorage.setItem("role", response.data.role);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("name, role")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setName(data.name);
+        if (data.role) {
+          setRole(data.role);
+        }
       }
-      // expose whether the user can switch back to tutor (approved tutor)
+
+      // Check if user can switch to tutor (has tutor profile)
+      const { data: tutorProfile } = await supabase
+        .from("profile")
+        .select("profile_id")
+        .eq("user_id", session.user.id)
+        .single();
+
       if (typeof window !== "undefined") {
-        const can = response.data && response.data.can_switch_to_tutor ? "true" : "false";
-        localStorage.setItem("canSwitchToTutor", can);
+        const can = tutorProfile ? true : false;
         window.dispatchEvent(new CustomEvent("canSwitchUpdated", { detail: { value: can } }));
       }
     } catch (err) {
@@ -36,14 +51,28 @@ const TuteeDashboard = () => {
 
   const getAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/tutee",
-        {
-          headers: { token },
-        }
-      );
-      setAppointments(response.data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          tutor:users!tutor_id(name)
+        `)
+        .eq("user_id", session.user.id)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      // Format data to match expected structure
+      const formattedData = (data || []).map(appointment => ({
+        ...appointment,
+        tutor_name: appointment.tutor?.name || null
+      }));
+
+      setAppointments(formattedData);
     } catch (err) {
       console.error(err.message);
       setMessage("Error loading appointments");
@@ -53,19 +82,23 @@ const TuteeDashboard = () => {
   };
 
   async function fetchAnnouncement() {
-    axios
-      .get("http://localhost:5000/announcement")
-      .then((response) => {
-        // Handle array response - get the first announcement
-        if (response.data && response.data.length > 0) {
-          setAnnouncement(response.data[0]);
-        } else {
-          setAnnouncement(null);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching announcement:", error);
-      });
+    try {
+      const { data, error } = await supabase
+        .from("announcement")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw error;
+      }
+
+      setAnnouncement(data || null);
+    } catch (error) {
+      console.error("Error fetching announcement:", error);
+      setAnnouncement(null);
+    }
   }
 
   useEffect(() => {

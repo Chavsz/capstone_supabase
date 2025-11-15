@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
 const Switch = () => {
@@ -15,26 +15,28 @@ const Switch = () => {
   const handleConfirmSwitch = async () => {
     setIsLoading(true);
     try {
-      // Call the API to change role in database
-      const response = await axios.put(
-        "http://localhost:5000/dashboard/switch-role",
-        { newRole: "student" },
-        {
-          headers: { token: localStorage.getItem("token") }
-        }
-      );
-
-      if (response.data.success) {
-        // Update localStorage with the new role from database
-        localStorage.setItem("role", "student");
-        setIsModalOpen(false);
-        
-        // Dispatch custom event to notify App component of role change
-        window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: 'student' } }));
-        
-        // Navigate to dashboard to trigger role-based routing
-        navigate("/dashboard");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("You must be logged in to switch roles");
+        return;
       }
+
+      // Update role in users table
+      const { error } = await supabase
+        .from("users")
+        .update({ role: "student" })
+        .eq("user_id", session.user.id);
+
+      if (error) throw error;
+
+      // Role will be updated in App.jsx when it detects the change
+      setIsModalOpen(false);
+      
+      // Dispatch custom event to notify App component of role change
+      window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: 'student' } }));
+      
+      // Navigate to dashboard to trigger role-based routing
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error switching role:", error);
       alert("Failed to switch role. Please try again.");

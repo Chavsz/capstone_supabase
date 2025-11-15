@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../supabase-client";
 import { motion } from "framer-motion";
 
 function About() {
@@ -11,12 +11,28 @@ function About() {
   });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/landing")
-      .then((response) => {
-        setLandingData(response.data);
-      })
-      .catch((error) => console.error("Error fetching landing data:", error));
+    const fetchLandingData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          throw error;
+        }
+
+        if (data) {
+          setLandingData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching landing data:", error);
+      }
+    };
+
+    fetchLandingData();
   }, []);
 
   return (
@@ -49,12 +65,18 @@ function About() {
             
               <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden">
                 <img
-                  src={`http://localhost:5000${
+                  src={
                     landingData.about_image ||
-                    "/uploads/landing/placeholder.png"
-                  }`}
+                    "/placeholder.png"
+                  }
                   alt="About LAV"
                   className="w-full h-auto object-cover rounded-3xl"
+                  onError={(e) => {
+                    console.error("Error loading about image:", landingData.about_image);
+                    if (landingData.about_image) {
+                      e.target.src = "/placeholder.png";
+                    }
+                  }}
                 />
               </div>
           </motion.div>

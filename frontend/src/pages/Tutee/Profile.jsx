@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { FaEdit, FaTimes } from "react-icons/fa";
 
 const Profile = () => {
@@ -15,10 +15,17 @@ const Profile = () => {
 
   async function getName() {
     try {
-      const response = await axios.get("http://localhost:5000/dashboard", {
-        headers: { token: localStorage.getItem("token") },
-      });
-      setName(response.data.name);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) setName(data.name);
     } catch (err) {
       console.error(err.message);
     }
@@ -26,14 +33,28 @@ const Profile = () => {
 
   async function getProfile() {
     try {
-      const response = await axios.get(
-        "http://localhost:5000/dashboard/profile",
-        {
-          headers: { token: localStorage.getItem("token") },
-        }
-      );
-      setProfile(response.data || {});
-      setForm(response.data || {});
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("student_profile")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      const profileData = data || {
+        program: "",
+        college: "",
+        year_level: "",
+        profile_image: "",
+      };
+
+      setProfile(profileData);
+      setForm(profileData);
     } catch (err) {
       console.error(err.message);
     }
@@ -54,9 +75,46 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      await axios.put("http://localhost:5000/dashboard/profile/student", form, {
-        headers: { token: localStorage.getItem("token") },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("student_profile")
+        .select("profile_id")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from("student_profile")
+          .update({
+            program: form.program,
+            college: form.college,
+            year_level: form.year_level,
+            profile_image: form.profile_image,
+          })
+          .eq("user_id", session.user.id);
+
+        if (error) throw error;
+      } else {
+        // Create new profile
+        const { error } = await supabase
+          .from("student_profile")
+          .insert([
+            {
+              user_id: session.user.id,
+              program: form.program,
+              college: form.college,
+              year_level: form.year_level,
+              profile_image: form.profile_image,
+            },
+          ]);
+
+        if (error) throw error;
+      }
+
       setProfile(form);
       setShowEditModal(false);
     } catch (err) {
@@ -68,27 +126,35 @@ const Profile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("profile_image", file);
-
     try {
-      const response = await axios.post(
-        "http://localhost:5000/upload/profile-image",
-        formData,
-        {
-          headers: {
-            token: localStorage.getItem("token"),
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `profile-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath);
 
       // Update the profile with the new image URL
       setProfile((prev) => ({
         ...prev,
-        profile_image: response.data.imageUrl,
+        profile_image: publicUrl,
       }));
-      setForm((prev) => ({ ...prev, profile_image: response.data.imageUrl }));
+      setForm((prev) => ({ ...prev, profile_image: publicUrl }));
     } catch (err) {
       console.error(err.message);
     }
@@ -119,7 +185,7 @@ const Profile = () => {
           <div className="w-32 h-32 bg-blue-500 rounded-full flex items-center justify-center mb-3">
             {profile.profile_image ? (
               <img
-                src={`http://localhost:5000${profile.profile_image}`}
+                src={profile.profile_image}
                 alt="Profile"
                 className="w-32 h-32 rounded-full object-cover"
               />
@@ -179,7 +245,7 @@ const Profile = () => {
                   <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
                     {form.profile_image ? (
                       <img
-                        src={`http://localhost:5000${form.profile_image}`}
+                        src={form.profile_image}
                         alt="Profile"
                         className="w-24 h-24 rounded-full object-cover"
                       />

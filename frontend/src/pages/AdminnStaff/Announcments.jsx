@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 
 const Announcments = () => {
-  const [formData, setFormData] = useState({
-    event_title: "",
-    event_description: "",
-    event_time: "",
-    event_date: "",
-    event_location: "",
-    event_image: null,
-  });
-
   const [announcement, setAnnouncement] = useState(null);
   const [announcementContent, setAnnouncementContent] = useState("");
   const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
@@ -19,12 +10,20 @@ const Announcments = () => {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/announcement");
-        if (response.data && response.data.length > 0) {
-          // Get the first announcement (assuming single announcement system)
-          const firstAnnouncement = response.data[0];
-          setAnnouncement(firstAnnouncement);
-          setAnnouncementContent(firstAnnouncement.announcement_content);
+        const { data, error } = await supabase
+          .from("announcement")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+          throw error;
+        }
+
+        if (data) {
+          setAnnouncement(data);
+          setAnnouncementContent(data.announcement_content);
         }
       } catch (error) {
         console.error("Error fetching announcement:", error);
@@ -37,29 +36,42 @@ const Announcments = () => {
   const handleAnnouncementSubmit = async (e) => {
     e.preventDefault();
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("You must be logged in to create/update announcements");
+        return;
+      }
+
       if (announcement && isEditingAnnouncement) {
-        const response = await axios.put(
-          `http://localhost:5000/announcement/${announcement.announcement_id}`,
-          {
+        const { data, error } = await supabase
+          .from("announcement")
+          .update({
             announcement_content: announcementContent,
-          },
-          {
-            headers: { token: localStorage.getItem("token") }
-          }
-        );
-        setAnnouncement(response.data.announcement);
+            updated_at: new Date().toISOString(),
+          })
+          .eq("announcement_id", announcement.announcement_id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setAnnouncement(data);
         alert("Announcement updated successfully.");
       } else {
-        const response = await axios.post(
-          "http://localhost:5000/announcement",
-          {
-            announcement_content: announcementContent,
-          },
-          {
-            headers: { token: localStorage.getItem("token") }
-          }
-        );
-        setAnnouncement(response.data.announcement);
+        const { data, error } = await supabase
+          .from("announcement")
+          .insert([
+            {
+              user_id: session.user.id,
+              announcement_content: announcementContent,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setAnnouncement(data);
         alert("Announcement created successfully.");
       }
       setIsEditingAnnouncement(false);
@@ -74,12 +86,13 @@ const Announcments = () => {
     if (!announcement) return;
     if (window.confirm("Are you sure you want to delete this announcement?")) {
       try {
-        await axios.delete(
-          `http://localhost:5000/announcement/${announcement.announcement_id}`,
-          {
-            headers: { token: localStorage.getItem("token") }
-          }
-        );
+        const { error } = await supabase
+          .from("announcement")
+          .delete()
+          .eq("announcement_id", announcement.announcement_id);
+
+        if (error) throw error;
+
         setAnnouncement(null);
         setAnnouncementContent("");
         setIsEditingAnnouncement(false);

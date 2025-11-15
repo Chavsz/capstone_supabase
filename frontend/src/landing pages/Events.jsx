@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../supabase-client";
 import { motion } from "framer-motion";
 
 function Events() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/event")
-      .then((response) => {
-        setEvents(response.data);
-      })
-      .catch((error) => console.error("Error fetching events data:", error));
+    const fetchEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("event")
+          .select("*")
+          .order("event_date", { ascending: true })
+          .order("event_time", { ascending: true });
+
+        if (error) throw error;
+
+        setEvents(data || []);
+      } catch (error) {
+        console.error("Error fetching events data:", error);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
   return (
@@ -57,9 +68,9 @@ function Events() {
                     {/* Event Image */}
                     <div className="relative overflow-hidden">
                       <img
-                        src={`http://localhost:5000${
-                          event.event_image || "/uploads/landing/placeholder.png"
-                        }`}
+                        src={
+                          event.event_image || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+                        }
                         alt={event.event_title}
                         className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                         onError={(e) => {

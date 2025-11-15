@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 const Lavroom = () => {
@@ -8,16 +8,30 @@ const Lavroom = () => {
 
   const getAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/appointment/admin",
-        {
-          headers: { token },
-        }
-      );
-      setAppointments(response.data);
+      // Fetch all appointments with tutor and student names
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(`
+          *,
+          tutor:users!appointment_tutor_id_fkey(name),
+          student:users!appointment_user_id_fkey(name)
+        `)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      // Format data to match expected structure
+      const formattedData = (data || []).map(appointment => ({
+        ...appointment,
+        tutor_name: appointment.tutor?.name || null,
+        student_name: appointment.student?.name || null
+      }));
+
+      setAppointments(formattedData);
     } catch (err) {
       console.error(err.message);
+      toast.error("Error loading appointments");
     } finally {
       setLoading(false);
     }
@@ -64,10 +78,13 @@ const Lavroom = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/appointment/admin/${appointmentId}`, {
-        headers: { token }
-      });
+      const { error } = await supabase
+        .from("appointment")
+        .delete()
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
       getAppointments(); // Refresh the list
       toast.success("Appointment deleted successfully");
     } catch (err) {
