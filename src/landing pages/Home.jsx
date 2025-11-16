@@ -27,6 +27,7 @@ function Home() {
       if (data) {
         setLandingData(data);
       }
+      // console.log("Landing data:", data);
     } catch (error) {
       console.error("Error fetching landing data:", error);
     }
@@ -118,10 +119,20 @@ function Home() {
                   alt="Learning"
                   className="w-full h-auto object-cover rounded-3xl"
                   onError={(e) => {
-                    console.error("Error loading home image:", landingData.home_image);
-                    if (landingData.home_image) {
-                      e.target.src = "/placeholder.png";
+                    // Prevent infinite loop by checking if we've already tried the fallback
+                    if (e.target.dataset.fallbackAttempted === 'true') {
+                      return;
                     }
+                    // Only log error if we have a valid, non-empty image URL
+                    const imageUrl = landingData.home_image;
+                    if (imageUrl && 
+                        imageUrl.trim() !== "" && 
+                        imageUrl !== "/placeholder.png" &&
+                        (imageUrl.startsWith("http") || imageUrl.startsWith("/"))) {
+                    }
+                    const fallbackUrl = "/placeholder.png";
+                    e.target.dataset.fallbackAttempted = 'true';
+                    e.target.src = fallbackUrl;
                   }}
                 />
               </div>

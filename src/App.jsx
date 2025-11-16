@@ -30,8 +30,6 @@ function RoleBasedDashboard({ setAuth, currentRole, loading }) {
 
   const role = currentRole;
 
-  console.log("RoleBasedDashboard - currentRole:", currentRole, "loading:", loading);
-
   switch (role) {
     case "admin":
       return <AdminPage setAuth={setAuth} />;
@@ -66,24 +64,19 @@ function App() {
 
   // Single function to fetch role
   const fetchUserRole = async (userId) => {
-    console.log("fetchUserRole called - isFetching:", isFetching.current, "hasRole:", hasRole.current, "currentRole:", currentRole);
-    
     // Don't fetch if already fetching
     if (isFetching.current) {
-      console.log("Already fetching role, skipping...");
       return;
     }
 
     // If we already have a role in state, don't fetch again
     if (currentRole) {
-      console.log("Role already exists in state, skipping fetch. Role:", currentRole);
       setLoading(false);
       hasRole.current = true; // Sync the ref
       return;
     }
 
     isFetching.current = true;
-    console.log("START: Fetching role for user_id:", userId);
 
     try {
       const { data, error } = await supabase
@@ -91,8 +84,6 @@ function App() {
         .select("role")
         .eq("user_id", userId)
         .single();
-
-      console.log("RESPONSE: Role query completed", { data, error });
 
       if (error) {
         console.error("Role fetch error:", error);
@@ -105,7 +96,6 @@ function App() {
       }
 
       if (data && data.role) {
-        console.log("SUCCESS: Role fetched:", data.role);
         setCurrentRole(data.role);
         hasRole.current = true; // Mark that we have a role
         setLoading(false);
@@ -117,7 +107,6 @@ function App() {
       console.error("CATCH: Error fetching user role:", err);
       setLoading(false);
     } finally {
-      console.log("FINALLY: Resetting isFetching flag");
       isFetching.current = false;
     }
   };
@@ -142,12 +131,10 @@ function App() {
         }
 
         if (session) {
-          console.log("Initial session found");
           setSession(session);
           setIsAuthenticated(true);
           await fetchUserRole(session.user.id);
         } else {
-          console.log("No initial session");
           setIsAuthenticated(false);
           setLoading(false);
         }
@@ -170,8 +157,6 @@ function App() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      console.log("Auth state change:", event);
-
       // Ignore INITIAL_SESSION - already handled above
       if (event === 'INITIAL_SESSION') {
         return;
@@ -179,21 +164,17 @@ function App() {
 
       // Wait for initialization to complete before handling other events
       if (!initialized) {
-        console.log("Waiting for initialization...");
         return;
       }
 
       // Handle sign in
       if (event === 'SIGNED_IN' && session) {
-        console.log("SIGNED_IN event - currentRole:", currentRole, "hasRole:", hasRole.current);
-        
         setSession(session);
         setIsAuthenticated(true);
         
         // If we already have a role, this is likely a tab switch, not a real login
         // Check the ref because state might not be updated yet
         if (hasRole.current) {
-          console.log("Already have role (ref=true), ignoring SIGNED_IN event");
           setLoading(false);
           return;
         }
@@ -218,7 +199,6 @@ function App() {
 
       // For TOKEN_REFRESHED, just update session but don't refetch role
       if (event === 'TOKEN_REFRESHED' && session) {
-        console.log("Token refreshed - keeping existing role");
         setSession(session);
         // If we already have a role, ensure loading is false
         if (hasRole.current && currentRole) {
@@ -230,7 +210,6 @@ function App() {
 
       // For USER_UPDATED, just update session
       if (event === 'USER_UPDATED' && session) {
-        console.log("User updated - keeping existing role");
         setSession(session);
         return;
       }
@@ -247,7 +226,6 @@ function App() {
     const handleRoleChange = (event) => {
       const newRole = event.detail?.newRole;
       if (newRole) {
-        console.log("Role changed via event:", newRole);
         setCurrentRole(newRole);
         hasRole.current = true; // Mark that we have a role
         setLoading(false);

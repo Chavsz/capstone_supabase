@@ -189,10 +189,6 @@ const TutorDashboard = () => {
     day: "numeric",
   });
 
-  const cardStyle = () => {
-    return "bg-blue-500 text-white shadow-md shadow-blue-500/50 border-none";
-  }
-
   const cardText = () => {
     return "text-white";
   }
@@ -217,8 +213,6 @@ const TutorDashboard = () => {
           title="Sessions"
           icon={<fiIcons.FiCalendar />}
           total={completedAppointments.length}
-          style={cardStyle()}
-          text={cardText()}
         />
         <Cards
           title="Tutee Request"

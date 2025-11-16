@@ -199,7 +199,7 @@ export const AppointmentsAreaChart = ({appointmentsData}) => {
         <select
           value={areaRange}
           onChange={(e) => setAreaRange(e.target.value)}
-          className="bg-white border-0 outline-0 text-[#132c91] text-sm rounded-md p-[2px]"
+          className="bg-white border-0 outline-0 text-blue-600 text-sm rounded-md p-[2px]"
         >
           <option value="7d">Last 7 Days</option>
           <option value="30d">Last 30 Days</option>

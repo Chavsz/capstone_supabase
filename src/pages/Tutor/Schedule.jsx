@@ -47,7 +47,7 @@ const AppointmentModal = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-[#132c91]">
+          <h2 className="text-xl font-bold text-blue-600">
             Appointment Details
           </h2>
           <button
@@ -338,7 +338,7 @@ const Schedule = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white p-6">
-        <h1 className="text-[#132c91] font-bold text-2xl">Appointments</h1>
+        <h1 className="text-blue-600 font-bold text-2xl">Appointments</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
     );

@@ -54,23 +54,41 @@ const Event = () => {
       const fileName = `${eventId}_${Date.now()}.${fileExt}`;
       const filePath = `event-images/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('capstone')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error details:", uploadError);
+        throw uploadError;
+      }
+      
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('capstone')
         .getPublicUrl(filePath);
 
+      // Verify the file exists by trying to list it
+      const { data: listData, error: listError } = await supabase.storage
+        .from('capstone')
+        .list('event-images', {
+          limit: 100,
+          search: fileName
+        });
+
+      if (listError) {
+        console.warn("Could not verify file existence:", listError);
+      } else {
+        console.log("File verification:", listData);
+      }
+
       return publicUrl;
     } catch (error) {
-      console.error("Error uploading image:", error);
+      toast.error(`Image upload failed: ${error.message}.`);
       throw error;
     }
   };
@@ -236,7 +254,6 @@ const Event = () => {
         setEvents(events.filter((event) => event.event_id !== eventId));
         toast.success("Event deleted successfully.");
       } catch (error) {
-        console.error("Error deleting event:", error);
         toast.error("Failed to delete event.");
       }
     }
@@ -419,14 +436,21 @@ const Event = () => {
                         src={event.event_image}
                         alt={event.event_title}
                         className="w-full h-48 object-cover"
-                        onError={() => {
-                          console.error("Error loading image:", event.event_image);
+                        onError={(e) => {
                           setFailedImages(prev => new Set(prev).add(event.event_id));
                         }}
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center text-gray-400">
-                        {event.event_image ? 'Failed to load image' : 'No Image'}
+                        {event.event_image ? (
+                          <div className="text-center p-2">
+                            <p className="text-sm">Failed to load image</p>
+                            <p className="text-xs mt-1">Check bucket permissions</p>
+                          </div>
+                        ) : (
+                          'No Image'
+                        )}
                       </div>
                     )}
                   </div>

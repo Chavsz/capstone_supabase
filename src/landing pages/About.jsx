@@ -27,6 +27,7 @@ function About() {
         if (data) {
           setLandingData(data);
         }
+        // console.log("Landing data About:", landingData);
       } catch (error) {
         console.error("Error fetching landing data:", error);
       }
@@ -72,10 +73,21 @@ function About() {
                   alt="About LAV"
                   className="w-full h-auto object-cover rounded-3xl"
                   onError={(e) => {
-                    console.error("Error loading about image:", landingData.about_image);
-                    if (landingData.about_image) {
-                      e.target.src = "/placeholder.png";
+                    // Prevent infinite loop by checking if we've already tried the fallback
+                    if (e.target.dataset.fallbackAttempted === 'true') {
+                      return;
                     }
+                    // Only log error if we have a valid, non-empty image URL
+                    const imageUrl = landingData.about_image;
+                    if (imageUrl && 
+                        imageUrl.trim() !== "" && 
+                        imageUrl !== "/placeholder.png" &&
+                        (imageUrl.startsWith("http") || imageUrl.startsWith("/"))) {
+                      console.error("Error loading about image:", imageUrl);
+                    }
+                    const fallbackUrl = "/placeholder.png";
+                    e.target.dataset.fallbackAttempted = 'true';
+                    e.target.src = fallbackUrl;
                   }}
                 />
               </div>
