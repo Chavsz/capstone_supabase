@@ -30,30 +30,22 @@ const Login = ({ setAuth }) => {
 
       // Get user role from users table
       if (data.user) {
-        console.log("Login - Fetching role for user_id:", data.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from("users")
           .select("user_id, role, name, email")
           .eq("user_id", data.user.id)
           .single();
 
-        console.log("Login - Role query result:", { data: profileData, error: profileError });
-
         if (profileError) {
-          console.error("Login - Error fetching role:", profileError);
           if (profileError.code === 'PGRST116') {
-            console.error("Login - User not found in users table. User ID:", data.user.id);
             setMessage("User profile not found. Please contact support.");
           }
         } else if (profileData) {
-          console.log("Login - User data retrieved:", profileData);
           if (profileData.role) {
             const role = profileData.role;
-            console.log("Login - Role fetched:", role);
             // Dispatch role change event so App.jsx can pick it up immediately
             window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: role } }));
           } else {
-            console.warn("Login - Role is null or undefined in database for user:", data.user.id);
             setMessage("User role not set. Please contact support.");
           }
         }
