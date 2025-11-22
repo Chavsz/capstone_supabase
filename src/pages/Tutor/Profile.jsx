@@ -281,6 +281,9 @@ const Profile = () => {
 
       setProfile(form);
       setShowEditModal(false);
+      
+      // Dispatch event to notify Header component to refresh profile
+      window.dispatchEvent(new CustomEvent('profileUpdated'));
     } catch (err) {
       console.error(err.message);
     }
@@ -300,7 +303,7 @@ const Profile = () => {
       const filePath = `profile-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('profile-images')
+        .from('capstone')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -310,7 +313,7 @@ const Profile = () => {
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-images')
+        .from('capstone')
         .getPublicUrl(filePath);
 
       // Update the profile with the new image URL
@@ -322,6 +325,10 @@ const Profile = () => {
     } catch (err) {
       console.error(err.message);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setForm((prev) => ({ ...prev, profile_image: "" }));
   };
 
   return (
@@ -541,7 +548,7 @@ const Profile = () => {
                   <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
                     {form.profile_image ? (
                       <img
-                        src={`http://localhost:5000${form.profile_image}`}
+                        src={form.profile_image}
                         alt="Profile"
                         className="w-24 h-24 rounded-full object-cover"
                       />
@@ -559,9 +566,20 @@ const Profile = () => {
                       onChange={handleImageUpload}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
-                    <p className="text-sm text-gray-500 mt-1 ml-2">
-                      Upload new a profile image
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-gray-500 ml-2">
+                        Upload a new profile picture
+                      </p>
+                      {form.profile_image && (
+                        <button
+                          onClick={handleRemoveImage}
+                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                          <FaTrash size={12} />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

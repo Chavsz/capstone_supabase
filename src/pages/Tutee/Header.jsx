@@ -13,11 +13,40 @@ const Header = () => {
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const dropdownRef = useRef(null);
+  const [profile, setProfile] = useState({
+    program: "",
+    college: "",
+    year_level: "",
+    profile_image: "",
+  });
+  const [name, setName] = useState("");
+
+  // get name
+  async function getName() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) setName(data.name);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
 
   // Fetch unread notifications
   const getUnreadNotifications = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
@@ -36,17 +65,52 @@ const Header = () => {
     }
   };
 
+  // get profile
+  async function getProfile() {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("student_profile")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+
+      const profileData = data || {
+        program: "",
+        college: "",
+        year_level: "",
+        profile_image: "",
+      };
+
+      setProfile(profileData);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
   const getUpcomingSessions = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
         .from("appointment")
-        .select(`
+        .select(
+          `
           *,
           tutor:users!tutor_id(name)
-        `)
+        `
+        )
         .eq("user_id", session.user.id)
         .eq("status", "confirmed")
         .order("date", { ascending: true })
@@ -61,7 +125,9 @@ const Header = () => {
             return false;
           }
 
-          const startDate = new Date(`${appointment.date}T${appointment.start_time}`);
+          const startDate = new Date(
+            `${appointment.date}T${appointment.start_time}`
+          );
           if (isNaN(startDate.getTime())) {
             return false;
           }
@@ -70,15 +136,17 @@ const Header = () => {
           return diffMs > 0 && diffMs <= 20 * 60 * 1000;
         })
         .map((appointment) => {
-          const startDate = new Date(`${appointment.date}T${appointment.start_time}`);
+          const startDate = new Date(
+            `${appointment.date}T${appointment.start_time}`
+          );
           const diffMs = Math.max(startDate.getTime() - now.getTime(), 0);
           const minutesUntil = Math.max(Math.ceil(diffMs / (60 * 1000)), 0);
-          return { 
+          return {
             appointment: {
               ...appointment,
-              tutor_name: appointment.tutor?.name || null
-            }, 
-            minutesUntil 
+              tutor_name: appointment.tutor?.name || null,
+            },
+            minutesUntil,
           };
         })
         .sort((a, b) => a.minutesUntil - b.minutesUntil);
@@ -92,7 +160,9 @@ const Header = () => {
   // Fetch confirmed appointments count
   const getConfirmedCount = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { count, error } = await supabase
@@ -142,6 +212,8 @@ const Header = () => {
 
   // Fetch data on component mount
   useEffect(() => {
+    getName();
+    getProfile();
     getUnreadNotifications();
     getConfirmedCount();
     getUpcomingSessions();
@@ -184,7 +256,7 @@ const Header = () => {
               </span>
             )}
           </button>
-          
+
           {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2 duration-200">
@@ -193,39 +265,53 @@ const Header = () => {
                   <IoIosNotifications className="text-gray-600" />
                   Notifications
                 </h3>
-                
+
                 <div className="space-y-3">
                   {upcomingSessions.length > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                       <p className="text-blue-800 font-medium">
-                        Upcoming session{upcomingSessions.length > 1 ? "s" : ""} soon
+                        Upcoming session{upcomingSessions.length > 1 ? "s" : ""}{" "}
+                        soon
                       </p>
                       <div className="mt-2 space-y-2">
-                        {upcomingSessions.map(({ appointment, minutesUntil }) => (
-                          <div key={appointment.appointment_id} className="text-blue-700 text-sm">
-                            <p className="font-semibold">
-                              In {minutesUntil} {minutesUntil === 1 ? "minute" : "minutes"}
-                            </p>
-                            <p>
-                              {appointment.tutor_name ? `With ${appointment.tutor_name}` : "Tutoring session"} at{" "}
-                              {new Date(`2000-01-01T${appointment.start_time}`).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                                hour12: true,
-                              })}{" "}
-                              on{" "}
-                              {new Date(appointment.date).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </p>
-                          </div>
-                        ))}
+                        {upcomingSessions.map(
+                          ({ appointment, minutesUntil }) => (
+                            <div
+                              key={appointment.appointment_id}
+                              className="text-blue-700 text-sm"
+                            >
+                              <p className="font-semibold">
+                                In {minutesUntil}{" "}
+                                {minutesUntil === 1 ? "minute" : "minutes"}
+                              </p>
+                              <p>
+                                {appointment.tutor_name
+                                  ? `With ${appointment.tutor_name}`
+                                  : "Tutoring session"}{" "}
+                                at{" "}
+                                {new Date(
+                                  `2000-01-01T${appointment.start_time}`
+                                ).toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}{" "}
+                                on{" "}
+                                {new Date(appointment.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )}
+                              </p>
+                            </div>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
-
 
                   {/* Confirmed Appointments */}
                   {/* {confirmedCount > 0 && (
@@ -241,7 +327,7 @@ const Header = () => {
 
                   {/* Unread Notifications */}
                   {unreadNotifications.map((notification) => (
-                    <div 
+                    <div
                       key={notification.notification_id}
                       className="bg-blue-50 border border-blue-200 rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
                       onClick={() => markAsRead(notification.notification_id)}
@@ -262,7 +348,7 @@ const Header = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <Link
                     to="/dashboard/schedules"
@@ -277,14 +363,26 @@ const Header = () => {
             </div>
           )}
         </div>
-        
+
         <span className="font-extralight text-[#696969]">|</span>
-        
+
         {/* Profile Icon */}
-        <Link className="p-1 text-3xl" to="/dashboard/profile"><IoPersonCircleOutline /></Link>
+        <Link className="w-6.5 h-6.5 bg-blue-500 rounded-full flex items-center justify-center" to="/dashboard/profile" >
+          {profile.profile_image ? (
+            <img
+              src={profile.profile_image}
+              alt="Profile"
+              className="w-6.5 h-6.5 rounded-full object-cover"
+            />
+          ) : (
+            <span className="text-white text-sm font-medium">
+              {name && name.length > 0 ? name.charAt(0).toUpperCase() : "?"}  
+            </span>
+          )}
+        </Link>
       </div>
     </div>
   );
 };
 
-export default Header; 
+export default Header;

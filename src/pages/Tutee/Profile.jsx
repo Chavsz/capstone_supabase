@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
-import { FaEdit, FaTimes } from "react-icons/fa";
+import { FaEdit, FaTimes, FaTrash } from "react-icons/fa";
 
 const Profile = () => {
   const [name, setName] = useState("");
@@ -136,7 +136,7 @@ const Profile = () => {
       const filePath = `profile-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('profile-images')
+        .from('capstone')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -146,7 +146,7 @@ const Profile = () => {
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-images')
+        .from('capstone')
         .getPublicUrl(filePath);
 
       // Update the profile with the new image URL
@@ -158,6 +158,10 @@ const Profile = () => {
     } catch (err) {
       console.error(err.message);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setForm((prev) => ({ ...prev, profile_image: "" }));
   };
 
   return (
@@ -263,9 +267,20 @@ const Profile = () => {
                       onChange={handleImageUpload}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
-                    <p className="text-sm text-gray-500 mt-1 ml-2">
-                      Upload a new profile picture
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-gray-500 ml-2">
+                        Upload a new profile picture
+                      </p>
+                      {form.profile_image && (
+                        <button
+                          onClick={handleRemoveImage}
+                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                        >
+                          <FaTrash size={12} />
+                          <span>Remove</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

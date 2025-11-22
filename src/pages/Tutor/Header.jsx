@@ -12,6 +12,10 @@ const Header = () => {
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const [profile, setProfile] = useState({
+    profile_image: "",
+  });
+  const [name, setName] = useState("");
 
   // Fetch pending appointments count
   const getPendingCount = async () => {
@@ -32,6 +36,51 @@ const Header = () => {
       console.error("Error fetching pending count:", err.message);
     }
   };
+
+  // get name
+  async function getName() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("name")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) setName(data.name);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+  // get profile
+  async function getProfile() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("profile")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+
+      const profileData = data || {
+        profile_image: "",
+      };
+
+      setProfile(profileData);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
 
   // Fetch unread notifications
   const getUnreadNotifications = async () => {
@@ -88,8 +137,20 @@ const Header = () => {
 
   // Fetch data on component mount
   useEffect(() => {
+    getName();
+    getProfile();
     getPendingCount();
     getUnreadNotifications();
+
+    // Listen for profile update events
+    const handleProfileUpdate = () => {
+      getProfile();
+    };
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const toggleDropdown = () => {
@@ -184,7 +245,19 @@ const Header = () => {
         <span className="font-extralight text-[#696969]">|</span>
         
         {/* Profile Icon */}
-        <Link className="p-1 text-3xl" to="/dashboard/profile"><IoPersonCircleOutline /></Link>
+        <Link className="w-6.5 h-6.5 bg-blue-500 rounded-full flex items-center justify-center" to="/dashboard/profile">
+          {profile.profile_image ? (
+            <img
+              src={profile.profile_image}
+              alt="Profile"
+              className="w-6.5 h-6.5 rounded-full object-cover"
+            />
+          ) : (
+            <span className="text-white text-sm font-medium">
+              {name && name.length > 0 ? name.charAt(0).toUpperCase() : "?"}
+            </span>
+          )}
+        </Link>
       </div>
     </div>
   );
