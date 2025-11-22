@@ -2,6 +2,196 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
+// Evaluation Modal component
+const EvaluationModal = ({
+  appointment,
+  isOpen,
+  onClose,
+  onEvaluate,
+}) => {
+  const [evaluationData, setEvaluationData] = useState({
+    presentation_clarity: "",
+    drills_sufficiency: "",
+    patience_enthusiasm: "",
+    study_skills_development: "",
+    positive_impact: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen && appointment) {
+      // Reset form when modal opens
+      setEvaluationData({
+        presentation_clarity: "",
+        drills_sufficiency: "",
+        patience_enthusiasm: "",
+        study_skills_development: "",
+        positive_impact: "",
+      });
+      setError("");
+    }
+  }, [isOpen, appointment]);
+
+  const handleRatingChange = (criterion, value) => {
+    setEvaluationData((prev) => ({
+      ...prev,
+      [criterion]: value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    // Validate that all fields are filled
+    const requiredFields = [
+      "presentation_clarity",
+      "drills_sufficiency",
+      "patience_enthusiasm",
+      "study_skills_development",
+      "positive_impact",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !evaluationData[field]
+    );
+
+    if (missingFields.length > 0) {
+      setError("Please rate all criteria before submitting.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await onEvaluate(appointment.appointment_id, evaluationData);
+      onClose();
+    } catch (err) {
+      setError("Failed to submit evaluation. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen || !appointment) return null;
+
+  const ratingOptions = [
+    { value: "5", label: "5 - Outstanding" },
+    { value: "4", label: "4 - Very Satisfactory" },
+    { value: "3", label: "3 - Satisfactory" },
+    { value: "2", label: "2 - Needs Improvement" },
+    { value: "1", label: "1 - Poor" },
+    { value: "N/A", label: "N/A - Not Applicable" },
+  ];
+
+  const criteria = [
+    {
+      key: "presentation_clarity",
+      label: "Clear and organized presentation of the lessons by the peer tutor.",
+    },
+    {
+      key: "drills_sufficiency",
+      label: "Sufficiency of drills and exercises provided by the tutor for the skill mastery.",
+    },
+    {
+      key: "patience_enthusiasm",
+      label: "Patience & enthusiasm of the peer tutor in satisfactorily answering questions regarding the lesson/s.",
+    },
+    {
+      key: "study_skills_development",
+      label: "Opportunity for development of my study skills gained from the tutorial session/s.",
+    },
+    {
+      key: "positive_impact",
+      label: "Positive impact in my progress in this subject as a result of the tutorial session.",
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-xl font-bold text-blue-600">
+            Evaluation Form
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Tutor:</span> {appointment.tutor_name}
+          </p>
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Subject:</span> {appointment.subject}
+          </p>
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Topic:</span> {appointment.topic}
+          </p>
+        </div>
+
+        <div className="space-y-6 mb-6">
+          {criteria.map((criterion, index) => (
+            <div key={criterion.key} className="border-b border-gray-200 pb-4">
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                {index + 1}. {criterion.label}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {ratingOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex items-center cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name={criterion.key}
+                      value={option.value}
+                      checked={evaluationData[criterion.key] === option.value}
+                      onChange={() =>
+                        handleRatingChange(criterion.key, option.value)
+                      }
+                      className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {option.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-600 mb-4" role="alert">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="bg-gray-500 text-white rounded-md px-4 py-2 text-sm hover:bg-gray-600 flex-1"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Submitting..." : "Submit Evaluation"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Modal component for appointment details
 const AppointmentModal = ({
   appointment,
@@ -9,6 +199,7 @@ const AppointmentModal = ({
   onClose,
   onDelete,
   onUpdate,
+  onEvaluate,
 }) => {
   const [formData, setFormData] = useState({
     date: "",
@@ -277,6 +468,19 @@ const AppointmentModal = ({
               {isSaving ? "Saving..." : "Update Appointment"}
             </button>
           )}
+          {appointment.status === "completed" && appointment.hasEvaluation === false && (
+            <button
+              onClick={() => {
+                onClose();
+                if (onEvaluate) {
+                  onEvaluate(appointment);
+                }
+              }}
+              className="bg-green-600 text-white rounded-md px-4 py-2 text-sm hover:bg-green-700 flex-1"
+            >
+              Evaluate Session
+            </button>
+          )}
           <button
             onClick={() => {
               onDelete(appointment.appointment_id);
@@ -298,6 +502,8 @@ const Schedules = () => {
   const [selectedFilter, setSelectedFilter] = useState("upcoming");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvaluationAppointment, setSelectedEvaluationAppointment] = useState(null);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
 
   const getAppointments = async () => {
     try {
@@ -316,10 +522,22 @@ const Schedules = () => {
 
       if (error) throw error;
 
+      // Check which appointments have evaluations
+      const appointmentIds = (data || []).map(apt => apt.appointment_id);
+      const { data: evaluations } = await supabase
+        .from("evaluation")
+        .select("appointment_id")
+        .in("appointment_id", appointmentIds);
+
+      const evaluatedAppointmentIds = new Set(
+        (evaluations || []).map(evaluationItem => evaluationItem.appointment_id)
+      );
+
       // Format data to match expected structure
       const formattedData = (data || []).map(appointment => ({
         ...appointment,
-        tutor_name: appointment.tutor?.name || null
+        tutor_name: appointment.tutor?.name || null,
+        hasEvaluation: evaluatedAppointmentIds.has(appointment.appointment_id)
       }));
 
       setAppointments(formattedData);
@@ -464,6 +682,60 @@ const Schedules = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedAppointment(null);
+  };
+
+  const openEvaluationModal = (appointment) => {
+    setSelectedEvaluationAppointment(appointment);
+    setIsEvaluationModalOpen(true);
+  };
+
+  const closeEvaluationModal = () => {
+    setIsEvaluationModalOpen(false);
+    setSelectedEvaluationAppointment(null);
+  };
+
+  const handleEvaluate = async (appointmentId, evaluationData) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to submit an evaluation");
+        return;
+      }
+
+      // Get appointment details to get tutor_id
+      const { data: appointmentData, error: appointmentError } = await supabase
+        .from("appointment")
+        .select("tutor_id")
+        .eq("appointment_id", appointmentId)
+        .single();
+
+      if (appointmentError) throw appointmentError;
+
+      // Insert evaluation
+      const { error } = await supabase
+        .from("evaluation")
+        .insert([
+          {
+            appointment_id: appointmentId,
+            tutor_id: appointmentData.tutor_id,
+            user_id: session.user.id,
+            presentation_clarity: evaluationData.presentation_clarity,
+            drills_sufficiency: evaluationData.drills_sufficiency,
+            patience_enthusiasm: evaluationData.patience_enthusiasm,
+            study_skills_development: evaluationData.study_skills_development,
+            positive_impact: evaluationData.positive_impact,
+          },
+        ]);
+
+      if (error) throw error;
+
+      toast.success("Evaluation submitted successfully!");
+      await getAppointments(); // Refresh appointments
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Error submitting evaluation");
+      throw err;
+    }
   };
 
   if (loading) {
@@ -681,11 +953,22 @@ const Schedules = () => {
                           <div className="text-sm text-gray-500 mb-1">
                             {appointment.mode_of_session}
                           </div>
-                          {/* {appointment.status === "confirmed" && appointment.online_link && (
-                            <div className="text-xs text-green-600 font-medium">
-                              Online link available
+                          {appointment.status === "completed" && !appointment.hasEvaluation && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEvaluationModal(appointment);
+                              }}
+                              className="mt-2 bg-green-600 text-white text-xs px-3 py-1 rounded hover:bg-green-700"
+                            >
+                              Evaluate
+                            </button>
+                          )}
+                          {appointment.status === "completed" && appointment.hasEvaluation && (
+                            <div className="mt-2 text-xs text-green-600 font-medium">
+                              ✓ Evaluated
                             </div>
-                          )} */}
+                          )}
                         </div>
                       </div>
                     ))}
@@ -697,13 +980,22 @@ const Schedules = () => {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Appointment Modal */}
       <AppointmentModal
         appointment={selectedAppointment}
         isOpen={isModalOpen}
         onClose={closeModal}
         onDelete={handleDelete}
         onUpdate={handleAppointmentUpdate}
+        onEvaluate={openEvaluationModal}
+      />
+
+      {/* Evaluation Modal */}
+      <EvaluationModal
+        appointment={selectedEvaluationAppointment}
+        isOpen={isEvaluationModalOpen}
+        onClose={closeEvaluationModal}
+        onEvaluate={handleEvaluate}
       />
     </div>
   );

@@ -9,6 +9,7 @@ const AppointmentModal = ({
   onClose,
   onStatusUpdate,
   feedbacks,
+  evaluation,
 }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -39,6 +40,18 @@ const AppointmentModal = ({
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getRatingLabel = (rating) => {
+    const labels = {
+      "5": "Outstanding",
+      "4": "Very Satisfactory",
+      "3": "Satisfactory",
+      "2": "Needs Improvement",
+      "1": "Poor",
+      "N/A": "Not Applicable",
+    };
+    return labels[rating] || rating;
   };
 
   if (!isOpen || !appointment) return null;
@@ -99,6 +112,82 @@ const AppointmentModal = ({
             </span>
           </div>
         </div>
+
+        {/* Evaluation Display */}
+        {evaluation && appointment.status === "completed" && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-green-800 mb-4">
+              Session Evaluation
+            </h3>
+            <div className="space-y-3">
+              <div className="border-b border-green-200 pb-2">
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  1. Clear and organized presentation of the lessons
+                </p>
+                <p className="text-sm text-gray-600">
+                  Rating: <span className="font-semibold">{evaluation.presentation_clarity}</span>
+                  {evaluation.presentation_clarity !== "N/A" && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({getRatingLabel(evaluation.presentation_clarity)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="border-b border-green-200 pb-2">
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  2. Sufficiency of drills and exercises
+                </p>
+                <p className="text-sm text-gray-600">
+                  Rating: <span className="font-semibold">{evaluation.drills_sufficiency}</span>
+                  {evaluation.drills_sufficiency !== "N/A" && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({getRatingLabel(evaluation.drills_sufficiency)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="border-b border-green-200 pb-2">
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  3. Patience & enthusiasm in answering questions
+                </p>
+                <p className="text-sm text-gray-600">
+                  Rating: <span className="font-semibold">{evaluation.patience_enthusiasm}</span>
+                  {evaluation.patience_enthusiasm !== "N/A" && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({getRatingLabel(evaluation.patience_enthusiasm)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="border-b border-green-200 pb-2">
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  4. Opportunity for development of study skills
+                </p>
+                <p className="text-sm text-gray-600">
+                  Rating: <span className="font-semibold">{evaluation.study_skills_development}</span>
+                  {evaluation.study_skills_development !== "N/A" && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({getRatingLabel(evaluation.study_skills_development)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  5. Positive impact on progress in the subject
+                </p>
+                <p className="text-sm text-gray-600">
+                  Rating: <span className="font-semibold">{evaluation.positive_impact}</span>
+                  {evaluation.positive_impact !== "N/A" && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({getRatingLabel(evaluation.positive_impact)})
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-wrap">
@@ -170,6 +259,7 @@ const Schedule = () => {
   const [selectedFilter, setSelectedFilter] = useState("confirmed");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [evaluations, setEvaluations] = useState({});
 
   const getAppointments = async () => {
     try {
@@ -195,6 +285,26 @@ const Schedule = () => {
       }));
 
       setAppointments(formattedData);
+
+      // Fetch evaluations for completed appointments
+      const appointmentIds = formattedData
+        .filter(apt => apt.status === "completed")
+        .map(apt => apt.appointment_id);
+
+      if (appointmentIds.length > 0) {
+        const { data: evaluationData, error: evalError } = await supabase
+          .from("evaluation")
+          .select("*")
+          .in("appointment_id", appointmentIds);
+
+        if (!evalError && evaluationData) {
+          const evaluationsMap = {};
+          evaluationData.forEach(evaluationItem => {
+            evaluationsMap[evaluationItem.appointment_id] = evaluationItem;
+          });
+          setEvaluations(evaluationsMap);
+        }
+      }
     } catch (err) {
       console.error(err.message);
       toast.error("Error loading appointments");
@@ -563,6 +673,7 @@ const Schedule = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         onStatusUpdate={handleStatusUpdate}
+        evaluation={selectedAppointment ? evaluations[selectedAppointment.appointment_id] : null}
       />
     </div>
   );
