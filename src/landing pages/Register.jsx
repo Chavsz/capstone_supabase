@@ -11,6 +11,7 @@ const Register = ({ setAuth }) => {
     role: "student", // default role
   });
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("error");
 
   const { name, email, password, role } = inputs;
 
@@ -51,17 +52,30 @@ const Register = ({ setAuth }) => {
 
         if (userError) {
           console.error("Error creating user record:", userError);
-          setMessage("Registration successful, but there was an issue creating your profile. Please try logging in.");
-        } else {
-          // Dispatch role change event so App.jsx can pick it up immediately
-          window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: role } }));
+          setMessage(
+            "Registration successful, but there was an issue creating your profile. Please try logging in."
+          );
+          setMessageType("error");
+          return;
         }
 
-        setAuth(true);
+        setMessage(
+          "Registration successful! Please check your email inbox and verify your account before logging in."
+        );
+        setMessageType("success");
+        setInputs({
+          name: "",
+          email: "",
+          password: "",
+          role: "student",
+        });
+        setAuth(false);
+        return;
       }
     } catch (err) {
       console.error(err.message);
       setMessage(err.message || "Registration failed. Please try again.");
+      setMessageType("error");
     }
   };
 
@@ -94,8 +108,20 @@ const Register = ({ setAuth }) => {
           </h2>
 
           {message && (
-            <div className="mb-4 p-3 rounded-lg bg-red-100 border border-red-300">
-              <p className="text-red-600 text-sm">{message}</p>
+            <div
+              className={`mb-4 p-3 rounded-lg border ${
+                messageType === "success"
+                  ? "bg-green-100 border-green-300"
+                  : "bg-red-100 border-red-300"
+              }`}
+            >
+              <p
+                className={`text-sm ${
+                  messageType === "success" ? "text-green-700" : "text-red-600"
+                }`}
+              >
+                {message}
+              </p>
             </div>
           )}
 
