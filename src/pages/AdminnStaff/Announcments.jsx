@@ -17,7 +17,8 @@ const Announcments = () => {
           .limit(1)
           .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        if (error && error.code !== "PGRST116") {
+          // PGRST116 = no rows returned
           throw error;
         }
 
@@ -36,7 +37,9 @@ const Announcments = () => {
   const handleAnnouncementSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         alert("You must be logged in to create/update announcements");
         return;
@@ -105,43 +108,43 @@ const Announcments = () => {
   };
 
   return (
-    <div className="min-h-screen flex-col bg-white font-sans p-6">
+    <div className="min-h-screen flex-col font-sans p-6">
       {/* Announcement Section */}
       <aside className=" flex-col">
-      <h1 className="text-[24px] font-bold text-blue-600">Announcements</h1>
+        <h1 className="text-[24px] font-bold text-gray-600">Announcements</h1>
 
         {announcement ? (
-          <div className="bg-white p-4 rounded-lg shadow-md mb-6 mt-4">
+          <div className="bg-white p-4 rounded-md border border-gray-300 mb-6 mt-4">
             <h2 className="text-xl font-semibold text-gray-800 mb-3">
               Current Announcement
             </h2>
             <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
               {announcement.announcement_content}
             </p>
-            <div className="mt-4 flex space-x-3">
+            <div className="mt-4 flex gap-3">
               <button
                 onClick={() => setIsEditingAnnouncement(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300  focus:ring-offset-2"
               >
                 Edit
               </button>
               <button
                 onClick={handleAnnouncementDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300  focus:ring-offset-2"
               >
                 Delete
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white p-4 rounded-lg shadow-md mb-6 text-center">
+          <div className="bg-white p-4 rounded-md mb-6 text-center">
             <p className="text-gray-600 italic">No announcement found.</p>
           </div>
         )}
 
         <form
           onSubmit={handleAnnouncementSubmit}
-          className="bg-white p-4 rounded-lg shadow-md flex flex-col"
+          className="bg-white p-4 rounded-md border border-gray-300 flex flex-col"
         >
           <h2 className="text-xl font-semibold text-gray-800 mb-3">
             {isEditingAnnouncement
@@ -153,27 +156,33 @@ const Announcments = () => {
             value={announcementContent}
             onChange={(e) => setAnnouncementContent(e.target.value)}
             placeholder="Enter your announcement here..."
-            className="w-full p-2 border border-gray-300 rounded-lg mb-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-2 border border-gray-300 rounded-md mb-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
             maxLength={100}
           />
-          <button
-            type="submit"
-            className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 mb-2"
-          >
-            {isEditingAnnouncement
-              ? "Update Announcement"
-              : "Publish Announcement"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+            >
+              {isEditingAnnouncement
+                ? "Update Announcement"
+                : "Publish Announcement"}
+            </button>
+          
+
           {isEditingAnnouncement && (
+            
             <button
               type="button"
               onClick={() => setIsEditingAnnouncement(false)}
-              className="w-full py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+              className="py-2 px-4 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300"
             >
               Cancel Edit
             </button>
+            
           )}
+          </div>
         </form>
       </aside>
     </div>
@@ -181,4 +190,3 @@ const Announcments = () => {
 };
 
 export default Announcments;
-

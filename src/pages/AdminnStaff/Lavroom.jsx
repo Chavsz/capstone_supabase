@@ -95,7 +95,7 @@ const Lavroom = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white p-6">
+      <div className="min-h-screen p-6">
         <h1 className="text-blue-600 font-bold text-2xl">Schedules</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
@@ -103,8 +103,8 @@ const Lavroom = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <h1 className="text-[24px] font-bold text-blue-600 mb-6">Lavroom</h1>
+    <div className="min-h-screen p-6">
+      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Lavroom</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-6">
           {appointments.map((appointment) => (
@@ -113,7 +113,7 @@ const Lavroom = () => {
               className="bg-white p-5 rounded-lg shadow-md border border-gray-200"
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-blue-600">
+                <h3 className="text-lg font-semibold text-gray-600">
                   {appointment.subject}
                 </h3>
                 <span
@@ -144,7 +144,7 @@ const Lavroom = () => {
 
                   <button 
                   onClick={() => handleDelete(appointment.appointment_id)}
-                  className="bg-red-400 text-white rounded-md px-4 py-2 text-sm hover:bg-red-400 mt-4"
+                  className="bg-red-500 text-white rounded-md px-4 py-2 text-sm hover:bg-red-400 mt-4"
                 >
                   Delete
                 </button>

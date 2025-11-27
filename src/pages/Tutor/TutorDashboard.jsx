@@ -18,6 +18,9 @@ import {
 
 //icons
 import * as fiIcons from "react-icons/fi";
+import { PiSpeakerHigh } from "react-icons/pi";
+import { AiOutlineSchedule } from "react-icons/ai";
+import { LuChartLine } from "react-icons/lu";
 
 // Components
 import { Cards } from "../../components/cards";
@@ -32,7 +35,9 @@ const TutorDashboard = () => {
 
   async function getName() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
@@ -57,15 +62,19 @@ const TutorDashboard = () => {
 
   const getAppointments = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
         .from("appointment")
-        .select(`
+        .select(
+          `
           *,
           student:users!appointment_user_id_fkey(name)
-        `)
+        `
+        )
         .eq("tutor_id", session.user.id)
         .order("date", { ascending: true })
         .order("start_time", { ascending: true });
@@ -73,9 +82,9 @@ const TutorDashboard = () => {
       if (error) throw error;
 
       // Format data to match expected structure
-      const formattedData = (data || []).map(appointment => ({
+      const formattedData = (data || []).map((appointment) => ({
         ...appointment,
-        student_name: appointment.student?.name || null
+        student_name: appointment.student?.name || null,
       }));
 
       setAppointments(formattedData);
@@ -93,7 +102,7 @@ const TutorDashboard = () => {
         .limit(1)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
 
@@ -191,12 +200,12 @@ const TutorDashboard = () => {
 
   const cardText = () => {
     return "text-white";
-  }
+  };
 
   return (
-    <div className="flex-1 flex flex-col bg-white px-6 py-3">
+    <div className="flex-1 flex flex-col px-6 py-3">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-blue-600">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-600">Dashboard</h1>
 
         {/* Show date today */}
         <p className="text-[13px] font-extralight text-[#696969] flex items-center gap-2">
@@ -204,11 +213,9 @@ const TutorDashboard = () => {
         </p>
       </div>
 
-      <h2 className="ttext-[24px] font-bold text-blue-600">
-        Welcome, {name}!
-      </h2>
+      <h2 className="ttext-[24px] font-bold text-blue-600">Welcome, {name}!</h2>
 
-      <div className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-7 mt-6">
+      <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-7 mt-6">
         <Cards
           title="Sessions"
           icon={<fiIcons.FiCalendar />}
@@ -229,11 +236,14 @@ const TutorDashboard = () => {
       <div className="mt-6 grid lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 gap-7">
         <div className="lg:row-span-2">
           {/* Area Chart for Appointments */}
-          <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+          <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
             <div className="flex justify-between items-center mb-2">
-              <p className="text-blue-600 font-semibold">
+              <div className="flex gap-4 items-center">
+              <p className="text-blue-600 text-2xl"><LuChartLine /></p>
+              <p className="text-gray-600 font-semibold">
                 Appointments Overview
               </p>
+              </div>
               <select
                 value={areaRange}
                 onChange={(e) => setAreaRange(e.target.value)}
@@ -282,8 +292,13 @@ const TutorDashboard = () => {
 
         <div className="lg:row-span-2 flex flex-col gap-7">
           {/* Announcements */}
-          <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
-            <p className="text-blue-600 font-semibold">Announcement</p>
+          <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="flex gap-4 items-center">
+              <p className="text-blue-600 text-2xl">
+                <PiSpeakerHigh />
+              </p>
+              <p className="text-gray-600 font-semibold">Announcement</p>
+            </div>
             <div className="mt-2 ">
               {announcement ? (
                 <div>
@@ -302,10 +317,15 @@ const TutorDashboard = () => {
           </div>
 
           {/* Next Sessions Table */}
-          <div className="bg-white p-3.5 rounded-lg border-2 border-[#EBEDEF] flex-1 hover:translate-y-[-5px] transition-all duration-300">
-            <p className="text-blue-600 font-semibold mb-4">
-              Confirmed Sessions Today
-            </p>
+          <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF] flex-1 hover:translate-y-[-5px] transition-all duration-300">
+            <div className="flex gap-4 item-center">
+              <p className="text-2xl text-blue-600">
+                <AiOutlineSchedule />
+              </p>
+              <p className="text-gray-600 font-semibold mb-4">
+                Confirmed Sessions Today
+              </p>
+            </div>
             {nextSessions.length > 0 ? (
               <div className="overflow-x-auto overflow-y-auto h-[180px]">
                 <table className="w-full text-[#1a1a1a]">

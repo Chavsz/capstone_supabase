@@ -165,9 +165,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="py-3 px-6 bg-white">
+    <div className="py-3 px-6">
       {/* Page Header */}
-      <h1 className="text-2xl font-bold text-blue-600 mb-6">My Profile</h1>
+      <h1 className="text-2xl font-bold text-gray-600 mb-6">My Profile</h1>
 
       {/* Student Information Card */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 max-w-full">

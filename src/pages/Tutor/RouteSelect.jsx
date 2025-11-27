@@ -47,8 +47,8 @@ const Route = ({ to, selected, Icon, title, handleSelect }) => {
       to={to}
       className={`flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
         selected
-          ? "bg-[#e0ecfd] text-blue-600 shadow"
-          : "hover:bg-[#e0ecfd]  text-[#696969] shadow-none"
+          ? "bg-gray-200 text-gray-600 shadow"
+          : "hover:bg-gray-200 text-[#696969] shadow-none"
       }`}
       onClick={() => handleSelect(to)}
     >

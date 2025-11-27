@@ -447,8 +447,8 @@ const Schedule = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white p-6">
-        <h1 className="text-blue-600 font-bold text-2xl">Appointments</h1>
+      <div className="min-h-screen p-6">
+        <h1 className="text-gray-600 font-bold text-2xl">Appointments</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
     );
@@ -543,7 +543,7 @@ const Schedule = () => {
 
   return (
     <div className="py-3 px-6">
-      <h1 className="text-blue-600 font-bold text-2xl mb-6">Schedules</h1>
+      <h1 className="text-gray-600 font-bold text-2xl mb-6">Schedules</h1>
 
       {/* Filter Buttons */}
       <div className="flex gap-3 mb-6">
@@ -597,7 +597,7 @@ const Schedule = () => {
                     {appointments.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
-                        className="bg-blue-50 border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
+                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
                         onClick={() => openModal(appointment)}
                       >
                         <div className="pl-3 border-l-3 border-blue-300">

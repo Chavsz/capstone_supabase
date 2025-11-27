@@ -107,11 +107,11 @@ function Dashboard() {
 
   return (
     <div className="flex">
-      <div className="min-h-screen flex-1 flex flex-col bg-[#ffffff] p-6">
+      <div className="min-h-screen flex-1 flex flex-col p-6">
         <div className="">
           <div className="flex justify-between items-center">
 
-            <h1 className="text-[24px] font-bold text-blue-600">Dashboard</h1>
+            <h1 className="text-[24px] font-bold text-gray-600">Dashboard</h1>
 
             {/* Show date today */}
             <p className="text-[13px] font-extralight text-[#696969] flex items-center gap-2">
@@ -120,7 +120,7 @@ function Dashboard() {
           </div>
 
           {/* Admin Dashboard Cards  */}
-          <div className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-4 mt-6">
+          <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 mt-6">
             {/* Sessions Card */}
             <Cards
               title="Sessions"
@@ -157,10 +157,10 @@ function Dashboard() {
             />
 
             {/* Cancellations Card */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <div className="flex items-center justify-between">
-                <p className="text-blue-600 font-semibold">Cancellations</p>
-                <p className="text-2xl">
+                <p className="text-gray-600 font-semibold">Cancellations</p>
+                <p className="text-2xl text-blue-600">
                   <fiIcons.FiCalendar />
                 </p>
               </div>
@@ -186,19 +186,19 @@ function Dashboard() {
           {/* Line and bar chart cards */}
           <div className="mt-6 grid lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 gap-4 ">
             {/* confirmed Appointments bar chart */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <SessionBarChart appointmentsData={appointments} />
             </div>
 
             {/* Area Chart for Appointments */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <AppointmentsAreaChart appointmentsData={appointments} />
             </div>
           </div>
 
           {/* Pie Chart for student from each college */}
           <div className="mt-6 w-full">
-            <div className="bg-[#ffffff] w-1/2 p-3.5 rounded-lg border-2 border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] w-1/2 p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <CollegePieChart collegeData={collegeData} />
             </div>
           </div>

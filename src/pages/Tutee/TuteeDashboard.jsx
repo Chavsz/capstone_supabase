@@ -5,6 +5,11 @@ import { supabase } from "../../supabase-client";
 //component
 import { CardsOne } from "../../components/cards";
 
+//icons
+import { PiSpeakerHigh } from "react-icons/pi";
+import { AiOutlineSchedule } from "react-icons/ai";
+import { MdOutlineWorkHistory } from "react-icons/md";
+
 const TuteeDashboard = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -141,10 +146,10 @@ const TuteeDashboard = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-white px-6 py-3">
+    <div className="flex-1 flex flex-col px-6 py-3">
       <div className="flex justify-between items-center">
         {/* <h2 className="text-xl">Welcome, {name}!</h2> */}
-        <h1 className="text-2xl font-bold text-blue-600">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-600">Dashboard</h1>
 
         {/* Show date today */}
         <p className="text-[13px] font-extralight text-[#696969] gap-2 flex items-center">
@@ -161,11 +166,14 @@ const TuteeDashboard = () => {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-7 h-full">
+      <div className="mt-4 grid sm:grid-cols-1 md:grid-cols-2 gap-7 h-full">
         {/* Announcements */}
         <div className="h-full">
-          <div className="bg-[#ffffff] p-3.5 rounded-lg border-2 border-[#EBEDEF] h-full flex flex-col">
-            <p className="text-blue-600 font-semibold">Announcement</p>
+          <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] h-full flex flex-col">
+            <div className="flex gap-4 items-center">
+            <div className="text-blue-600 text-2xl"><PiSpeakerHigh  /></div>
+            <p className="text-gray-600 font-semibold"> Announcement</p>
+            </div>
             <div className="mt-2 flex-1">
               {announcement ? (
                 <div>
@@ -183,10 +191,13 @@ const TuteeDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white p-3.5 rounded-lg border-2 border-[#EBEDEF]">
-          <p className="text-blue-600 font-semibold mb-4">
+        <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF]">
+          <div className="flex gap-4 item-center">
+          <p className="text-2xl text-blue-600">< AiOutlineSchedule /></p>
+          <p className="text-gray-600 font-semibold mb-4">
             Confirmed Sessions Today
           </p>
+          </div>
           {nextSessions.length > 0 ? (
             <div className="overflow-x-auto overflow-y-auto h-[150px]">
               <table className="w-full text-[#1a1a1a]">
@@ -226,10 +237,13 @@ const TuteeDashboard = () => {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 grid-rows-3 gap-7">
+      <div className="mt-6 grid sm:grid-cols-1 md:grid-cols-3 grid-rows-3 gap-7">
         <div className="row-span-3 col-span-2">
-          <div className="bg-white p-3.5 rounded-lg border-2 border-[#EBEDEF] flex-1">
-            <p className="text-blue-600 font-semibold">Session History</p>
+          <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF] flex-1">
+            <div className="flex gap-4 text-center">
+            <p className="text-blue-600 text-2xl"><MdOutlineWorkHistory /></p>
+            <p className="text-gray-600 font-semibold">Session History</p>
+            </div>
 
             {/*Completed Sessions */}
             <div className="overflow-x-auto overflow-y-auto h-[280px]">
@@ -240,7 +254,7 @@ const TuteeDashboard = () => {
                     <th className="text-left font-bold py-3 px-2">Date</th>
                     <th className="text-left font-bold py-3 px-2">Time</th>
                     <th className="text-left font-bold py-3 px-2">Subject</th>
-                    <th className="text-left font-bold py-3 px-2">Toipc</th>
+                    <th className="text-left font-bold py-3 px-2">Topic</th>
                   </tr>
                 </thead>
 
@@ -269,7 +283,7 @@ const TuteeDashboard = () => {
         </div>
 
         {/* Top Tutors, Top Colleges, Top Reasons */}
-        <div className="">
+        <div className="flex flex-col">
           <div>
             <CardsOne title="Top Tutors" />
           </div>

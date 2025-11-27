@@ -165,7 +165,7 @@ const Header = () => {
   const totalNotifications = pendingCount + unreadCount;
 
   return (
-    <div className="pt-3 px-3 bg-white">
+    <div className="pt-3 px-3 ">
       <div className="flex gap-2 justify-end items-center text-gray-600 text-xl">
         {/* Notification Icon with Dropdown */}
         <div className="relative" ref={dropdownRef}>

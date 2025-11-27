@@ -260,10 +260,10 @@ const Event = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white font-sans">
+    <div className="min-h-screen flex flex-col lg:flex-rowfont-sans">
       {/* Event Section */}
       <main className="w-full p-6 flex flex-col">
-        <h1 className="text-[24px] font-bold text-blue-600 mb-4">Events</h1>
+        <h1 className="text-[24px] font-bold text-gray-600 mb-4">Events</h1>
 
         {/* Event Form */}
         <div className="px-15">

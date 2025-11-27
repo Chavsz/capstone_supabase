@@ -55,7 +55,7 @@ export const CollegePieChart = ({ collegeData }) => {
 
   return (
     <div>
-      <p className="text-blue-600 font-semibold mb-4">Students by College</p>
+      <p className="text-gray-600 font-semibold mb-4">Registered Students by College</p>
       {pieChartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -124,7 +124,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
   return (
     <div>
       {" "}
-      <p className="text-blue-600 font-semibold">Confirmed Sessions</p>
+      <p className="text-gray-600 font-semibold">Confirmed Sessions</p>
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
           data={barChartData}
@@ -197,7 +197,7 @@ export const AppointmentsAreaChart = ({appointmentsData}) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <p className="text-blue-600 font-semibold">Appointments Overview</p>
+        <p className="text-gray-600 font-semibold">Appointments Overview</p>
         <select
           value={areaRange}
           onChange={(e) => setAreaRange(e.target.value)}

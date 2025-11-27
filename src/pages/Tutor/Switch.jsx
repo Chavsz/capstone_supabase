@@ -50,8 +50,8 @@ const Switch = () => {
   };
 
   return (
-    <div className="py-3 px-6 bg-white">
-      <h1 className="text-blue-600 font-bold text-2xl mb-6">Switch</h1>
+    <div className="py-3 px-6">
+      <h1 className="text-gray-600 font-bold text-2xl mb-6">Switch</h1>
       <div>
         <h1 className="text-sm font-medium text-gray-600 mb-2">Switch to Student</h1>
         <button 

@@ -83,8 +83,8 @@ const Users = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <h1 className="text-[24px] font-bold text-blue-600 mb-6">Users</h1>
+    <div className="min-h-screen p-6">
+      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Users</h1>
 
       <div className="flex justify-between items-center">
         {/* Filter Buttons */}

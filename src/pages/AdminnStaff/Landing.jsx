@@ -224,12 +224,12 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <h1 className="text-[24px] font-bold text-blue-600">Landing</h1>
+    <div className="min-h-screen p-6">
+      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Landing</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg"
+        className="max-w-3xl mx-auto bg-white p-6 rounded-lg border border-gray-300 "
       >
         <div className="mb-4">
           <label
