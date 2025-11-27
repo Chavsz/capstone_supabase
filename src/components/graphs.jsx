@@ -1,5 +1,8 @@
 import {useState} from "react";
 
+// icons
+import { AiOutlineSchedule } from "react-icons/ai";
+
 import {
   BarChart,
   Bar,
@@ -89,13 +92,6 @@ export const CollegePieChart = ({ collegeData }) => {
 
 // Bar chart to display the session dates
 export const SessionBarChart = ({ appointmentsData }) => {
-  const barColors = [
-    "#ea5545", // Mon
-    "#ef9b20", // Tue
-    "#edbf33", // Wed
-    "#bdcf32", // Thu
-    "#27aeef", // Fri
-  ];
 
   // Helper: Get weekday name from date string
   function getWeekday(dateString) {
@@ -123,8 +119,12 @@ export const SessionBarChart = ({ appointmentsData }) => {
   }));
   return (
     <div>
-      {" "}
+      <div className="flex gap-4 items-center">
+      <p className="text-2xl text-blue-600">
+        <AiOutlineSchedule />
+      </p>
       <p className="text-gray-600 font-semibold">Confirmed Sessions</p>
+      </div>
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
           data={barChartData}
@@ -138,7 +138,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
             {barChartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={barColors[index % barColors.length]}
+                fill="#1E88E5"
               />
             ))}
           </Bar>
