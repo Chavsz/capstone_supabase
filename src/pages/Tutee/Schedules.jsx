@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
@@ -209,9 +209,12 @@ const AppointmentModal = ({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    if (appointment && isOpen) {
+  const initializeForm = useCallback(
+    (sourceAppointment) => {
+      if (!sourceAppointment) return;
+
       const normalizeDate = (value) => {
         if (!value) return "";
         const parsed = new Date(value);
@@ -227,15 +230,23 @@ const AppointmentModal = ({
       };
 
       setFormData({
-        date: normalizeDate(appointment.date),
-        start_time: normalizeTime(appointment.start_time),
-        end_time: normalizeTime(appointment.end_time),
-        mode_of_session: appointment.mode_of_session || "",
+        date: normalizeDate(sourceAppointment.date),
+        start_time: normalizeTime(sourceAppointment.start_time),
+        end_time: normalizeTime(sourceAppointment.end_time),
+        mode_of_session: sourceAppointment.mode_of_session || "",
       });
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (appointment && isOpen) {
+      initializeForm(appointment);
       setError("");
       setIsSaving(false);
+      setIsEditing(false);
     }
-  }, [appointment, isOpen]);
+  }, [appointment, initializeForm, isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -271,6 +282,12 @@ const AppointmentModal = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setError("");
+    initializeForm(appointment);
   };
 
   const formatDate = (dateString) => {
@@ -309,8 +326,8 @@ const AppointmentModal = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-blue-600">
+        <div className="flex justify-between items-start mb-7">
+          <h2 className="text-xl font-bold text-gray-600">
             Appointment Details
           </h2>
           <button
@@ -323,42 +340,42 @@ const AppointmentModal = ({
 
         <div className="space-y-3 mb-6">
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Subject:</span>
+            <span className="font-semibold text-gray-600">Subject:</span>
             <span className="text-gray-900">{appointment.subject}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Topic:</span>
+            <span className="font-semibold text-gray-600">Topic:</span>
             <span className="text-gray-900">{appointment.topic}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Tutor:</span>
+            <span className="font-semibold text-gray-600">Tutor:</span>
             <span className="text-gray-900">{appointment.tutor_name}</span>
           </div>
           {appointment.tutor_name && (
             <>
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">Program:</span>
+                <span className="font-semibold text-gray-600">Program:</span>
                 <span className="text-gray-900">
-                  {appointment.program || "Not specified"}
+                  {appointment.subject || "Not specified"}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-700">College:</span>
                 <span className="text-gray-900">
                   {appointment.college || "Not specified"}
                 </span>
-              </div>
+              </div> */}
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">Specialization:</span>
+                <span className="font-semibold text-gray-600">Specialization:</span>
                 <span className="text-gray-900">
-                  {appointment.specialization || "Not specified"}
+                  {appointment.topic || "Not specified"}
                 </span>
               </div>
             </>
           )}
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Date:</span>
-            {appointment.status === "pending" ? (
+            <span className="font-semibold text-gray-600">Date:</span>
+            {appointment.status === "pending" && isEditing ? (
               <input
                 type="date"
                 name="date"
@@ -373,8 +390,8 @@ const AppointmentModal = ({
             )}
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Time:</span>
-            {appointment.status === "pending" ? (
+            <span className="font-semibold text-gray-600">Time:</span>
+            {appointment.status === "pending" && isEditing ? (
               <div className="flex items-center gap-2">
                 <input
                   type="time"
@@ -383,7 +400,7 @@ const AppointmentModal = ({
                   onChange={handleInputChange}
                   className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
                 />
-                <span className="text-gray-500 text-sm">to</span>
+                <span className="text-gray-600 text-sm">to</span>
                 <input
                   type="time"
                   name="end_time"
@@ -400,8 +417,8 @@ const AppointmentModal = ({
             )}
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Mode:</span>
-            {appointment.status === "pending" ? (
+            <span className="font-semibold text-gray-600">Mode:</span>
+            {appointment.status === "pending" && isEditing ? (
               <input
                 type="text"
                 name="mode_of_session"
@@ -411,11 +428,13 @@ const AppointmentModal = ({
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 w-40"
               />
             ) : (
-              <span className="text-gray-900">{appointment.mode_of_session}</span>
+              <span className="text-gray-900">
+                {appointment.mode_of_session || "Not specified"}
+              </span>
             )}
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Status:</span>
+            <span className="font-semibold text-gray-600">Status:</span>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                 appointment.status
@@ -426,7 +445,7 @@ const AppointmentModal = ({
           </div>
           {appointment.status === "confirmed" && appointment.online_link && (
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-700">Online Link:</span>
+              <span className="font-semibold text-gray-600">Online Link:</span>
               <a
                 href={appointment.online_link}
                 target="_blank"
@@ -439,7 +458,7 @@ const AppointmentModal = ({
           )}
           {appointment.status === "confirmed" && appointment.file_link && (
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-700">Materials:</span>
+              <span className="font-semibold text-gray-600">Materials:</span>
               <a
                 href={appointment.file_link}
                 rel="noopener noreferrer"
@@ -458,15 +477,32 @@ const AppointmentModal = ({
             {error}
           </p>
         )}
-        <div className="flex gap-2">
-          {appointment.status === "pending" && (
+        <div className="flex gap-2 flex-wrap">
+          {appointment.status === "pending" && !isEditing && (
             <button
-              onClick={handleUpdateClick}
-              className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
-              disabled={isSaving}
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1"
             >
-              {isSaving ? "Saving..." : "Update Appointment"}
+              Update Appointment
             </button>
+          )}
+          {appointment.status === "pending" && isEditing && (
+            <>
+              <button
+                onClick={handleUpdateClick}
+                className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="bg-gray-200 text-gray-800 rounded-md px-4 py-2 text-sm hover:bg-gray-300 flex-1"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+            </>
           )}
           {appointment.status === "completed" && appointment.hasEvaluation === false && (
             <button
@@ -476,20 +512,22 @@ const AppointmentModal = ({
                   onEvaluate(appointment);
                 }
               }}
-              className="bg-green-600 text-white rounded-md px-4 py-2 text-sm hover:bg-green-700 flex-1"
+              className="bg-green-500 text-white font-medium rounded-md px-4 py-2 text-sm hover:bg-green-500 flex-1"
             >
               Evaluate Session
             </button>
           )}
-          <button
-            onClick={() => {
-              onDelete(appointment.appointment_id);
-              onClose();
-            }}
-            className="bg-gray-500 text-white rounded-md px-4 py-2 text-sm hover:bg-gray-600 flex-1"
-          >
-            Delete Appointment
-          </button>
+          {!isEditing && (
+            <button
+              onClick={() => {
+                onDelete(appointment.appointment_id);
+                onClose();
+              }}
+              className="bg-red-500 text-white font-medium rounded-md px-4 py-2 text-sm hover:bg-red-600 flex-1"
+            >
+              Delete Appointment
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -741,7 +779,7 @@ const Schedules = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white p-6">
-        <h1 className="text-[#132c91] font-bold text-2xl">Schedules</h1>
+        <h1 className="text-blue-600 font-bold text-2xl">Schedules</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
     );
