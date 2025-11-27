@@ -383,6 +383,11 @@ const Appointment = () => {
 
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
+  const getInitial = (name = "") => {
+    if (!name) return "?";
+    return name.trim().charAt(0).toUpperCase();
+  };
+
   const minDate = formatDateYMD(getMinSelectableDate());
 
   return (
@@ -564,8 +569,18 @@ const Appointment = () => {
                       }`}
                     >
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-12 h-12 bg-gray-300 rounded-full mb-2 flex items-center justify-center">
-                          <span className="text-gray-600 text-sm">👤</span>
+                        <div className="w-12 h-12 bg-blue-500 rounded-full mb-2 flex items-center justify-center overflow-hidden">
+                          {tutorDetails[tutor.user_id]?.profile_image ? (
+                            <img
+                              src={tutorDetails[tutor.user_id].profile_image}
+                              alt={`${tutor.name} profile`}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-white text-base font-semibold">
+                              {getInitial(tutor.name)}
+                            </span>
+                          )}
                         </div>
                         <p className="font-medium text-sm">{tutor.name}</p>
                         <p className="text-xs text-gray-600">
@@ -598,8 +613,18 @@ const Appointment = () => {
             <div className="space-y-6">
               {/* Tutor Profile */}
               <div className="flex flex-col items-center">
-                <div className="w-24 h-24 bg-gray-300 rounded-full mb-4 flex items-center justify-center">
-                  <span className="text-gray-600 text-2xl">👤</span>
+                <div className="w-24 h-24 bg-blue-500 rounded-full mb-4 flex items-center justify-center overflow-hidden">
+                  {tutorDetails[selectedTutor.user_id]?.profile_image ? (
+                    <img
+                      src={tutorDetails[selectedTutor.user_id].profile_image}
+                      alt={`${selectedTutor.name} profile`}
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-4xl font-bold">
+                      {getInitial(selectedTutor.name)}
+                    </span>
+                  )}
                 </div>
                 <p className="font-semibold text-lg">{selectedTutor.name}</p>
                 <p className="text-gray-600">
