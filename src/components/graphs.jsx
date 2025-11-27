@@ -44,9 +44,11 @@ export const CollegePieChart = ({ collegeData }) => {
 
   pieChartData = collegeData.map((item, index) => {
     const shortName = collegeMapping[item.college] || item.college;
+    const value =
+      parseInt(item.student_count ?? item.count ?? item.value, 10) || 0;
     return {
       name: shortName,
-      value: parseInt(item.student_count) || 0,
+      value,
       color: collegeColors[index % collegeColors.length],
     };
   });
