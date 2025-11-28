@@ -59,9 +59,9 @@ const Login = ({ setAuth }) => {
   };
 
   return (
-    <div className="flex h-screen p-3">
-      {/* Left Panel - Blue Background with Logo (Less Wide) */}
-      <div className="w-1/3 bg-blue-600 flex flex-col items-center justify-center relative rounded-md">
+    <div className="flex h-screen p-0 md:p-3">
+      {/* Left Panel - Blue Background with Logo (Hidden on Mobile) */}
+      <div className="hidden md:flex w-1/3 bg-blue-600 flex-col items-center justify-center relative rounded-md">
         <Link to="/" className="absolute top-8 left-8 flex items-center ">
           <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
           <span className="ml-2 text-white font-semibold text-lg">LAV</span>
@@ -78,9 +78,15 @@ const Login = ({ setAuth }) => {
       </div>
 
       {/* Right Panel - White Background with Form */}
-      <div className="flex-1 bg-white flex flex-col items-center justify-center px-16">
-        <div className="max-w-md w-full">
-          <h2 className="text-3xl font-bold text-blue-600 mb-8 text-center">
+      <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 md:px-16 py-4 md:py-0 relative">
+        {/* Small Logo and LAV Text - Visible on Mobile */}
+        <Link to="/" className="absolute top-4 md:top-8 left-4 md:left-8 flex items-center md:hidden">
+          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
+          <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
+        </Link>
+
+        <div className="max-w-md w-full mt-8 md:mt-0">
+          <h2 className="text-2xl md:text-3xl font-bold text-blue-600 mb-6 md:mb-8 text-center">
             Welcome!
           </h2>
 
