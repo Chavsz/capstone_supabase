@@ -353,24 +353,18 @@ const AppointmentModal = ({
           </div>
           {appointment.tutor_name && (
             <>
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Program:</span>
-                <span className="text-gray-900">
-                  {appointment.subject || "Not specified"}
-                </span>
-              </div>
               {/* <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-700">College:</span>
                 <span className="text-gray-900">
                   {appointment.college || "Not specified"}
                 </span>
               </div> */}
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-600">Specialization:</span>
                 <span className="text-gray-900">
                   {appointment.topic || "Not specified"}
                 </span>
-              </div>
+              </div> */}
             </>
           )}
           <div className="flex justify-between items-center">
