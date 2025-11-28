@@ -234,7 +234,7 @@ const Header = () => {
       }
 
       const now = new Date();
-      const fourteenHoursInMs = 1 * 60 * 60 * 1000; // 14 hours in milliseconds
+      const fourteenHoursInMs = 14 * 60 * 60 * 1000; // 14 hours in milliseconds
       //14 * 60 * 60 * 1000;
       const appointmentsToDecline = [];
 
