@@ -1,7 +1,9 @@
-import {useState} from "react";
+import { useState } from "react";
 
 // icons
 import { AiOutlineSchedule } from "react-icons/ai";
+import { IoPieChart } from "react-icons/io5"; //pie
+import { TiChartAreaOutline } from "react-icons/ti"; //area
 
 import {
   BarChart,
@@ -58,7 +60,14 @@ export const CollegePieChart = ({ collegeData }) => {
 
   return (
     <div>
-      <p className="text-gray-600 font-semibold mb-4">Registered Students by College</p>
+      <div className="flex gap-4 items-center">
+        <p className="text-2xl text-blue-600">
+          <IoPieChart />
+        </p>
+        <p className="text-gray-600 font-semibold">
+          Registered Students by College
+        </p>
+      </div>
       {pieChartData.length > 0 ? (
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -92,7 +101,6 @@ export const CollegePieChart = ({ collegeData }) => {
 
 // Bar chart to display the session dates
 export const SessionBarChart = ({ appointmentsData }) => {
-
   // Helper: Get weekday name from date string
   function getWeekday(dateString) {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -120,10 +128,10 @@ export const SessionBarChart = ({ appointmentsData }) => {
   return (
     <div>
       <div className="flex gap-4 items-center">
-      <p className="text-2xl text-blue-600">
-        <AiOutlineSchedule />
-      </p>
-      <p className="text-gray-600 font-semibold">Confirmed Sessions</p>
+        <p className="text-2xl text-blue-600">
+          <AiOutlineSchedule />
+        </p>
+        <p className="text-gray-600 font-semibold">Confirmed Sessions</p>
       </div>
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
@@ -136,10 +144,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
           <Tooltip />
           <Bar dataKey="count">
             {barChartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill="#1E88E5"
-              />
+              <Cell key={`cell-${index}`} fill="#1E88E5" />
             ))}
           </Bar>
         </BarChart>
@@ -149,7 +154,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
 };
 
 //Appointments Area Chart
-export const AppointmentsAreaChart = ({appointmentsData}) => {
+export const AppointmentsAreaChart = ({ appointmentsData }) => {
   const [areaRange, setAreaRange] = useState("7d");
 
   // Helper: Filter appointments by date range
@@ -197,7 +202,12 @@ export const AppointmentsAreaChart = ({appointmentsData}) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <p className="text-gray-600 font-semibold">Appointments Overview</p>
+        <div className="flex gap-4 items-center">
+          <p className="text-2xl text-blue-600">
+            <TiChartAreaOutline />
+          </p>
+          <p className="text-gray-600 font-semibold">Appointments Overview</p>
+        </div>
         <select
           value={areaRange}
           onChange={(e) => setAreaRange(e.target.value)}

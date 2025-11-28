@@ -642,7 +642,7 @@ const Schedule = () => {
                     {appointments.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
-                        className="bg-blue-50 border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
+                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
                         onClick={() => openModal(appointment)}
                       >
                         <div className="pl-3 border-l-3 border-blue-300">

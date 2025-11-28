@@ -45,7 +45,9 @@ const Profile = () => {
 
   async function getName() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
@@ -63,7 +65,9 @@ const Profile = () => {
 
   async function getProfile() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       const { data, error } = await supabase
@@ -72,7 +76,7 @@ const Profile = () => {
         .eq("user_id", session.user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
 
@@ -98,7 +102,9 @@ const Profile = () => {
   async function getSchedules() {
     setLoadingSchedules(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       // Get profile_id first
@@ -146,7 +152,9 @@ const Profile = () => {
   const handleAddTime = async (day) => {
     if (!newTime.start || !newTime.end) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       // Get profile_id first
@@ -161,16 +169,14 @@ const Profile = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from("schedule")
-        .insert([
-          {
-            profile_id: profileData.profile_id,
-            day,
-            start_time: newTime.start,
-            end_time: newTime.end,
-          },
-        ]);
+      const { error } = await supabase.from("schedule").insert([
+        {
+          profile_id: profileData.profile_id,
+          day,
+          start_time: newTime.start,
+          end_time: newTime.end,
+        },
+      ]);
 
       if (error) throw error;
 
@@ -229,7 +235,9 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       // Check if profile exists
@@ -259,31 +267,29 @@ const Profile = () => {
         if (error) throw error;
       } else {
         // Create new profile
-        const { error } = await supabase
-          .from("profile")
-          .insert([
-            {
-              user_id: session.user.id,
-              nickname: form.nickname,
-              program: form.program,
-              college: form.college,
-              year_level: form.year_level,
-              subject: form.subject,
-              specialization: form.specialization,
-              profile_image: form.profile_image,
-              online_link: form.online_link,
-              file_link: form.file_link,
-            },
-          ]);
+        const { error } = await supabase.from("profile").insert([
+          {
+            user_id: session.user.id,
+            nickname: form.nickname,
+            program: form.program,
+            college: form.college,
+            year_level: form.year_level,
+            subject: form.subject,
+            specialization: form.specialization,
+            profile_image: form.profile_image,
+            online_link: form.online_link,
+            file_link: form.file_link,
+          },
+        ]);
 
         if (error) throw error;
       }
 
       setProfile(form);
       setShowEditModal(false);
-      
+
       // Dispatch event to notify Header component to refresh profile
-      window.dispatchEvent(new CustomEvent('profileUpdated'));
+      window.dispatchEvent(new CustomEvent("profileUpdated"));
     } catch (err) {
       console.error(err.message);
     }
@@ -294,27 +300,29 @@ const Profile = () => {
     if (!file) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
       // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${session.user.id}-${Math.random()}.${fileExt}`;
       const filePath = `profile-images/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('capstone')
+        .from("capstone")
         .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('capstone')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("capstone").getPublicUrl(filePath);
 
       // Update the profile with the new image URL
       setProfile((prev) => ({
@@ -354,17 +362,17 @@ const Profile = () => {
         <div className="">
           {/* Profile Image */}
           <div className="w-32 h-32 bg-blue-500 rounded-full flex items-center justify-center mb-3">
-          {profile.profile_image ? (
-            <img
-              src={profile.profile_image}
-              alt="Profile"
-              className="w-32 h-32 rounded-full object-cover"
-            />
-          ) : (
-            <span className="text-white text-4xl font-bold">
-              {name.charAt(0).toUpperCase()}
-            </span>
-          )}
+            {profile.profile_image ? (
+              <img
+                src={profile.profile_image}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-white text-4xl font-bold">
+                {name.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           {/* Profile Information */}
@@ -445,7 +453,11 @@ const Profile = () => {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DemoContainer components={["TimePicker"]}>
                         <TimePicker
-                          value={newTime.start ? dayjs(`2000-01-01T${newTime.start}`) : null}
+                          value={
+                            newTime.start
+                              ? dayjs(`2000-01-01T${newTime.start}`)
+                              : null
+                          }
                           onChange={(value) => handleTimeChange("start", value)}
                           label="Start Time"
                           sx={{
@@ -468,7 +480,11 @@ const Profile = () => {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DemoContainer components={["TimePicker"]}>
                         <TimePicker
-                          value={newTime.end ? dayjs(`2000-01-01T${newTime.end}`) : null}
+                          value={
+                            newTime.end
+                              ? dayjs(`2000-01-01T${newTime.end}`)
+                              : null
+                          }
                           onChange={(value) => handleTimeChange("end", value)}
                           label="End Time"
                           sx={{
@@ -654,13 +670,35 @@ const Profile = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     College
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="college"
                     value={form.college || ""}
                     onChange={handleChange}
                     className="block w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
+                  >
+                    <option value="">Select College</option>
+                    <option value="College of Engineering">
+                      College of Engineering
+                    </option>
+                    <option value="College of Arts and Social Sciences">
+                      College of Arts and Social Sciences
+                    </option>
+                    <option value="College of Computer Studies">
+                      College of Computer Studies
+                    </option>
+                    <option value="College of Education">
+                      College of Education
+                    </option>
+                    <option value="College of Health and Sciences">
+                      College of Health and Sciences
+                    </option>
+                    <option value="College of Economics, Business, and Accountancy">
+                      College of Economics, Business, and Accountancy
+                    </option>
+                    <option value="College of Science and Mathematics">
+                      College of Science and Mathematics
+                    </option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

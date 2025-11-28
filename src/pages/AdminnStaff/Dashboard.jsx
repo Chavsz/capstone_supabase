@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
+
+// icons
 import * as fiIcons from "react-icons/fi";
 
 // Components
@@ -12,7 +14,6 @@ import {
 
 function Dashboard() {
   const [appointments, setAppointments] = useState([]);
-  const [evaluatedAppointments, setEvaluatedAppointments] = useState([]);
   const [collegeData, setCollegeData] = useState([]);
 
   async function getAppointments() {
