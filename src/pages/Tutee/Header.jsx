@@ -13,6 +13,7 @@ const Header = () => {
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const dropdownRef = useRef(null);
+  const isProcessingAutoDecline = useRef(false);
   const [profile, setProfile] = useState({
     program: "",
     college: "",
@@ -196,6 +197,133 @@ const Header = () => {
     }
   };
 
+  // Auto-decline appointments that are pending for more than 14 hours
+  const checkAndAutoDeclineAppointments = async () => {
+    // Prevent concurrent execution
+    if (isProcessingAutoDecline.current) {
+      return;
+    }
+
+    isProcessingAutoDecline.current = true;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        isProcessingAutoDecline.current = false;
+        return;
+      }
+
+      // Get all pending appointments for the current user
+      const { data: pendingAppointments, error: fetchError } = await supabase
+        .from("appointment")
+        .select("appointment_id, user_id, subject, topic, created_at")
+        .eq("user_id", session.user.id)
+        .eq("status", "pending");
+
+      if (fetchError) {
+        console.error("Error fetching pending appointments:", fetchError);
+        isProcessingAutoDecline.current = false;
+        return;
+      }
+
+      if (!pendingAppointments || pendingAppointments.length === 0) {
+        isProcessingAutoDecline.current = false;
+        return;
+      }
+
+      const now = new Date();
+      const fourteenHoursInMs = 1 * 20 * 1000; // 14 hours in milliseconds
+      //14 * 60 * 60 * 1000;
+      const appointmentsToDecline = [];
+
+      // Check each pending appointment
+      for (const appointment of pendingAppointments) {
+        if (!appointment.created_at) continue;
+
+        const createdDate = new Date(appointment.created_at);
+        const timeDiff = now.getTime() - createdDate.getTime();
+
+        // If appointment is older than 14 hours, mark for auto-decline
+        if (timeDiff >= fourteenHoursInMs) {
+          appointmentsToDecline.push(appointment);
+        }
+      }
+
+      // Auto-decline appointments and create notifications
+      for (const appointment of appointmentsToDecline) {
+        try {
+          // Double-check that appointment is still pending before processing
+          const { data: currentAppointment, error: checkError } = await supabase
+            .from("appointment")
+            .select("status")
+            .eq("appointment_id", appointment.appointment_id)
+            .single();
+
+          if (checkError || !currentAppointment || currentAppointment.status !== "pending") {
+            // Appointment is no longer pending, skip it
+            continue;
+          }
+
+          // Check if notification already exists for this auto-decline
+          const notificationMessage = `Your appointment request for ${appointment.subject}${appointment.topic ? ` - ${appointment.topic}` : ""} has been automatically declined as it was not confirmed within 14 hours.`;
+          
+          const { data: existingNotifications } = await supabase
+            .from("notification")
+            .select("notification_id")
+            .eq("user_id", appointment.user_id)
+            .eq("notification_content", notificationMessage)
+            .eq("status", "unread")
+            .limit(1);
+
+          // If notification already exists, skip creating a duplicate
+          if (existingNotifications && existingNotifications.length > 0) {
+            continue;
+          }
+
+          // Update appointment status to declined
+          const { error: updateError } = await supabase
+            .from("appointment")
+            .update({ status: "declined" })
+            .eq("appointment_id", appointment.appointment_id)
+            .eq("status", "pending"); // Only update if still pending
+
+          if (updateError) {
+            console.error(`Error declining appointment ${appointment.appointment_id}:`, updateError);
+            continue;
+          }
+
+          // Create notification for the tutee
+          const { error: notificationError } = await supabase
+            .from("notification")
+            .insert([
+              {
+                user_id: appointment.user_id,
+                notification_content: notificationMessage,
+                status: "unread",
+              },
+            ]);
+
+          if (notificationError) {
+            console.error(`Error creating notification for appointment ${appointment.appointment_id}:`, notificationError);
+          }
+        } catch (err) {
+          console.error(`Error processing appointment ${appointment.appointment_id}:`, err.message);
+        }
+      }
+
+      // Refresh notifications if any appointments were declined
+      if (appointmentsToDecline.length > 0) {
+        getUnreadNotifications();
+      }
+    } catch (err) {
+      console.error("Error in auto-decline check:", err.message);
+    } finally {
+      isProcessingAutoDecline.current = false;
+    }
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -217,13 +345,21 @@ const Header = () => {
     getUnreadNotifications();
     getConfirmedCount();
     getUpcomingSessions();
+    checkAndAutoDeclineAppointments(); // Check on mount
 
-    const intervalId = setInterval(() => {
+    // Check for upcoming sessions every minute
+    const upcomingIntervalId = setInterval(() => {
       getUpcomingSessions();
     }, 60000);
 
+    // Check for auto-decline every hour (3600000 ms)
+    const autoDeclineIntervalId = setInterval(() => {
+      checkAndAutoDeclineAppointments();
+    }, 3600000);
+
     return () => {
-      clearInterval(intervalId);
+      clearInterval(upcomingIntervalId);
+      clearInterval(autoDeclineIntervalId);
     };
   }, []);
 
@@ -233,6 +369,7 @@ const Header = () => {
       getUnreadNotifications();
       getConfirmedCount();
       getUpcomingSessions();
+      checkAndAutoDeclineAppointments(); // Also check for auto-decline when opening dropdown
     }
     setIsDropdownOpen(!isDropdownOpen);
   };
