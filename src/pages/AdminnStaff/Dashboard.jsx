@@ -108,20 +108,19 @@ function Dashboard() {
 
   return (
     <div className="flex">
-      <div className="min-h-screen flex-1 flex flex-col p-6">
+      <div className="min-h-screen flex-1 flex flex-col p-4 md:p-6">
         <div className="">
-          <div className="flex justify-between items-center">
-
-            <h1 className="text-[24px] font-bold text-gray-600">Dashboard</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 md:mb-0">
+            <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600">Dashboard</h1>
 
             {/* Show date today */}
-            <p className="text-[13px] font-extralight text-[#696969] flex items-center gap-2">
+            <p className="text-[12px] md:text-[13px] font-extralight text-[#696969] flex items-center gap-2">
               {dateToday}
             </p>
           </div>
 
           {/* Admin Dashboard Cards  */}
-          <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 md:mt-6">
             {/* Sessions Card */}
             <Cards
               title="Sessions"
@@ -160,21 +159,21 @@ function Dashboard() {
             {/* Cancellations Card */}
             <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <div className="flex items-center justify-between">
-                <p className="text-gray-600 font-semibold">Cancellations</p>
-                <p className="text-2xl text-blue-600">
+                <p className="text-gray-600 font-semibold text-sm md:text-base">Cancellations</p>
+                <p className="text-xl md:text-2xl text-blue-600">
                   <fiIcons.FiCalendar />
                 </p>
               </div>
-              <p className="text-[30px] font-bold pl-4 py-4 text-gray-600">
+              <p className="text-[24px] md:text-[30px] font-bold pl-4 py-4 text-gray-600">
                 {cancelledAppointments.length}
               </p>
-              <div className="flex gap-2">
-                <p className="text-[13.5px] text-[#ad0d0d] font-bold">
+              <div className="flex gap-2 flex-wrap">
+                <p className="text-[12px] md:text-[13.5px] text-[#ad0d0d] font-bold">
                   {cancelledSessionsToday.length === 0
                     ? ""
                     : cancelledSessionsToday.length}
                 </p>
-                <p className="text-[13.5px] text-[#A0A0A0]">
+                <p className="text-[12px] md:text-[13.5px] text-[#A0A0A0]">
                   {" "}
                   {cancelledSessionsToday.length === 0
                     ? "No cancelled sessions today"
@@ -185,21 +184,21 @@ function Dashboard() {
           </div>
 
           {/* Line and bar chart cards */}
-          <div className="mt-6 grid lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 gap-4 ">
+          <div className="mt-4 md:mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* confirmed Appointments bar chart */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <SessionBarChart appointmentsData={appointments} />
             </div>
 
             {/* Area Chart for Appointments */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+            <div className="bg-[#ffffff] p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <AppointmentsAreaChart appointmentsData={appointments} />
             </div>
           </div>
 
           {/* Pie Chart for student from each college */}
-          <div className="mt-6 w-full">
-            <div className="bg-[#ffffff] w-1/2 p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+          <div className="mt-4 md:mt-6 w-full">
+            <div className="bg-[#ffffff] w-full md:w-1/2 p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <CollegePieChart collegeData={collegeData} />
             </div>
           </div>

@@ -95,63 +95,68 @@ const Lavroom = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-blue-600 font-bold text-2xl">Schedules</h1>
-        <div className="mt-6 text-center">Loading appointments...</div>
+      <div className="min-h-screen p-4 md:p-6">
+        <h1 className="text-blue-600 font-bold text-xl md:text-2xl">Schedules</h1>
+        <div className="mt-4 md:mt-6 text-center text-sm md:text-base">Loading appointments...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Lavroom</h1>
+    <div className="min-h-screen p-4 md:p-6">
+      <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Lavroom</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-6">
-          {appointments.map((appointment) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {appointments.length > 0 ? appointments.map((appointment) => (
             <div
               key={appointment.appointment_id}
-              className="bg-white p-5 rounded-lg shadow-md border border-gray-200"
+              className="bg-white p-4 md:p-5 rounded-lg shadow-md border border-gray-200"
             >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-600">
+              <div className="flex justify-between items-start mb-3 md:mb-4">
+                <h3 className="text-base md:text-lg font-semibold text-gray-600 flex-1 pr-2">
                   {appointment.subject}
                 </h3>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
                     appointment.status
                   )}`}
                 >
                   {appointment.status}
                 </span>
               </div>
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="text-gray-600">
-                    Tutor: {appointment.tutor_name}
-                  </p>
-                  <p className="text-gray-600">
-                    Student: {appointment.student_name}
-                  </p>
-                  <p className="text-gray-600">Specialization: {appointment.topic}</p>
-                  <p className="text-gray-600">
-                    Mode: {appointment.mode_of_session}
-                  </p>
-                  <p className="text-gray-600">Date: {formatDate(appointment.date)}</p>
-                  <p className="text-gray-600">
-                    Start Time: {formatTime(appointment.start_time)} -{" "}
-                    End Time: {formatTime(appointment.end_time)}
-                  </p>
-
-                  <button 
-                  onClick={() => handleDelete(appointment.appointment_id)}
-                  className="bg-red-500 text-white rounded-md px-4 py-2 text-sm hover:bg-red-400 mt-4"
-                >
-                  Delete
-                </button>
-                </div>
+              <div className="space-y-2 mb-4">
+                <p className="text-sm md:text-base text-gray-600 break-words">
+                  <span className="font-medium">Tutor:</span> {appointment.tutor_name || "N/A"}
+                </p>
+                <p className="text-sm md:text-base text-gray-600 break-words">
+                  <span className="font-medium">Student:</span> {appointment.student_name || "N/A"}
+                </p>
+                <p className="text-sm md:text-base text-gray-600 break-words">
+                  <span className="font-medium">Specialization:</span> {appointment.topic || "N/A"}
+                </p>
+                <p className="text-sm md:text-base text-gray-600 break-words">
+                  <span className="font-medium">Mode:</span> {appointment.mode_of_session || "N/A"}
+                </p>
+                <p className="text-sm md:text-base text-gray-600">
+                  <span className="font-medium">Date:</span> {formatDate(appointment.date)}
+                </p>
+                <p className="text-sm md:text-base text-gray-600">
+                  <span className="font-medium">Time:</span> {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                </p>
               </div>
+
+              <button 
+                onClick={() => handleDelete(appointment.appointment_id)}
+                className="w-full bg-red-500 text-white rounded-md px-4 py-2 text-sm hover:bg-red-400 transition duration-300 mt-2"
+              >
+                Delete
+              </button>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-full bg-white p-6 rounded-lg border border-gray-200 text-center">
+              <p className="text-sm md:text-base text-gray-500">No appointments found</p>
+            </div>
+          )}
         </div>
       </div>
   );

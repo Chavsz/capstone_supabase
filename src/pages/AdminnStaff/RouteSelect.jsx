@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import * as mdIcons from "react-icons/md";
 import * as fiIcons from "react-icons/fi";
 
-const RouteSelect = () => {
+const RouteSelect = ({ onClose }) => {
   const [selected, setSelected] = useState(window.location.pathname);
 
   const handleSelect = (to) => {
@@ -20,6 +20,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/lavroom"
@@ -27,6 +28,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdCalendarMonth}
         title="Lavroom"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/users"
@@ -34,6 +36,7 @@ const RouteSelect = () => {
         Icon={fiIcons.FiUsers}
         title="Users"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/landingadmin"
@@ -41,6 +44,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdHome}
         title="Landing"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/announcments"
@@ -48,6 +52,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdOutlineAnnouncement}
         title="Announcements"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/event"
@@ -55,12 +60,13 @@ const RouteSelect = () => {
         Icon={mdIcons.MdOutlineAnnouncement}
         title="Events"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
     </div>
   );
 };
 
-const Route = ({ to, selected, Icon, title, handleSelect }) => {
+const Route = ({ to, selected, Icon, title, handleSelect, onClose }) => {
   return (
     <Link
       to={to}
@@ -69,7 +75,10 @@ const Route = ({ to, selected, Icon, title, handleSelect }) => {
           ? "bg-gray-200 text-gray-600 shadow"
           : "hover:bg-gray-200 text-[#696969] shadow-none"
       }`}
-      onClick={() => handleSelect(to)}
+      onClick={() => {
+        handleSelect(to);
+        if (onClose) onClose(); // Close mobile menu on navigation
+      }}
     >
       <Icon className={`${selected ? "text-blue-600" : ""}`} />
       <p className="text-md font-semibold hidden md:block">{title}</p>

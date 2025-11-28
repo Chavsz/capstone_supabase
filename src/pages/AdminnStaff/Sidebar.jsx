@@ -5,7 +5,7 @@ import RouteSelect from "./RouteSelect";
 
 import * as fiIcons from "react-icons/fi";
 
-const Sidebar = ({ setAuth }) => {
+const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
 
   //logout
@@ -27,11 +27,23 @@ const Sidebar = ({ setAuth }) => {
   };
 
   return (
-    <div className="p-4 text-white sticky top-0  bg-white h-screen">
-      <div className="top-4 h-[calc(100vh-32px-50px)]">
-        <h1 className="text-xl md:text-2xl font-bold text-center text-blue-600 mb-9">LAV</h1>
+    <div className="p-4 text-white sticky top-0 bg-white h-screen w-[240px] overflow-y-auto">
+      {/* Mobile Close Button */}
+      <div className="flex justify-between items-center mb-4 md:hidden">
+        <h1 className="text-xl font-bold text-blue-600">LAV</h1>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-600 hover:bg-gray-200 rounded"
+          aria-label="Close menu"
+        >
+          <fiIcons.FiX className="w-5 h-5" />
+        </button>
+      </div>
 
-        <RouteSelect />
+      <div className="top-4 h-[calc(100vh-32px-50px)]">
+        <h1 className="text-xl md:text-2xl font-bold text-center text-blue-600 mb-9 hidden md:block">LAV</h1>
+
+        <RouteSelect onClose={onClose} />
       </div>
 
       <div>

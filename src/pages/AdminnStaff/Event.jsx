@@ -260,22 +260,22 @@ const Event = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-rowfont-sans">
+    <div className="min-h-screen flex flex-col lg:flex-row font-sans">
       {/* Event Section */}
-      <main className="w-full p-6 flex flex-col">
-        <h1 className="text-[24px] font-bold text-gray-600 mb-4">Events</h1>
+      <main className="w-full p-4 md:p-6 flex flex-col">
+        <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4">Events</h1>
 
         {/* Event Form */}
-        <div className="px-15">
-          <div className="bg-white p-6 rounded-lg border-1 border-[#EBEDEF] mb-8">
+        <div className="w-full">
+          <div className="bg-white p-4 md:p-6 rounded-lg border-1 border-[#EBEDEF] mb-6 md:mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-5">
               {editingEvent ? "Edit Event" : "Add New Event"}
             </h2>
             <form
               onSubmit={handleEventSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-5"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
             >
-              <div>
+              <div className="md:col-span-2">
                 <label
                   htmlFor="event_title"
                   className="block text-sm font-medium text-gray-700 mb-2"
@@ -289,7 +289,7 @@ const Event = () => {
                   placeholder="e.g., Crash Tutorial"
                   value={formData.event_title}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -307,7 +307,7 @@ const Event = () => {
                   value={formData.event_description}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y text-sm md:text-base"
                   required
                 />
               </div>
@@ -324,7 +324,7 @@ const Event = () => {
                   id="event_time"
                   value={formData.event_time}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -341,7 +341,7 @@ const Event = () => {
                   id="event_date"
                   value={formData.event_date}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -359,7 +359,7 @@ const Event = () => {
                   placeholder="e.g., MSU-IIT Lawn"
                   value={formData.event_location}
                   onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
                 />
               </div>
@@ -375,21 +375,21 @@ const Event = () => {
                   name="event_image"
                   id="eventImageInput"
                   onChange={handleFileChange}
-                  className="w-full text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  className="w-full text-gray-700 text-sm md:text-base file:mr-2 md:file:mr-4 file:py-1 md:file:py-2 file:px-2 md:file:px-4 file:rounded-md file:border-0 file:text-xs md:file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
                   accept="image/*"
                 />
                 {editingEvent &&
                   editingEvent.event_image &&
                   !formData.event_image && (
-                    <p className="text-sm text-gray-500 mt-1 italic">
+                    <p className="text-xs md:text-sm text-gray-500 mt-1 italic">
                       Current image will be used unless a new one is uploaded.
                     </p>
                   )}
               </div>
-              <div className="md:col-span-2 flex space-x-4 mt-4">
+              <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0 mt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  className="flex-1 py-2 md:py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm md:text-base"
                 >
                   {editingEvent ? "Update Event" : "Add Event"}
                 </button>
@@ -408,7 +408,7 @@ const Event = () => {
                       });
                       document.getElementById("eventImageInput").value = "";
                     }}
-                    className="flex-1 py-3 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
+                    className="flex-1 py-2 md:py-3 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-sm md:text-base"
                   >
                     Cancel Edit
                   </button>
@@ -420,10 +420,10 @@ const Event = () => {
 
         {/* Events Gallery */}
         <section id="events-list" className="flex-grow overflow-auto">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4 md:mb-6">
             Upcoming Events
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {events.length > 0 ? (
               events.map((event) => (
                 <article
@@ -454,17 +454,17 @@ const Event = () => {
                       </div>
                     )}
                   </div>
-                  <div className="p-5 flex flex-col flex-grow">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <div className="p-4 md:p-5 flex flex-col flex-grow">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
                       {event.event_title}
                     </h3>
-                    <p className="text-gray-700 text-sm mb-3 line-clamp-3">
+                    <p className="text-gray-700 text-xs md:text-sm mb-3 line-clamp-3">
                       {event.event_description}
                     </p>
-                    <div className="text-gray-600 text-sm mb-1">
+                    <div className="text-gray-600 text-xs md:text-sm mb-1">
                       <strong>Time:</strong> {event.event_time}
                     </div>
-                    <div className="text-gray-600 text-sm mb-1">
+                    <div className="text-gray-600 text-xs md:text-sm mb-1">
                       <strong>Date:</strong>{" "}
                       {new Date(event.event_date).toLocaleDateString("en-US", {
                         year: "numeric",
@@ -472,19 +472,19 @@ const Event = () => {
                         day: "numeric",
                       })}
                     </div>
-                    <div className="text-gray-600 text-sm mb-4">
+                    <div className="text-gray-600 text-xs md:text-sm mb-4">
                       <strong>Location:</strong> {event.event_location}
                     </div>
-                    <div className="mt-auto flex space-x-3">
+                    <div className="mt-auto flex flex-col sm:flex-row gap-2 sm:space-x-3 sm:gap-0">
                       <button
                         onClick={() => handleEventEdit(event)}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleEventDelete(event.event_id)}
-                        className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                       >
                         Delete
                       </button>

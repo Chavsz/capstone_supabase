@@ -108,45 +108,45 @@ const Announcments = () => {
   };
 
   return (
-    <div className="min-h-screen flex-col font-sans p-6">
+    <div className="min-h-screen flex-col font-sans p-4 md:p-6">
       {/* Announcement Section */}
-      <aside className=" flex-col">
-        <h1 className="text-[24px] font-bold text-gray-600">Announcements</h1>
+      <aside className="flex-col">
+        <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-0">Announcements</h1>
 
         {announcement ? (
-          <div className="bg-white p-4 rounded-md border border-gray-300 mb-6 mt-4">
-            <h2 className="text-xl font-semibold text-gray-800 mb-3">
+          <div className="bg-white p-4 md:p-6 rounded-md border border-gray-300 mb-4 md:mb-6 mt-4">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
               Current Announcement
             </h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
               {announcement.announcement_content}
             </p>
-            <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setIsEditingAnnouncement(true)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300  focus:ring-offset-2"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 focus:ring-offset-2 text-sm md:text-base"
               >
                 Edit
               </button>
               <button
                 onClick={handleAnnouncementDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300  focus:ring-offset-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 focus:ring-offset-2 text-sm md:text-base"
               >
                 Delete
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white p-4 rounded-md mb-6 text-center">
-            <p className="text-gray-600 italic">No announcement found.</p>
+          <div className="bg-white p-4 rounded-md mb-4 md:mb-6 text-center mt-4">
+            <p className="text-sm md:text-base text-gray-600 italic">No announcement found.</p>
           </div>
         )}
 
         <form
           onSubmit={handleAnnouncementSubmit}
-          className="bg-white p-4 rounded-md border border-gray-300 flex flex-col"
+          className="bg-white p-4 md:p-6 rounded-md border border-gray-300 flex flex-col"
         >
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
             {isEditingAnnouncement
               ? "Edit Announcement"
               : "Create New Announcement"}
@@ -156,14 +156,14 @@ const Announcments = () => {
             value={announcementContent}
             onChange={(e) => setAnnouncementContent(e.target.value)}
             placeholder="Enter your announcement here..."
-            className="w-full p-2 border border-gray-300 rounded-md mb-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md mb-3 text-sm md:text-base text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
             maxLength={100}
           />
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <button
               type="submit"
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300 text-sm md:text-base"
             >
               {isEditingAnnouncement
                 ? "Update Announcement"
@@ -176,7 +176,7 @@ const Announcments = () => {
             <button
               type="button"
               onClick={() => setIsEditingAnnouncement(false)}
-              className="py-2 px-4 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300"
+              className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 text-sm md:text-base"
             >
               Cancel Edit
             </button>

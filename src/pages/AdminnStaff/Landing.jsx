@@ -224,17 +224,17 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Landing</h1>
+    <div className="min-h-screen p-4 md:p-6">
+      <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Landing</h1>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto bg-white p-6 rounded-lg border border-gray-300 "
+        className="max-w-3xl mx-auto bg-white p-4 md:p-6 rounded-lg border border-gray-300"
       >
         <div className="mb-4">
           <label
             htmlFor="home_title"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             Home Title:
           </label>
@@ -245,14 +245,14 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter Home Title"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="home_description"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             Home Description:
           </label>
@@ -262,16 +262,16 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter Home Description"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base resize-y"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="home_more"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
-            {" "}
             More:
           </label>
           <input
@@ -281,14 +281,14 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter Learn More Text"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="home_image"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             Home Image Upload:
           </label>
@@ -297,10 +297,10 @@ const Landing = () => {
             name="home_image"
             accept="image/*"
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           />
           {landingData?.home_image && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
               Current image: <a href={landingData.home_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
             </p>
           )}
@@ -309,7 +309,7 @@ const Landing = () => {
         <div className="mb-4">
           <label
             htmlFor="about_title"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             About Title:
           </label>
@@ -320,14 +320,14 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter About Title"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="about_description"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             About Description:
           </label>
@@ -337,14 +337,15 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter About Description"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base resize-y"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="about_link"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             About Link:
           </label>
@@ -355,14 +356,14 @@ const Landing = () => {
             onChange={handleChange}
             placeholder="Enter About Link"
             required
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="about_image"
-            className="block text-sm font-semibold text-gray-700"
+            className="block text-sm font-semibold text-gray-700 mb-1"
           >
             About Image Upload:
           </label>
@@ -371,10 +372,10 @@ const Landing = () => {
             name="about_image"
             accept="image/*"
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
           />
           {landingData?.about_image && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
               Current image: <a href={landingData.about_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
             </p>
           )}
@@ -383,7 +384,7 @@ const Landing = () => {
         <button
           type="submit"
           disabled={isSaving}
-          className="w-full p-3 bg-blue-600 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-2 md:p-3 bg-blue-600 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSaving ? "Saving..." : "Save Changes"}
         </button>

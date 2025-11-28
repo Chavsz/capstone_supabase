@@ -83,16 +83,16 @@ const Users = () => {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <h1 className="text-[24px] font-bold text-gray-600 mb-6">Users</h1>
+    <div className="min-h-screen p-4 md:p-6">
+      <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Users</h1>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 md:mb-6">
         {/* Filter Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
           {["All", "Tutor", "Student"].map((filter) => (
             <button
               key={filter}
-              className={`px-4 py-2 font-medium transition-all duration-200 text-gray-600 border-b-2  ${
+              className={`px-3 md:px-4 py-2 font-medium transition-all duration-200 text-sm md:text-base text-gray-600 border-b-2 whitespace-nowrap ${
                 selectedFilter === filter
                   ? "border-b-2 border-b-blue-600"
                   : " border-b-2 border-b-transparent"
@@ -108,19 +108,19 @@ const Users = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <input
             type="text"
             placeholder="Search by name or email"
-            className="w-[300px] px-4 py-2 bg-gray-100 border-b-2 border-b-transparent outline-none focus:border-b-blue-600 focus:border-b-2"
+            className="w-full sm:w-[250px] md:w-[300px] px-3 md:px-4 py-2 bg-gray-100 border-b-2 border-b-transparent outline-none focus:border-b-blue-600 focus:border-b-2 text-sm md:text-base"
             value={searchTerm}
             onChange={handleSearch}
           />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-white overflow-hidden rounded-lg border border-gray-200">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
@@ -152,7 +152,7 @@ const Users = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <button
-                    className=" text-gray-400 hover:text-red-500 px-2 py-1 rounded-md"
+                    className="text-gray-400 hover:text-red-500 px-2 py-1 rounded-md"
                     onClick={() => deleteUser(user.user_id)}
                   >
                     <MdDelete />
@@ -170,15 +170,50 @@ const Users = () => {
         </table>
       </div>
 
+      {/* Mobile Card Layout */}
+      <div className="md:hidden space-y-3">
+        {currentUsers.length > 0 ? currentUsers.map((user) => (
+          <div
+            key={user.user_id}
+            className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-gray-900 mb-1">
+                  {user.name}
+                </h3>
+                <p className="text-sm text-gray-600 break-words mb-2">
+                  {user.email}
+                </p>
+                <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                  {user.role === "tutor" ? "Tutor" : "Student"}
+                </span>
+              </div>
+              <button
+                className="text-gray-400 hover:text-red-500 p-2 rounded-md ml-2"
+                onClick={() => deleteUser(user.user_id)}
+                aria-label="Delete user"
+              >
+                <MdDelete className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )) : (
+          <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
+            <p className="text-sm text-gray-500">No users found</p>
+          </div>
+        )}
+      </div>
+
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <div className="text-sm text-gray-700">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6">
+        <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 order-1 sm:order-2">
           <button
-            className={`px-3 py-1 rounded border ${
+            className={`px-3 py-1.5 rounded border text-sm ${
               currentPage === 1
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-white text-gray-700 hover:bg-gray-50"
@@ -189,7 +224,7 @@ const Users = () => {
             ← Previous
           </button>
           <button
-            className={`px-3 py-1 rounded border ${
+            className={`px-3 py-1.5 rounded border text-sm ${
               currentPage === totalPages || totalPages === 0
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-white text-gray-700 hover:bg-gray-50"
