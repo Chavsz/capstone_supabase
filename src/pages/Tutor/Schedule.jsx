@@ -341,12 +341,61 @@ const Schedule = () => {
 
   const handleStatusUpdate = async (appointmentId, status) => {
     try {
+      // First, get the appointment details to get the tutee's user_id
+      const { data: appointmentData, error: fetchError } = await supabase
+        .from("appointment")
+        .select("user_id, subject, topic, date, start_time")
+        .eq("appointment_id", appointmentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update the appointment status
       const { error } = await supabase
         .from("appointment")
         .update({ status })
         .eq("appointment_id", appointmentId);
 
       if (error) throw error;
+
+      // Create notification for the tutee based on status
+      if (appointmentData && appointmentData.user_id && (status === "confirmed" || status === "declined" || status === "cancelled")) {
+        let notificationMessage = "";
+        
+        if (status === "confirmed") {
+          const formattedDate = new Date(appointmentData.date).toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          });
+          const formattedTime = new Date(`2000-01-01T${appointmentData.start_time}`).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed.`;
+        } else if (status === "declined") {
+          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined.`;
+        } else if (status === "cancelled") {
+          notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled.`;
+        }
+
+        // Create notification for the tutee
+        const { error: notificationError } = await supabase
+          .from("notification")
+          .insert([
+            {
+              user_id: appointmentData.user_id,
+              notification_content: notificationMessage,
+              status: "unread",
+            },
+          ]);
+
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Don't throw here, as the appointment update was successful
+        }
+      }
 
       getAppointments(); // Refresh the list
       toast.success(`Appointment ${status} successfully`);
