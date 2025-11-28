@@ -423,13 +423,13 @@ const Appointment = () => {
 
             {/* Topic */}
             <div>
-              <h3 className="font-semibold text-lg mb-3">Topic</h3>
+              <h3 className="font-semibold text-lg mb-3">Specialization</h3>
               <input
                 type="text"
                 name="topic"
                 value={formData.topic}
                 onChange={handleInputChange}
-                placeholder="Enter topic"
+                placeholder="Enter specicalization"
                 className="border border-gray-300 rounded-md p-3 w-full"
                 required
               />

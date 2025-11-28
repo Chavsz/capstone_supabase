@@ -60,7 +60,7 @@ const AppointmentModal = ({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-blue-600">
+          <h2 className="text-xl font-bold text-gray-600">
             Appointment Details
           </h2>
           <button
@@ -77,7 +77,7 @@ const AppointmentModal = ({
             <span className="text-gray-900">{appointment.subject}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Topic:</span>
+            <span className="font-semibold text-gray-700">Specialization:</span>
             <span className="text-gray-900">{appointment.topic}</span>
           </div>
           <div className="flex justify-between items-center">

@@ -129,7 +129,7 @@ const EvaluationModal = ({
             <span className="font-semibold">Subject:</span> {appointment.subject}
           </p>
           <p className="text-sm text-gray-700">
-            <span className="font-semibold">Topic:</span> {appointment.topic}
+            <span className="font-semibold">Specialization:</span> {appointment.topic}
           </p>
         </div>
 
@@ -344,7 +344,7 @@ const AppointmentModal = ({
             <span className="text-gray-900">{appointment.subject}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Topic:</span>
+            <span className="font-semibold text-gray-600">Specialization:</span>
             <span className="text-gray-900">{appointment.topic}</span>
           </div>
           <div className="flex justify-between items-center">
@@ -437,7 +437,7 @@ const AppointmentModal = ({
               {appointment.status}
             </span>
           </div>
-          {appointment.status === "confirmed" && appointment.online_link && (
+          {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Online Link:</span>
               <a
@@ -450,7 +450,7 @@ const AppointmentModal = ({
               </a>
             </div>
           )}
-          {appointment.status === "confirmed" && appointment.file_link && (
+          {(appointment.status === "confirmed" || appointment.status === "started") && appointment.file_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Materials:</span>
               <a
@@ -554,6 +554,25 @@ const Schedules = () => {
 
       if (error) throw error;
 
+      // Fetch tutor profiles to get online_link and file_link
+      const tutorIds = [...new Set((data || []).map(apt => apt.tutor_id))];
+      let tutorProfiles = {};
+      if (tutorIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profile")
+          .select("user_id, online_link, file_link")
+          .in("user_id", tutorIds);
+        
+        if (profilesData) {
+          profilesData.forEach(profile => {
+            tutorProfiles[profile.user_id] = {
+              online_link: profile.online_link,
+              file_link: profile.file_link
+            };
+          });
+        }
+      }
+
       // Check which appointments have evaluations
       const appointmentIds = (data || []).map(apt => apt.appointment_id);
       const { data: evaluations } = await supabase
@@ -566,11 +585,18 @@ const Schedules = () => {
       );
 
       // Format data to match expected structure
-      const formattedData = (data || []).map(appointment => ({
-        ...appointment,
-        tutor_name: appointment.tutor?.name || null,
-        hasEvaluation: evaluatedAppointmentIds.has(appointment.appointment_id)
-      }));
+      const formattedData = (data || []).map(appointment => {
+        // Use links from appointment table if available, otherwise use profile links
+        const profileLinks = tutorProfiles[appointment.tutor_id] || {};
+        
+        return {
+          ...appointment,
+          tutor_name: appointment.tutor?.name || null,
+          hasEvaluation: evaluatedAppointmentIds.has(appointment.appointment_id),
+          online_link: appointment.online_link || profileLinks.online_link || null,
+          file_link: appointment.file_link || profileLinks.file_link || null
+        };
+      });
 
       setAppointments(formattedData);
     } catch (err) {
