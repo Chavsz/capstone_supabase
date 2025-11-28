@@ -19,7 +19,7 @@ function AdminPage({ setAuth }) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md text-gray-600 hover:bg-gray-100"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-md shadow-md text-gray-600 hover:bg-gray-100"
         aria-label="Toggle menu"
       >
         <fiIcons.FiMenu className="w-6 h-6" />
@@ -36,8 +36,8 @@ function AdminPage({ setAuth }) {
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300">
         {/* Sidebar */}
         <div
-          className={`fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          className={`fixed md:static inset-y-0 right-0 z-50 transform transition-transform duration-300 ${
+            sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
           }`}
         >
           <Sidebar setAuth={setAuth} onClose={() => setSidebarOpen(false)} />

@@ -5,7 +5,7 @@ import RouteSelect from "./RouteSelect";
 
 import * as fiIcons from "react-icons/fi";
 
-const Sidebar = ({ setAuth }) => {
+const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
 
   //logout
@@ -25,18 +25,35 @@ const Sidebar = ({ setAuth }) => {
       navigate("/");
     }
   };
-  return (
-    <div className="p-4 sticky top-0 h-screen bg-white">
-      <div className="top-4 h-[calc(100vh-32px-50px)]">
-        
-        <h1 className="text-xl md:text-2xl font-bold text-center text-blue-600 mb-9">LAV</h1>
 
-        <RouteSelect />
+  return (
+    <div className="flex flex-col p-4 text-white sticky top-0 bg-white h-screen w-[240px]">
+      {/* Mobile Close Button */}
+      <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
+        <h1 className="text-xl font-bold text-blue-600">LAV</h1>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-600 hover:bg-gray-200 rounded"
+          aria-label="Close menu"
+        >
+          <fiIcons.FiX className="w-5 h-5" />
+        </button>
       </div>
 
-      <div>
+      {/* Desktop Title */}
+      <div className="flex-shrink-0 hidden md:block">
+        <h1 className="text-xl md:text-2xl font-bold text-center text-blue-600 mb-9">LAV</h1>
+      </div>
+
+      {/* Menu Items - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <RouteSelect onClose={onClose} />
+      </div>
+
+      {/* Logout Button - Always Visible at Bottom */}
+      <div className="flex-shrink-0 mt-auto pt-4">
         <button
-          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-gray-200 text-[#696969] shadow-none "
+          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-gray-200 text-[#696969] shadow-none"
           onClick={(e) => logout(e)}
         >
           <fiIcons.FiLogOut /> <p className="text-md font-semibold hidden md:block">Log out</p>

@@ -6,7 +6,7 @@ import * as mdIcons from "react-icons/md";
 import * as piIcons from "react-icons/pi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 
-const RouteSelect = () => {
+const RouteSelect = ({ onClose }) => {
   const [selected, setSelected] = useState(window.location.pathname);
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
 
@@ -64,6 +64,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/appointment"
@@ -71,6 +72,7 @@ const RouteSelect = () => {
         Icon={mdIcons.MdCalendarMonth}
         title="Appointment"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       <Route
         to="/dashboard/schedules"
@@ -78,6 +80,7 @@ const RouteSelect = () => {
         Icon={RiCalendarScheduleLine}
         title="Schedules"
         handleSelect={handleSelect}
+        onClose={onClose}
       />
       {canSwitchToTutor && (
         <Route
@@ -86,13 +89,14 @@ const RouteSelect = () => {
           Icon={piIcons.PiUserSwitchBold}
           title="Switch"
           handleSelect={handleSelect}
+          onClose={onClose}
         />
       )}
     </div>
   );
 };
 
-const Route = ({ to, selected, Icon, title, handleSelect }) => {
+const Route = ({ to, selected, Icon, title, handleSelect, onClose }) => {
   return (
     <Link
       to={to}
@@ -101,7 +105,10 @@ const Route = ({ to, selected, Icon, title, handleSelect }) => {
           ? "bg-gray-200 text-gray-600 shadow"
           : "hover:bg-gray-200 text-[#696969] shadow-none"
       }`}
-      onClick={() => handleSelect(to)}  
+      onClick={() => {
+        handleSelect(to);
+        if (onClose) onClose(); // Close mobile menu on navigation
+      }}  
     >
       <Icon className={`${selected ? "text-blue-600" : ""}`} />
       <p className="text-md font-semibold hidden md:block">{title}</p>
