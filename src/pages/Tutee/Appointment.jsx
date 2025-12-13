@@ -193,11 +193,11 @@ const Appointment = () => {
 
   const CLASS_TIME_RANGES = [
     { start: { hour: 8, minute: 0 }, end: { hour: 11, minute: 30 } },
-    { start: { hour: 13, minute: 30 }, end: { hour: 17, minute: 30 } },
+    { start: { hour: 13, minute: 30 }, end: { hour: 17, minute: 0 } },
   ];
 
   const classHoursMessage =
-    "Class hours are 8:00 AM - 11:30 AM and 1:30 PM - 5:30 PM.";
+    "Class hours are 8:00 AM - 11:30 AM and 1:30 PM - 5:00 PM.";
 
   const isWithinClassHours = (timeValue) => {
     if (!timeValue || !timeValue.isValid()) return false;
@@ -210,7 +210,7 @@ const Appointment = () => {
   };
 
   const minClassTime = dayjs().set("hour", 8).set("minute", 0).set("second", 0).set("millisecond", 0);
-  const maxClassTime = dayjs().set("hour", 17).set("minute", 30).set("second", 0).set("millisecond", 0);
+  const maxClassTime = dayjs().set("hour", 17).set("minute", 0).set("second", 0).set("millisecond", 0);
 
   const getMinutesFromValue = (timeValue) =>
     timeValue ? timeValue.hour() * 60 + timeValue.minute() : null;
