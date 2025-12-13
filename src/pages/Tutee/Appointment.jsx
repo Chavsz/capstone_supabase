@@ -198,8 +198,6 @@ const Appointment = () => {
 
   const classHoursMessage =
     "Class hours are 8:00 AM - 12:00 PM and 1:00 PM - 5:00 PM (no bookings during 12:00-1:00 PM).";
-  const blockMismatchMessage =
-    "Start and end times must stay within the same session (either 8 AM - 12 PM or 1 PM - 5 PM).";
 
   const isWithinClassHours = (timeValue) => {
     if (!timeValue || !timeValue.isValid()) return false;
@@ -242,26 +240,11 @@ const Appointment = () => {
     });
   };
 
-  const validateStartEndOrder = (field, timeValue) => {
-    const startMinutes =
-      field === "start_time"
-        ? getMinutesFromValue(timeValue)
-        : getMinutesFromStored(formData.start_time);
-    const endMinutes =
-      field === "end_time"
-        ? getMinutesFromValue(timeValue)
-        : getMinutesFromStored(formData.end_time);
-
-    if (
-      startMinutes !== null &&
-      endMinutes !== null &&
-      endMinutes <= startMinutes
-    ) {
-      toast.error("End time must be later than start time.");
-      return false;
-    }
-
-    return true;
+  const areWithinSameBlock = (startMinutes, endMinutes) => {
+    if (startMinutes === null || endMinutes === null) return false;
+    const startBlock = getBlockIndex(startMinutes);
+    const endBlock = getBlockIndex(endMinutes);
+    return startBlock !== -1 && startBlock === endBlock;
   };
 
   const handleTimeChange = (field, value) => {
@@ -275,38 +258,10 @@ const Appointment = () => {
         return;
       }
 
-      if (!validateStartEndOrder(field, value)) {
-        return;
-      }
-
-      const minutes = getMinutesFromValue(value);
-      const otherField = field === "start_time" ? "end_time" : "start_time";
-      const otherFieldMinutes = getMinutesFromStored(formData[otherField]);
-      const updatedData = {
+      setFormData({
         ...formData,
         [field]: value.format("HH:mm"),
-      };
-
-      if (otherFieldMinutes !== null) {
-        const blockIndex = getBlockIndex(minutes);
-        const otherBlockIndex = getBlockIndex(otherFieldMinutes);
-
-        if (blockIndex !== otherBlockIndex) {
-          toast(blockMismatchMessage);
-          updatedData[otherField] = "";
-        } else {
-          const isInvalidOrder =
-            (field === "start_time" && otherFieldMinutes <= minutes) ||
-            (field === "end_time" && otherFieldMinutes >= minutes);
-
-          if (isInvalidOrder) {
-            toast("Adjusted other time to avoid conflicts. Please reselect it.");
-            updatedData[otherField] = "";
-          }
-        }
-      }
-
-      setFormData(updatedData);
+      });
     } else {
       setFormData({
         ...formData,
@@ -426,6 +381,24 @@ const Appointment = () => {
       return;
     }
 
+    const startMinutes = getMinutesFromStored(formData.start_time);
+    const endMinutes = getMinutesFromStored(formData.end_time);
+
+    if (startMinutes === null || endMinutes === null) {
+      toast.error("Invalid start or end time selected.");
+      return;
+    }
+
+    if (!areWithinSameBlock(startMinutes, endMinutes)) {
+      toast.error("Start and end times must stay within the same session (8 AM - 12 PM or 1 PM - 5 PM).");
+      return;
+    }
+
+    if (endMinutes <= startMinutes) {
+      toast.error("End time must be later than start time.");
+      return;
+    }
+
     // Extra guard: prevent booking on past dates and weekends
     const selected = new Date(`${formData.date}T00:00:00`);
     const minSelectable = getMinSelectableDate();
@@ -454,6 +427,20 @@ const Appointment = () => {
     }
 
     setLoading(true);
+
+    const startLabel = new Date(`2000-01-01T${formData.start_time}`).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endLabel = new Date(`2000-01-01T${formData.end_time}`).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const confirmMessage = `Confirm appointment on ${formData.date} from ${startLabel} to ${endLabel}?`;
+    if (!window.confirm(confirmMessage)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();

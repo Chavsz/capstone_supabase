@@ -99,47 +99,11 @@ const Profile = () => {
         alert(allowedHoursMessage);
         return;
       }
-      const formatted = value.format("HH:mm");
 
-      setNewTime((prev) => {
-        const otherField = field === "start" ? "end" : "start";
-        const otherMinutes = getMinutesFromString(prev[otherField]);
-
-        if (otherMinutes !== null) {
-          if (
-            (field === "start" && minutes >= otherMinutes) ||
-            (field === "end" && minutes <= otherMinutes)
-          ) {
-            alert("Adjusted the other time to avoid conflicts. Please reselect it.");
-            return {
-              ...prev,
-              [field]: formatted,
-              [otherField]: "",
-            };
-          }
-
-          const startMinutes =
-            field === "start" ? minutes : otherMinutes;
-          const endMinutes =
-            field === "end" ? minutes : otherMinutes;
-
-          if (!areWithinSameBlock(startMinutes, endMinutes)) {
-            alert(
-              "Start and end times need to remain within the same time block (morning or afternoon)."
-            );
-            return {
-              ...prev,
-              [field]: formatted,
-              [otherField]: "",
-            };
-          }
-        }
-
-        return {
-          ...prev,
-          [field]: formatted,
-        };
-      });
+      setNewTime((prev) => ({
+        ...prev,
+        [field]: value.format("HH:mm"),
+      }));
     } else {
       setNewTime((prev) => ({
         ...prev,
@@ -268,6 +232,10 @@ const Profile = () => {
   const handleAddTime = async (day) => {
     if (!newTime.start || !newTime.end) return;
     if (!validateTimePair(newTime.start, newTime.end)) return;
+    const confirmation = window.confirm(
+      `Add availability on ${day} from ${newTime.start} to ${newTime.end}?`
+    );
+    if (!confirmation) return;
     try {
       const {
         data: { session },
@@ -324,6 +292,10 @@ const Profile = () => {
   // Edit time slot
   const handleEditTime = async (id, start, end) => {
     if (!validateTimePair(start, end)) return;
+    const confirmation = window.confirm(
+      `Update availability to ${start} - ${end}?`
+    );
+    if (!confirmation) return;
     try {
       const { error } = await supabase
         .from("schedule")
