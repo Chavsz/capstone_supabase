@@ -24,6 +24,7 @@ const Reports = () => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [monthlyExporting, setMonthlyExporting] = useState(false);
+  const [landingImage, setLandingImage] = useState("");
 
   const fetchData = async () => {
     try {
@@ -34,6 +35,7 @@ const Reports = () => {
         .select(`
           appointment_id,
           tutor_id,
+          user_id,
           subject,
           topic,
           date,
@@ -87,6 +89,17 @@ const Reports = () => {
       setAppointments(appointmentData || []);
       setEvaluations(evaluationData || []);
       setSchedules(scheduleEntries);
+
+      const { data: landingData, error: landingError } = await supabase
+        .from("landing")
+        .select("home_image")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (landingError && landingError.code !== "PGRST116") {
+        throw landingError;
+      }
+      setLandingImage(landingData?.[0]?.home_image || "");
     } catch (error) {
       console.error(error);
       toast.error("Unable to load reports data");
@@ -179,7 +192,9 @@ const Reports = () => {
             thisWeek: 0,
             thisMonth: 0,
             monthly: {},
+            monthlyHours: {},
             history: [],
+            totalHours: 0,
           };
         }
 
@@ -196,7 +211,10 @@ const Reports = () => {
           (new Date(`2000-01-01T${appointment.end_time}`) -
             new Date(`2000-01-01T${appointment.start_time}`)) /
           60000;
-        entry.totalHours = (entry.totalHours || 0) + Math.max(durationMinutes / 60, 0);
+        const durationHours = Math.max(durationMinutes / 60, 0);
+        entry.totalHours = (entry.totalHours || 0) + durationHours;
+        entry.monthlyHours[monthKey] =
+          (entry.monthlyHours[monthKey] || 0) + durationHours;
 
         entry.history.push({
           appointment_id: appointment.appointment_id,
@@ -314,6 +332,7 @@ const Reports = () => {
       overallAverage: overallCount ? overallSum / overallCount : null,
     };
   }, [evaluations]);
+
   if (loading) {
     return (
       <div className="min-h-screen p-6">
@@ -325,6 +344,122 @@ const Reports = () => {
 
   const tutorEntries = Object.values(tutorStats);
   const tutorSummaryEntries = Object.values(tutorEvaluationStats);
+
+  const reportDate = new Date();
+  const currentMonthKey = `${reportDate.getFullYear()}-${String(
+    reportDate.getMonth() + 1
+  ).padStart(2, "0")}`;
+  const currentMonthLabel = reportDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  const preparedDateLabel = reportDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const monthlyCompletedAppointments = appointments.filter((apt) => {
+    if (apt.status !== "completed" || !apt.date) return false;
+    const appointmentDate = new Date(apt.date);
+    return (
+      appointmentDate.getFullYear() === reportDate.getFullYear() &&
+      appointmentDate.getMonth() === reportDate.getMonth()
+    );
+  });
+
+  const monthlySessions = monthlyCompletedAppointments.length;
+  const monthlyHoursTotal = monthlyCompletedAppointments.reduce((total, apt) => {
+    const minutes =
+      (new Date(`2000-01-01T${apt.end_time}`) - new Date(`2000-01-01T${apt.start_time}`)) /
+      60000;
+    return total + Math.max(minutes / 60, 0);
+  }, 0);
+
+  const activeTutorsMonth = tutorEntries.filter(
+    (entry) => (entry.monthly?.[currentMonthKey] || 0) > 0
+  ).length;
+
+  const monthlyTuteeIds = new Set(
+    monthlyCompletedAppointments.map((apt) => apt.user_id).filter(Boolean)
+  );
+  const activeTuteesMonth = monthlyTuteeIds.size;
+
+  const tutorAggregate = tutorSummaryEntries.reduce(
+    (acc, entry) => ({
+      sum: acc.sum + (entry.overallSum || 0),
+      count: acc.count + (entry.overallCount || 0),
+    }),
+    { sum: 0, count: 0 }
+  );
+  const overallTutorSatisfaction = tutorAggregate.count
+    ? tutorAggregate.sum / tutorAggregate.count
+    : null;
+  const tuteeSatisfaction = lavStats.overallAverage;
+
+  const summaryMetrics = [
+    {
+      label: "Sessions Conducted",
+      value: `${monthlySessions}`,
+      detail: currentMonthLabel,
+      icon: "SC",
+      progress: Math.min(100, (monthlySessions / 20) * 100),
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
+      label: "Total Hours of Tutoring",
+      value: `${monthlyHoursTotal.toFixed(1)} hrs`,
+      detail: "Logged teaching time this month",
+      icon: "HR",
+      progress: Math.min(100, (monthlyHoursTotal / 40) * 100),
+      color: "bg-emerald-100 text-emerald-700",
+    },
+    {
+      label: "Active Tutors",
+      value: `${activeTutorsMonth}`,
+      detail: "Tutors with confirmed sessions",
+      icon: "AT",
+      progress:
+        tutorEntries.length > 0
+          ? Math.min(100, (activeTutorsMonth / tutorEntries.length) * 100)
+          : 0,
+      color: "bg-purple-100 text-purple-700",
+    },
+    {
+      label: "Active Tutees",
+      value: `${activeTuteesMonth}`,
+      detail: "Tutees served this month",
+      icon: "TT",
+      progress: Math.min(100, (activeTuteesMonth / 30) * 100),
+      color: "bg-amber-100 text-amber-700",
+    },
+    {
+      label: "Tutor Satisfaction",
+      value: overallTutorSatisfaction ? `${overallTutorSatisfaction.toFixed(2)} / 5` : "- / 5",
+      detail: "Average evaluation from tutees",
+      icon: "TS",
+      progress: overallTutorSatisfaction ? (overallTutorSatisfaction / 5) * 100 : 0,
+      color: "bg-pink-100 text-pink-700",
+    },
+    {
+      label: "Tutee Satisfaction",
+      value: tuteeSatisfaction ? `${tuteeSatisfaction.toFixed(2)} / 5` : "- / 5",
+      detail: "LAV facility & service rating",
+      icon: "LS",
+      progress: tuteeSatisfaction ? (tuteeSatisfaction / 5) * 100 : 0,
+      color: "bg-indigo-100 text-indigo-700",
+    },
+  ];
+
+  const tutorMonthlyPerformance = tutorEntries
+    .map((entry) => ({
+      tutorId: entry.tutorId,
+      name: entry.name,
+      sessions: entry.monthly?.[currentMonthKey] || 0,
+      hours: entry.monthlyHours?.[currentMonthKey] || 0,
+    }))
+    .filter((entry) => entry.sessions > 0 || entry.hours > 0)
+    .sort((a, b) => b.hours - a.hours);
 
   const topTutorByHours = tutorEntries
     .filter((entry) => entry.totalHours)
@@ -346,6 +481,67 @@ const Reports = () => {
           </p>
         )}
       </header>
+
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {landingImage ? (
+              <img
+                src={landingImage}
+                alt="Learning Assistance Volunteer"
+                className="w-16 h-16 object-contain rounded-lg border border-gray-200"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-400">
+                Logo
+              </div>
+            )}
+            <div>
+              <p className="text-xs uppercase tracking-widest text-gray-500">
+                Learning Assistance Volunteer
+              </p>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Learning Assistance Volunteer Monthly Report
+              </h2>
+              <p className="text-sm text-gray-500">Month of {currentMonthLabel}</p>
+            </div>
+          </div>
+          <div className="text-sm text-gray-500">
+            Prepared on <span className="font-semibold text-gray-700">{preparedDateLabel}</span>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Key Metrics</h3>
+            <p className="text-sm text-gray-500">Performance Summary</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {summaryMetrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="relative rounded-2xl border border-gray-200 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${metric.color} text-base`}
+                >
+                  {metric.icon}
+                </div>
+                <p className="mt-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {metric.label}
+                </p>
+                <p className="text-2xl font-bold text-gray-800">{metric.value}</p>
+                <p className="text-xs text-gray-500">{metric.detail}</p>
+                <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+                    style={{ width: `${metric.progress ?? 0}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
@@ -474,7 +670,9 @@ const Reports = () => {
                 <p className="text-4xl font-bold text-blue-700 mt-2">
                   {lavStats.overallAverage !== null ? lavStats.overallAverage.toFixed(2) : "-"}
                 </p>
-                <p className="text-xs text-blue-700 mt-1">Combined LAV score across all submissions</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Combined LAV score across all submissions
+                </p>
               </div>
             </div>
           )}
@@ -558,6 +756,47 @@ const Reports = () => {
                         </td>
                       );
                     })}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div className="p-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Tutor Performance — {currentMonthLabel}
+          </h2>
+          <p className="text-sm text-gray-500">
+            Total hours and completed sessions recorded per tutor for this month.
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+              <tr>
+                <th className="text-left px-4 py-3">Tutor</th>
+                <th className="text-center px-4 py-3">Sessions</th>
+                <th className="text-center px-4 py-3">Total Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tutorMonthlyPerformance.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="text-center text-gray-500 py-5">
+                    No completed sessions were logged for {currentMonthLabel}.
+                  </td>
+                </tr>
+              ) : (
+                tutorMonthlyPerformance.map((entry) => (
+                  <tr key={entry.tutorId} className="border-t border-gray-100">
+                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
+                    <td className="px-4 py-3 text-center">{entry.sessions}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-blue-600">
+                      {entry.hours.toFixed(1)} hrs
+                    </td>
                   </tr>
                 ))
               )}
