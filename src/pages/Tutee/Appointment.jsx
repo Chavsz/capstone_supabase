@@ -248,25 +248,27 @@ const Appointment = () => {
   };
 
   const handleTimeChange = (field, value) => {
-    if (value && value.isValid()) {
-      if (!isWithinClassHours(value)) {
-        toast.error(classHoursMessage);
-        setFormData({
-          ...formData,
-          [field]: "",
-        });
-        return;
-      }
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value && value.isValid() ? value.format("HH:mm") : "",
+    }));
+  };
 
-      setFormData({
-        ...formData,
-        [field]: value.format("HH:mm"),
-      });
-    } else {
-      setFormData({
-        ...formData,
+  const handleTimeAccept = (field, value) => {
+    if (!value || !value.isValid()) {
+      setFormData((prev) => ({
+        ...prev,
         [field]: "",
-      });
+      }));
+      return;
+    }
+
+    if (!isWithinClassHours(value)) {
+      toast.error(classHoursMessage);
+      setFormData((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
     }
   };
 
@@ -650,6 +652,9 @@ const Appointment = () => {
                         onChange={(value) =>
                           handleTimeChange("start_time", value)
                         }
+                        onAccept={(value) =>
+                          handleTimeAccept("start_time", value)
+                        }
                         label="Start Time"
                         minTime={minClassTime}
                         maxTime={maxClassTime}
@@ -668,6 +673,9 @@ const Appointment = () => {
                         }
                         onChange={(value) =>
                           handleTimeChange("end_time", value)
+                        }
+                        onAccept={(value) =>
+                          handleTimeAccept("end_time", value)
                         }
                         label="End Time"
                         minTime={minClassTime}

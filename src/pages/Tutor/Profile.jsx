@@ -93,18 +93,24 @@ const Profile = () => {
   };
 
   const handleTimeChange = (field, value) => {
-    if (value && value.isValid()) {
-      const minutes = getMinutesFromDayjs(value);
-      if (!isWithinAllowedBlock(minutes)) {
-        alert(allowedHoursMessage);
-        return;
-      }
+    setNewTime((prev) => ({
+      ...prev,
+      [field]: value && value.isValid() ? value.format("HH:mm") : "",
+    }));
+  };
 
+  const handleTimeAccept = (field, value) => {
+    if (!value || !value.isValid()) {
       setNewTime((prev) => ({
         ...prev,
-        [field]: value.format("HH:mm"),
+        [field]: "",
       }));
-    } else {
+      return;
+    }
+
+    const minutes = getMinutesFromDayjs(value);
+    if (!isWithinAllowedBlock(minutes)) {
+      alert(allowedHoursMessage);
       setNewTime((prev) => ({
         ...prev,
         [field]: "",
@@ -549,6 +555,7 @@ const Profile = () => {
                               : null
                           }
                           onChange={(value) => handleTimeChange("start", value)}
+                          onAccept={(value) => handleTimeAccept("start", value)}
                           label="Start Time"
                           minTime={minScheduleTime}
                           maxTime={maxScheduleTime}
@@ -578,6 +585,7 @@ const Profile = () => {
                               : null
                           }
                           onChange={(value) => handleTimeChange("end", value)}
+                          onAccept={(value) => handleTimeAccept("end", value)}
                           label="End Time"
                           minTime={minScheduleTime}
                           maxTime={maxScheduleTime}
