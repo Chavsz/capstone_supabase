@@ -8,6 +8,7 @@ import Lavroom from "./Lavroom";
 import Users from "./Users";
 import Event from "./Event";
 import Announcments from "./Announcments";
+import Reports from "./Reports";
 
 import * as fiIcons from "react-icons/fi";
 
@@ -53,6 +54,7 @@ function AdminPage({ setAuth }) {
             />
             <Route exact path="/landingadmin" element={<Landing />} />
             <Route exact path="/lavroom" element={<Lavroom />} />
+            <Route exact path="/reports" element={<Reports />} />
             <Route exact path="/event" element={<Event />} />
             <Route exact path="/announcments" element={<Announcments />} />
             <Route exact path="/users" element={<Users />} />

@@ -783,11 +783,6 @@ const Schedule = () => {
                     </span>
                   )}
                 </div>
-                {appointment?.subject && (
-                  <p className="text-sm text-gray-600">
-                    Subject: {appointment.subject}
-                  </p>
-                )}
                 <p className="text-sm text-gray-700 whitespace-pre-line bg-blue-50 border border-blue-100 rounded-md p-3">
                   {evaluation.tutor_comment}
                 </p>

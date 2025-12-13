@@ -31,6 +31,14 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/reports"
+        selected={selected === "/dashboard/reports"}
+        Icon={fiIcons.FiBarChart2}
+        title="Reports"
+        handleSelect={handleSelect}
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/users"
         selected={selected === "/dashboard/users"}
         Icon={fiIcons.FiUsers}

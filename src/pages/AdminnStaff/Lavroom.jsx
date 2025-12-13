@@ -2,13 +2,25 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
+const STATUS_META = {
+  pending: { label: "Pending", badge: "bg-amber-100 text-amber-700" },
+  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-700" },
+  declined: { label: "Declined", badge: "bg-rose-100 text-rose-700" },
+  started: { label: "In Session", badge: "bg-sky-100 text-sky-700" },
+  completed: { label: "Completed", badge: "bg-indigo-100 text-indigo-700" },
+  cancelled: { label: "Cancelled", badge: "bg-gray-200 text-gray-600" },
+};
+
+const STATUS_FILTERS = ["all", ...Object.keys(STATUS_META)];
+
 const Lavroom = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const getAppointments = async () => {
     try {
-      // Fetch all appointments with tutor and student names
       const { data, error } = await supabase
         .from("appointment")
         .select(`
@@ -21,14 +33,13 @@ const Lavroom = () => {
 
       if (error) throw error;
 
-      // Format data to match expected structure
-      const formattedData = (data || []).map(appointment => ({
+      const formatted = (data || []).map((appointment) => ({
         ...appointment,
-        tutor_name: appointment.tutor?.name || null,
-        student_name: appointment.student?.name || null
+        tutor_name: appointment.tutor?.name || "Unknown tutor",
+        student_name: appointment.student?.name || "Unknown student",
       }));
 
-      setAppointments(formattedData);
+      setAppointments(formatted);
     } catch (err) {
       console.error(err.message);
       toast.error("Error loading appointments");
@@ -41,42 +52,22 @@ const Lavroom = () => {
     getAppointments();
   }, []);
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
-  };
 
-  const formatTime = (timeString) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
+  const formatTime = (timeString) =>
+    new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "declined":
-        return "bg-red-100 text-red-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const handleDelete = async (appointmentId) => {
-    if (!window.confirm("Are you sure you want to delete this appointment?")) {
-      return;
-    }
-
+    if (!window.confirm("Are you sure you want to delete this appointment?")) return;
     try {
       const { error } = await supabase
         .from("appointment")
@@ -84,82 +75,193 @@ const Lavroom = () => {
         .eq("appointment_id", appointmentId);
 
       if (error) throw error;
-
-      getAppointments(); // Refresh the list
       toast.success("Appointment deleted successfully");
+      getAppointments();
     } catch (err) {
       console.error(err.message);
       toast.error("Error deleting appointment");
     }
   };
 
+  const summary = appointments.reduce(
+    (acc, item) => {
+      acc.total += 1;
+      const key = item.status?.toLowerCase();
+      if (key && acc.status[key] !== undefined) {
+        acc.status[key] += 1;
+      }
+      return acc;
+    },
+    {
+      total: 0,
+      status: Object.keys(STATUS_META).reduce((map, key) => ({ ...map, [key]: 0 }), {}),
+    }
+  );
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const matchesStatus =
+      statusFilter === "all" ||
+      appointment.status?.toLowerCase() === statusFilter;
+
+    const searchable = [
+      appointment.subject,
+      appointment.topic,
+      appointment.tutor_name,
+      appointment.student_name,
+      appointment.mode_of_session,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch = searchable.includes(searchTerm.toLowerCase());
+
+    return matchesStatus && matchesSearch;
+  });
+
   if (loading) {
     return (
-      <div className="min-h-screen p-4 md:p-6">
-        <h1 className="text-blue-600 font-bold text-xl md:text-2xl">Schedules</h1>
-        <div className="mt-4 md:mt-6 text-center text-sm md:text-base">Loading appointments...</div>
+      <div className="min-h-screen p-6">
+        <h1 className="text-xl font-bold text-gray-700">Lavroom</h1>
+        <p className="mt-4 text-gray-500 text-sm">Loading appointments…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
-      <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Lavroom</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {appointments.length > 0 ? appointments.map((appointment) => (
-            <div
-              key={appointment.appointment_id}
-              className="bg-white p-4 md:p-5 rounded-lg shadow-md border border-gray-200"
-            >
-              <div className="flex justify-between items-start mb-3 md:mb-4">
-                <h3 className="text-base md:text-lg font-semibold text-gray-600 flex-1 pr-2">
-                  {appointment.subject}
-                </h3>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
-                    appointment.status
-                  )}`}
-                >
-                  {appointment.status}
-                </span>
-              </div>
-              <div className="space-y-2 mb-4">
-                <p className="text-sm md:text-base text-gray-600 break-words">
-                  <span className="font-medium">Tutor:</span> {appointment.tutor_name || "N/A"}
-                </p>
-                <p className="text-sm md:text-base text-gray-600 break-words">
-                  <span className="font-medium">Student:</span> {appointment.student_name || "N/A"}
-                </p>
-                <p className="text-sm md:text-base text-gray-600 break-words">
-                  <span className="font-medium">Specialization:</span> {appointment.topic || "N/A"}
-                </p>
-                <p className="text-sm md:text-base text-gray-600 break-words">
-                  <span className="font-medium">Mode:</span> {appointment.mode_of_session || "N/A"}
-                </p>
-                <p className="text-sm md:text-base text-gray-600">
-                  <span className="font-medium">Date:</span> {formatDate(appointment.date)}
-                </p>
-                <p className="text-sm md:text-base text-gray-600">
-                  <span className="font-medium">Time:</span> {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
-                </p>
-              </div>
-
-              <button 
-                onClick={() => handleDelete(appointment.appointment_id)}
-                className="w-full bg-red-500 text-white rounded-md px-4 py-2 text-sm hover:bg-red-400 transition duration-300 mt-2"
-              >
-                Delete
-              </button>
-            </div>
-          )) : (
-            <div className="col-span-full bg-white p-6 rounded-lg border border-gray-200 text-center">
-              <p className="text-sm md:text-base text-gray-500">No appointments found</p>
-            </div>
-          )}
+    <div className="min-h-screen p-4 md:p-6 bg-gray-50">
+      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-blue-500 font-semibold">
+            Admin control centre
+          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Lavroom
+          </h1>
+          <p className="text-sm text-gray-500">
+            Browse, search, and manage every tutorial session in one place.
+          </p>
         </div>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search tutor, student, or subject…"
+            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+          />
+          <div className="flex flex-wrap gap-2">
+            {STATUS_FILTERS.map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  statusFilter === status
+                    ? "bg-blue-600 text-white shadow"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-blue-400"
+                }`}
+              >
+                {status === "all"
+                  ? "All"
+                  : STATUS_META[status]?.label || status.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <SummaryCard label="Total Sessions" value={summary.total} />
+        {Object.entries(summary.status).map(([statusKey, value]) => (
+          <SummaryCard
+            key={statusKey}
+            label={STATUS_META[statusKey]?.label || statusKey}
+            value={value}
+            accent={STATUS_META[statusKey]?.badge}
+          />
+        ))}
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {filteredAppointments.length ? (
+          filteredAppointments.map((appointment) => {
+            const statusKey = appointment.status?.toLowerCase();
+            const statusMeta = STATUS_META[statusKey] || {};
+            return (
+              <article
+                key={appointment.appointment_id}
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition"
+              >
+                <div className="p-4 border-b border-gray-100 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase text-gray-400 tracking-wide">
+                      {formatDate(appointment.date)}
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {appointment.subject || "Untitled Session"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {appointment.topic || "No specialization provided"}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                      statusMeta.badge || "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {statusMeta.label || appointment.status}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-3 text-sm text-gray-700">
+                  <DetailRow label="Tutor" value={appointment.tutor_name} />
+                  <DetailRow label="Student" value={appointment.student_name} />
+                  <DetailRow
+                    label="Mode"
+                    value={appointment.mode_of_session || "No mode specified"}
+                  />
+                  <DetailRow
+                    label="Time"
+                    value={`${formatTime(appointment.start_time)} – ${formatTime(
+                      appointment.end_time
+                    )}`}
+                  />
+                </div>
+
+                <div className="p-4 pt-0">
+                  <button
+                    onClick={() => handleDelete(appointment.appointment_id)}
+                    className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition"
+                  >
+                    Delete Appointment
+                  </button>
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <div className="col-span-full bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-500">
+            <p className="text-base font-semibold">No sessions match your filters.</p>
+            <p className="text-sm mt-1">Try a different keyword or status.</p>
+          </div>
+        )}
       </div>
+    </div>
   );
 };
+
+const SummaryCard = ({ label, value, accent = "bg-gray-100 text-gray-800" }) => (
+  <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+    <p className="text-xs uppercase tracking-wide text-gray-400">{label}</p>
+    <p className={`text-2xl font-bold mt-1 ${accent}`}>{value}</p>
+  </div>
+);
+
+const DetailRow = ({ label, value }) => (
+  <p className="flex justify-between gap-3 text-sm">
+    <span className="text-gray-500 font-medium">{label}</span>
+    <span className="text-gray-800 text-right">{value}</span>
+  </p>
+);
 
 export default Lavroom;
