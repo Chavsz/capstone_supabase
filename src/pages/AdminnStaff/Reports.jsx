@@ -236,6 +236,16 @@ const Reports = () => {
     );
   }, [comparisonRange, periodRange]);
 
+  const evaluationsInPeriod = useMemo(() => {
+    if (!periodRange) return [];
+    return evaluations.filter((evaluation) => {
+      const appointment = appointmentsById.get(evaluation.appointment_id);
+      if (!appointment || !appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= periodRange.start && date < periodRange.end;
+    });
+  }, [evaluations, appointmentsById, periodRange]);
+
   const formatDate = (value) =>
     new Date(value).toLocaleDateString("en-US", {
       month: "short",
