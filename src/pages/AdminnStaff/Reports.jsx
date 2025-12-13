@@ -15,6 +15,7 @@ const Reports = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [monthlyExporting, setMonthlyExporting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -98,6 +99,43 @@ const Reports = () => {
     return Math.ceil(((newDate - yearStart) / 86400000 + 1) / 7);
   };
 
+  const handleMonthlyExport = () => {
+    if (monthlyExporting) return;
+    try {
+      setMonthlyExporting(true);
+      const rows = [["Tutor", "Month", "Completed Sessions"]];
+      Object.values(tutorStats).forEach((entry) => {
+        Object.keys(entry.monthly)
+          .sort()
+          .forEach((monthKey) => {
+            rows.push([entry.name, monthKey, entry.monthly[monthKey]]);
+          });
+      });
+
+      if (rows.length === 1) {
+        toast("No data to export yet.");
+        setMonthlyExporting(false);
+        return;
+      }
+
+      const csvContent = rows.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "tutor-monthly-report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to generate CSV");
+    } finally {
+      setMonthlyExporting(false);
+    }
+  };
+
   const tutorStats = useMemo(() => {
     const stats = {};
     const today = new Date();
@@ -132,6 +170,11 @@ const Reports = () => {
           "0"
         )}`;
         entry.monthly[monthKey] = (entry.monthly[monthKey] || 0) + 1;
+        const durationMinutes =
+          (new Date(`2000-01-01T${appointment.end_time}`) -
+            new Date(`2000-01-01T${appointment.start_time}`)) /
+          60000;
+        entry.totalHours = (entry.totalHours || 0) + Math.max(durationMinutes / 60, 0);
 
         entry.history.push({
           appointment_id: appointment.appointment_id,
@@ -200,25 +243,23 @@ const Reports = () => {
     return map;
   }, [evaluations, appointments]);
 
-  const evaluationRecords = useMemo(
-    () =>
-      evaluations.map((evaluation) => {
-        const ratings = ratingFields
-          .map((field) => Number(evaluation[field.key]))
-          .filter((value) => !Number.isNaN(value));
-        return {
-          id: `${evaluation.tutor_id}-${evaluation.user_id}-${evaluation.appointment_id || Math.random()}`,
-          tutor: appointments.find((apt) => apt.tutor_id === evaluation.tutor_id)?.tutor?.name || "Unknown Tutor",
-          studentId: evaluation.user_id,
-          overall: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : "—",
-          ratings: ratingFields.map((field) => ({
-            key: field.key,
-            value: Number(evaluation[field.key]) || null,
-          })),
-        };
-      }),
-    [evaluations, appointments]
-  );
+  const evaluationRecords = useMemo(() => {
+    return evaluations.map((evaluation) => {
+      const ratings = ratingFields
+        .map((field) => Number(evaluation[field.key]))
+        .filter((value) => !Number.isNaN(value));
+      return {
+        id: `${evaluation.tutor_id}-${evaluation.user_id}-${evaluation.appointment_id || Math.random()}`,
+        tutor: appointments.find((apt) => apt.tutor_id === evaluation.tutor_id)?.tutor?.name || "Unknown Tutor",
+        studentId: evaluation.user_id,
+        overall: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : "—",
+        ratings: ratingFields.map((field) => ({
+          key: field.key,
+          value: Number(evaluation[field.key]) || null,
+        })),
+      };
+    });
+  }, [evaluations, appointments]);
 
   const schedulesByTutor = useMemo(() => {
     const grouped = {};
@@ -245,6 +286,9 @@ const Reports = () => {
 
   const tutorEntries = Object.values(tutorStats);
   const ratingEntries = Object.values(ratingStats);
+  const topTutorByHours = tutorEntries
+    .filter((entry) => entry.totalHours)
+    .sort((a, b) => (b.totalHours || 0) - (a.totalHours || 0))[0];
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-8 bg-gray-50">
@@ -253,6 +297,14 @@ const Reports = () => {
         <p className="text-sm text-gray-500">
           Overview of completed sessions, tutor schedules, and evaluation summaries.
         </p>
+        {topTutorByHours && (
+          <p className="mt-2 text-sm text-gray-600">
+            Top tutor by teaching time:{" "}
+            <span className="font-semibold text-blue-600">
+              {topTutorByHours.name} ({topTutorByHours.totalHours.toFixed(1)} hrs)
+            </span>
+          </p>
+        )}
       </header>
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -268,12 +320,13 @@ const Reports = () => {
               <tr>
                 <th className="text-left px-4 py-3">Tutor</th>
                 <th className="text-center px-4 py-3">Today</th>
-                <th className="text-center px-4 py-3">This Week</th>
-                <th className="text-center px-4 py-3">This Month</th>
-                <th className="text-center px-4 py-3">Total</th>
-              </tr>
-            </thead>
-            <tbody>
+                  <th className="text-center px-4 py-3">This Week</th>
+                  <th className="text-center px-4 py-3">This Month</th>
+                  <th className="text-center px-4 py-3">Total</th>
+                  <th className="text-center px-4 py-3">Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
               {tutorEntries.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center text-gray-500 py-5">
@@ -288,6 +341,9 @@ const Reports = () => {
                     <td className="px-4 py-3 text-center">{entry.thisWeek}</td>
                     <td className="px-4 py-3 text-center">{entry.thisMonth}</td>
                     <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.total}</td>
+                    <td className="px-4 py-3 text-center">
+                      {entry.totalHours ? entry.totalHours.toFixed(1) : "—"}
+                    </td>
                   </tr>
                 ))
               )}
@@ -299,7 +355,24 @@ const Reports = () => {
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Monthly Breakdown</h2>
-          <p className="text-sm text-gray-500">Completed sessions grouped by month per tutor.</p>
+          <p className="text-sm text-gray-500 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <span>Completed sessions grouped by month per tutor.</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => window.print()}
+                className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-blue-500 transition"
+              >
+                Print
+              </button>
+              <button
+                onClick={() => handleMonthlyExport()}
+                className="rounded-lg border border-blue-500 text-blue-600 px-3 py-1 text-xs font-semibold hover:bg-blue-50 transition"
+                disabled={monthlyExporting}
+              >
+                {monthlyExporting ? "Preparing…" : "Download CSV"}
+              </button>
+            </div>
+          </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4">
           {tutorEntries.length === 0 ? (
@@ -332,7 +405,7 @@ const Reports = () => {
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Rating Averages</h2>
-          <p className="text-sm text-gray-500">Anonymous comments are not included.</p>
+          <p className="text-sm text-gray-500"></p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
