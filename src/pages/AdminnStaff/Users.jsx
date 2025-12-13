@@ -53,17 +53,26 @@ const Users = () => {
 
   // Filter users based on selected filter
   const getFilteredUsers = () => {
+    const normalizeRole = (role) => (role || "").toLowerCase();
+
     switch (selectedFilter) {
       case "Tutor":
-        return allUsers.filter((user) => user.role === "tutor");
+        return allUsers.filter((user) => normalizeRole(user.role) === "tutor");
       case "Student":
-        return allUsers.filter((user) => user.role === "student");
+        return allUsers.filter((user) => normalizeRole(user.role) === "student");
       default:
-        return allUsers.filter((user) => user.role !== "admin");
+        return allUsers.filter((user) => normalizeRole(user.role) !== "admin");
     }
   };
 
   const filteredUsers = getFilteredUsers();
+
+  const getRoleLabel = (role) => {
+    const normalized = (role || "").toLowerCase();
+    if (normalized === "tutor") return "Tutor";
+    if (normalized === "student") return "Student";
+    return role || "N/A";
+  };
   
   // Apply search filter
   const searchfilteredUsers = filteredUsers.filter((user) =>
@@ -174,7 +183,7 @@ const Users = () => {
                   {user.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.role === "tutor" ? "Tutor" : "Student"}
+                  {getRoleLabel(user.role)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center gap-2">
@@ -225,7 +234,7 @@ const Users = () => {
                   {user.email}
                 </p>
                 <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
-                  {user.role === "tutor" ? "Tutor" : "Student"}
+                  {getRoleLabel(user.role)}
                 </span>
               </div>
               <div className="flex items-center gap-1">
