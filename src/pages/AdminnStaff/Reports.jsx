@@ -13,41 +13,76 @@ const ratingFields = [
 const Reports = () => {
   const [appointments, setAppointments] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [scheduleEntries, setScheduleEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [{ data: appointmentData, error: appointmentError }, { data: evaluationData, error: evalError }] =
-        await Promise.all([
-          supabase
-            .from("appointment")
-            .select(`
-              appointment_id,
-              tutor_id,
-              subject,
-              topic,
-              date,
-              start_time,
-              end_time,
-              mode_of_session,
-              tutor:users!appointment_tutor_id_fkey(name),
-              student:users!appointment_user_id_fkey(name)
-            `)
-            .eq("status", "completed")
-            .order("date", { ascending: false }),
-          supabase
-            .from("evaluation")
-            .select(
-              "tutor_id, presentation_clarity, drills_sufficiency, patience_enthusiasm, study_skills_development, positive_impact"
-            ),
-        ]);
 
+      const { data: appointmentData, error: appointmentError } = await supabase
+        .from("appointment")
+        .select(`
+            appointment_id,
+            tutor_id,
+            subject,
+            topic,
+            date,
+            start_time,
+            end_time,
+            mode_of_session,
+            tutor:users!appointment_tutor_id_fkey(name),
+            student:users!appointment_user_id_fkey(name)
+          `)
+        .eq("status", "completed")
+        .order("date", { ascending: false });
       if (appointmentError) throw appointmentError;
-      if (evalError) throw evalError;
-
       setAppointments(appointmentData || []);
+
+      const { data: evaluationData, error: evalError } = await supabase
+        .from("evaluation")
+        .select(
+          "appointment_id, tutor_id, user_id, presentation_clarity, drills_sufficiency, patience_enthusiasm, study_skills_development, positive_impact"
+        );
+      if (evalError) throw evalError;
       setEvaluations(evaluationData || []);
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("profile")
+        .select("profile_id, user_id, users(name)")
+        .order("user_id");
+      if (profileError && profileError.code !== "PGRST116") throw profileError;
+
+      const tutorProfileMap = {};
+      const profileIds = [];
+      (profileData || []).forEach((profile) => {
+        if (!profile.profile_id) return;
+        profileIds.push(profile.profile_id);
+        tutorProfileMap[profile.profile_id] = {
+          tutorId: profile.user_id,
+          tutorName: profile.users?.name || "Unknown Tutor",
+        };
+      });
+
+      let scheduleRecords = [];
+      if (profileIds.length) {
+        const { data: scheduleData, error: scheduleError } = await supabase
+          .from("schedule")
+          .select("schedule_id, profile_id, day, start_time, end_time")
+          .in("profile_id", profileIds)
+          .order("day", { ascending: true })
+          .order("start_time", { ascending: true });
+
+        if (scheduleError && scheduleError.code !== "PGRST116") throw scheduleError;
+
+        scheduleRecords = (scheduleData || []).map((slot) => ({
+          ...slot,
+          tutorId: tutorProfileMap[slot.profile_id]?.tutorId || null,
+          tutorName: tutorProfileMap[slot.profile_id]?.tutorName || "Unknown Tutor",
+        }));
+      }
+
+      setScheduleEntries(scheduleRecords);
     } catch (error) {
       console.error(error);
       toast.error("Unable to load report data");
@@ -68,6 +103,21 @@ const Reports = () => {
     const weekNo = Math.ceil(((newDate - yearStart) / 86400000 + 1) / 7);
     return { year: newDate.getUTCFullYear(), week: weekNo };
   };
+
+  const tutorNameMap = useMemo(() => {
+    const map = {};
+    appointments.forEach((appointment) => {
+      if (appointment.tutor_id) {
+        map[appointment.tutor_id] = appointment.tutor?.name || "Unknown Tutor";
+      }
+    });
+    scheduleEntries.forEach((slot) => {
+      if (slot.tutorId && slot.tutorName) {
+        map[slot.tutorId] = slot.tutorName;
+      }
+    });
+    return map;
+  }, [appointments, scheduleEntries]);
 
   const tutorStats = useMemo(() => {
     const stats = {};
@@ -163,14 +213,63 @@ const Reports = () => {
     });
 
     Object.keys(map).forEach((tutorId) => {
-      const appointment = appointments.find((apt) => apt.tutor_id === tutorId);
-      if (appointment) {
-        map[tutorId].name = appointment.tutor?.name || "Unknown Tutor";
-      }
+      map[tutorId].name = tutorNameMap[tutorId] || "Unknown Tutor";
     });
 
     return map;
-  }, [evaluations, appointments]);
+  }, [evaluations, tutorNameMap]);
+
+  const evaluationRecords = useMemo(() => {
+    return evaluations.map((evaluation) => {
+      const values = ratingFields
+        .map((field) => Number(evaluation[field.key]))
+        .filter((value) => !Number.isNaN(value));
+      const overall = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+      return {
+        id: `${evaluation.tutor_id}-${evaluation.user_id}-${evaluation.appointment_id || Math.random()}`,
+        tutorName: tutorNameMap[evaluation.tutor_id] || "Unknown Tutor",
+        studentId: evaluation.user_id,
+        overall,
+        fields: ratingFields.map((field) => ({
+          key: field.key,
+          value: Number(evaluation[field.key]) || null,
+        })),
+      };
+    });
+  }, [evaluations, tutorNameMap]);
+
+  const scheduleByTutor = useMemo(() => {
+    const dayOrder = {
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+      Sunday: 7,
+    };
+    const groups = {};
+    scheduleEntries.forEach((slot) => {
+      if (!slot.tutorId) return;
+      if (!groups[slot.tutorId]) {
+        groups[slot.tutorId] = {
+          name: slot.tutorName || "Unknown Tutor",
+          slots: [],
+        };
+      }
+      groups[slot.tutorId].slots.push(slot);
+    });
+
+    Object.values(groups).forEach((group) => {
+      group.slots.sort((a, b) => {
+        const dayDiff = (dayOrder[a.day] || 10) - (dayOrder[b.day] || 10);
+        if (dayDiff !== 0) return dayDiff;
+        return (a.start_time || "").localeCompare(b.start_time || "");
+      });
+    });
+
+    return groups;
+  }, [scheduleEntries]);
 
   if (loading) {
     return (
@@ -362,6 +461,96 @@ const Reports = () => {
               </div>
             ))
           )}
+        </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div className="p-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">Tutor Schedules</h2>
+          <p className="text-sm text-gray-500">
+            Full availability roster per tutor for administrative planning.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4">
+          {Object.keys(scheduleByTutor).length === 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-6">
+              No schedules recorded.
+            </div>
+          ) : (
+            Object.entries(scheduleByTutor).map(([tutorId, data]) => (
+              <div key={tutorId} className="rounded-xl border border-gray-200 p-4 bg-gray-50 space-y-3">
+                <h3 className="text-lg font-semibold text-gray-800">{data.name}</h3>
+                {data.slots.length === 0 ? (
+                  <p className="text-sm text-gray-400">No published schedule.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.slots.map((slot) => (
+                      <div
+                        key={slot.schedule_id}
+                        className="flex justify-between text-sm text-gray-600 bg-white rounded-lg border border-gray-100 px-3 py-2"
+                      >
+                        <span className="font-medium">{slot.day}</span>
+                        <span>
+                          {slot.start_time?.slice(0, 5)} – {slot.end_time?.slice(0, 5)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">Evaluation Records</h2>
+            <p className="text-sm text-gray-500">
+              Each tutee submission, excluding private comments.
+            </p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+              <tr>
+                <th className="text-left px-4 py-3">Tutor</th>
+                <th className="text-left px-4 py-3">Submitted By (ID)</th>
+                <th className="text-center px-4 py-3">Overall</th>
+                {ratingFields.map((field) => (
+                  <th key={field.key} className="text-center px-4 py-3">
+                    {field.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {evaluationRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={ratingFields.length + 3} className="text-center text-gray-500 py-6">
+                    No evaluations submitted yet.
+                  </td>
+                </tr>
+              ) : (
+                evaluationRecords.map((record) => (
+                  <tr key={record.id} className="border-t border-gray-100">
+                    <td className="px-4 py-3 font-medium text-gray-800">{record.tutorName}</td>
+                    <td className="px-4 py-3 text-gray-600">{record.studentId || "Unknown"}</td>
+                    <td className="px-4 py-3 text-center font-semibold text-blue-600">
+                      {record.overall ? record.overall.toFixed(2) : "—"}
+                    </td>
+                    {record.fields.map((field) => (
+                      <td key={field.key} className="px-4 py-3 text-center">
+                        {field.value ? field.value.toFixed(1) : "—"}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
