@@ -76,7 +76,13 @@ const Login = ({ setAuth }) => {
       if (error) throw error;
     } catch (err) {
       console.error("Google sign-in error:", err.message);
-      setMessage("Unable to continue with Google right now. Please try again.");
+      if (err?.message?.includes("Unsupported provider")) {
+        setMessage(
+          "Google sign-in is not enabled in Supabase yet. Enable the Google provider in Auth > Providers (PostgreSQL backend) or continue with email."
+        );
+      } else {
+        setMessage("Unable to continue with Google right now. Please try again.");
+      }
     }
   };
 
@@ -177,6 +183,10 @@ const Login = ({ setAuth }) => {
             <FcGoogle className="text-xl" />
             Continue with Google
           </button>
+
+          <p className="mt-4 text-center text-xs text-gray-500">
+            NOTE: The database uses Supabase (PostgreSQL), so configure providers, policies, and triggers with SQL terms.
+          </p>
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-600">

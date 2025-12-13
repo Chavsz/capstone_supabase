@@ -191,8 +191,38 @@ const Appointment = () => {
     setFormData({ ...formData, date: value });
   };
 
+  const CLASS_TIME_RANGES = [
+    { start: { hour: 8, minute: 0 }, end: { hour: 12, minute: 0 } },
+    { start: { hour: 13, minute: 30 }, end: { hour: 17, minute: 0 } },
+  ];
+
+  const classHoursMessage =
+    "Class hours are 8:00 AM - 12:00 PM and 1:30 PM - 5:00 PM.";
+
+  const isWithinClassHours = (timeValue) => {
+    if (!timeValue || !timeValue.isValid()) return false;
+    const totalMinutes = timeValue.hour() * 60 + timeValue.minute();
+    return CLASS_TIME_RANGES.some(({ start, end }) => {
+      const startMinutes = start.hour * 60 + start.minute;
+      const endMinutes = end.hour * 60 + end.minute;
+      return totalMinutes >= startMinutes && totalMinutes <= endMinutes;
+    });
+  };
+
+  const minClassTime = dayjs().set("hour", 8).set("minute", 0).set("second", 0).set("millisecond", 0);
+  const maxClassTime = dayjs().set("hour", 17).set("minute", 0).set("second", 0).set("millisecond", 0);
+
   const handleTimeChange = (field, value) => {
     if (value && value.isValid()) {
+      if (!isWithinClassHours(value)) {
+        toast.error(classHoursMessage);
+        setFormData({
+          ...formData,
+          [field]: "",
+        });
+        return;
+      }
+
       setFormData({
         ...formData,
         [field]: value.format("HH:mm"),
@@ -481,6 +511,9 @@ const Appointment = () => {
                           handleTimeChange("start_time", value)
                         }
                         label="Start Time"
+                        minutesStep={30}
+                        minTime={minClassTime}
+                        maxTime={maxClassTime}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
@@ -498,6 +531,9 @@ const Appointment = () => {
                           handleTimeChange("end_time", value)
                         }
                         label="End Time"
+                        minutesStep={30}
+                        minTime={minClassTime}
+                        maxTime={maxClassTime}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
