@@ -60,13 +60,14 @@ const Users = () => {
       }
 
       // Remove appointments and evaluations referencing the user
+      // Delete evaluations first to avoid foreign key violations on appointment_id
       const relationalDeletes = [
         {
-          table: "appointment",
+          table: "evaluation",
           filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
         },
         {
-          table: "evaluation",
+          table: "appointment",
           filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
         },
       ];
