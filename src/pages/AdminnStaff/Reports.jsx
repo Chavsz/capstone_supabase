@@ -33,6 +33,10 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [monthlyExporting, setMonthlyExporting] = useState(false);
   const [landingImage, setLandingImage] = useState("");
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   const fetchData = async () => {
     try {
@@ -120,6 +124,116 @@ const Reports = () => {
     fetchData();
   }, []);
 
+  const appointmentsById = useMemo(() => {
+    const map = new Map();
+    appointments.forEach((appointment) => {
+      map.set(appointment.appointment_id, appointment);
+    });
+    return map;
+  }, [appointments]);
+
+  const periodOptions = useMemo(() => {
+    const optionMap = new Map();
+    appointments.forEach((appointment) => {
+      if (!appointment.date) return;
+      const date = new Date(appointment.date);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+      if (!optionMap.has(key)) {
+        optionMap.set(key, {
+          key,
+          label: date.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+          type: "month",
+          year,
+          month,
+        });
+      }
+    });
+
+    if (optionMap.size === 0) {
+      const now = new Date();
+      const fallbackKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      optionMap.set(fallbackKey, {
+        key: fallbackKey,
+        label: now.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+        type: "month",
+        year: now.getFullYear(),
+        month: now.getMonth(),
+      });
+    }
+
+    const options = Array.from(optionMap.values()).sort(
+      (a, b) => new Date(b.year, b.month, 1) - new Date(a.year, a.month, 1)
+    );
+
+    const currentYear = new Date().getFullYear();
+    options.push({
+      key: `${currentYear - 1}-year`,
+      label: `${currentYear - 1}`,
+      type: "year",
+      year: currentYear - 1,
+    });
+
+    return options;
+  }, [appointments]);
+
+  useEffect(() => {
+    if (periodOptions.length === 0) return;
+    if (!periodOptions.some((option) => option.key === selectedPeriodKey)) {
+      setSelectedPeriodKey(periodOptions[0].key);
+    }
+  }, [periodOptions, selectedPeriodKey]);
+
+  const selectedPeriod = useMemo(() => {
+    if (periodOptions.length === 0) return null;
+    return periodOptions.find((option) => option.key === selectedPeriodKey) || periodOptions[0];
+  }, [periodOptions, selectedPeriodKey]);
+
+  const periodRange = useMemo(() => {
+    if (!selectedPeriod) return null;
+    if (selectedPeriod.type === "year") {
+      return {
+        label: selectedPeriod.label,
+        start: new Date(selectedPeriod.year, 0, 1),
+        end: new Date(selectedPeriod.year + 1, 0, 1),
+        type: "year",
+      };
+    }
+    return {
+      label: selectedPeriod.label,
+      start: new Date(selectedPeriod.year, selectedPeriod.month, 1),
+      end: new Date(selectedPeriod.year, selectedPeriod.month + 1, 1),
+      type: "month",
+      year: selectedPeriod.year,
+      month: selectedPeriod.month,
+    };
+  }, [selectedPeriod]);
+
+  const comparisonRange = useMemo(() => {
+    if (!periodRange) return null;
+    if (periodRange.type === "year") {
+      const prevYear = periodRange.start.getFullYear() - 1;
+      return {
+        start: new Date(prevYear, 0, 1),
+        end: new Date(prevYear + 1, 0, 1),
+      };
+    }
+    const prevMonth = new Date(periodRange.start);
+    prevMonth.setMonth(prevMonth.getMonth() - 1);
+    return {
+      start: new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1),
+      end: new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 1),
+    };
+  }, [periodRange]);
+
+  const comparisonLabel = useMemo(() => {
+    if (!comparisonRange) return "Previous period";
+    const isYear = periodRange?.type === "year";
+    return comparisonRange.start.toLocaleDateString("en-US", isYear ? { year: "numeric" } : { month: "short", year: "numeric" });
+  }, [comparisonRange, periodRange]);
+
+
   const formatDate = (value) =>
     new Date(value).toLocaleDateString("en-US", {
       month: "short",
@@ -140,43 +254,6 @@ const Reports = () => {
     newDate.setUTCDate(newDate.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(newDate.getUTCFullYear(), 0, 1));
     return Math.ceil(((newDate - yearStart) / 86400000 + 1) / 7);
-  };
-
-  const handleMonthlyExport = () => {
-    if (monthlyExporting) return;
-    try {
-      setMonthlyExporting(true);
-      const rows = [["Tutor", "Month", "Completed Sessions"]];
-      Object.values(tutorStats).forEach((entry) => {
-        Object.keys(entry.monthly)
-          .sort()
-          .forEach((monthKey) => {
-            rows.push([entry.name, monthKey, entry.monthly[monthKey]]);
-          });
-      });
-
-      if (rows.length === 1) {
-        toast("No data to export yet.");
-        setMonthlyExporting(false);
-        return;
-      }
-
-      const csvContent = rows.map((row) => row.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "tutor-monthly-report.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to generate CSV");
-    } finally {
-      setMonthlyExporting(false);
-    }
   };
 
   const tutorStats = useMemo(() => {
@@ -256,7 +333,7 @@ const Reports = () => {
   const tutorEvaluationStats = useMemo(() => {
     const map = {};
 
-    evaluations.forEach((evaluation) => {
+    evaluationsInPeriod.forEach((evaluation) => {
       const tutorId = evaluation.tutor_id || "unknown";
       if (!map[tutorId]) {
         map[tutorId] = {
@@ -289,7 +366,7 @@ const Reports = () => {
     });
 
     return map;
-  }, [evaluations, appointments]);
+  }, [evaluationsInPeriod, appointments]);
 
   const schedulesByTutor = useMemo(() => {
     const grouped = {};
@@ -314,7 +391,7 @@ const Reports = () => {
       {}
     );
 
-    evaluations.forEach((evaluation) => {
+    evaluationsInPeriod.forEach((evaluation) => {
       lavRatingFields.forEach((field) => {
         const value = Number(evaluation[field.key]);
         if (!Number.isNaN(value)) {
@@ -339,50 +416,82 @@ const Reports = () => {
       averages,
       overallAverage: overallCount ? overallSum / overallCount : null,
     };
-  }, [evaluations]);
+  }, [evaluationsInPeriod]);
+
+  const appointmentsInPeriod = useMemo(() => {
+    if (!periodRange) return [];
+    return appointments.filter((appointment) => {
+      if (!appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= periodRange.start && date < periodRange.end;
+    });
+  }, [appointments, periodRange]);
+
+  const completedAppointmentsInPeriod = useMemo(
+    () => appointmentsInPeriod.filter((apt) => apt.status === "completed"),
+    [appointmentsInPeriod]
+  );
+
+  const totalHoursTeach = useMemo(() => {
+    return completedAppointmentsInPeriod.reduce((sum, appointment) => {
+      const minutes =
+        (new Date(`2000-01-01T${appointment.end_time}`) -
+          new Date(`2000-01-01T${appointment.start_time}`)) /
+        60000;
+      return sum + Math.max(minutes / 60, 0);
+    }, 0);
+  }, [completedAppointmentsInPeriod]);
+
+  const totalSessionsBooked = appointmentsInPeriod.length;
+  const totalSessionsCompleted = completedAppointmentsInPeriod.length;
+  const tuteesServed = completedAppointmentsInPeriod.reduce((set, appointment) => {
+    if (appointment.user_id) set.add(appointment.user_id);
+    return set;
+  }, new Set()).size;
+  const cancelledSessions = appointmentsInPeriod.filter(
+    (appointment) => appointment.status === "cancelled"
+  ).length;
+  const cancellationRate = totalSessionsBooked
+    ? (cancelledSessions / totalSessionsBooked) * 100
+    : 0;
+
+  const comparisonCompletedCount = useMemo(() => {
+    if (!comparisonRange) return null;
+    return appointments.filter((appointment) => {
+      if (appointment.status !== "completed" || !appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= comparisonRange.start && date < comparisonRange.end;
+    }).length;
+  }, [appointments, comparisonRange]);
+
+  const growthRate =
+    comparisonCompletedCount === null
+      ? null
+      : comparisonCompletedCount === 0
+      ? totalSessionsCompleted > 0
+        ? 100
+        : 0
+      : ((totalSessionsCompleted - comparisonCompletedCount) / comparisonCompletedCount) * 100;
+
+  const evaluationsInPeriod = useMemo(() => {
+    if (!periodRange) return [];
+    return evaluations.filter((evaluation) => {
+      const appointment = appointmentsById.get(evaluation.appointment_id);
+      if (!appointment || !appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= periodRange.start && date < periodRange.end;
+    });
+  }, [evaluations, appointmentsById, periodRange]);
 
   const tutorEntries = Object.values(tutorStats);
   const tutorSummaryEntries = Object.values(tutorEvaluationStats);
 
-  const reportDate = new Date();
-  const currentMonthKey = `${reportDate.getFullYear()}-${String(
-    reportDate.getMonth() + 1
-  ).padStart(2, "0")}`;
-  const currentMonthLabel = reportDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-  const preparedDateLabel = reportDate.toLocaleDateString("en-US", {
+  const displayPeriodLabel = periodRange?.label || "Current Period";
+  const preparedDateLabel = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
-
-  const monthlyCompletedAppointments = appointments.filter((apt) => {
-    if (apt.status !== "completed" || !apt.date) return false;
-    const appointmentDate = new Date(apt.date);
-    return (
-      appointmentDate.getFullYear() === reportDate.getFullYear() &&
-      appointmentDate.getMonth() === reportDate.getMonth()
-    );
-  });
-
-  const monthlySessions = monthlyCompletedAppointments.length;
-  const monthlyHoursTotal = monthlyCompletedAppointments.reduce((total, apt) => {
-    const minutes =
-      (new Date(`2000-01-01T${apt.end_time}`) - new Date(`2000-01-01T${apt.start_time}`)) /
-      60000;
-    return total + Math.max(minutes / 60, 0);
-  }, 0);
-
-  const activeTutorsMonth = tutorEntries.filter(
-    (entry) => (entry.monthly?.[currentMonthKey] || 0) > 0
-  ).length;
-
-  const monthlyTuteeIds = new Set(
-    monthlyCompletedAppointments.map((apt) => apt.user_id).filter(Boolean)
-  );
-  const activeTuteesMonth = monthlyTuteeIds.size;
 
   const tutorAggregate = tutorSummaryEntries.reduce(
     (acc, entry) => ({
@@ -395,70 +504,181 @@ const Reports = () => {
     ? tutorAggregate.sum / tutorAggregate.count
     : null;
   const tuteeSatisfaction = lavStats.overallAverage;
+  const averageSatisfactionDisplay = overallTutorSatisfaction
+    ? `${overallTutorSatisfaction.toFixed(2)} / 5`
+    : "- / 5";
+  const growthDisplay =
+    growthRate === null
+      ? "-"
+      : `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
 
   const summaryMetrics = [
     {
-      label: "Sessions Conducted",
-      value: `${monthlySessions}`,
-      detail: currentMonthLabel,
+      label: "Sessions Completed",
+      value: `${totalSessionsCompleted}`,
+      detail: displayPeriodLabel,
       icon: "SC",
-      progress: Math.min(100, (monthlySessions / 20) * 100),
+      progress: Math.min(100, (totalSessionsCompleted / 20) * 100),
       color: "bg-blue-100 text-blue-700",
     },
     {
-      label: "Total Hours of Tutoring",
-      value: `${monthlyHoursTotal.toFixed(1)} hrs`,
-      detail: "Logged teaching time this month",
+      label: "Teaching Hours",
+      value: `${totalHoursTeach.toFixed(1)} hrs`,
+      detail: "Confirmed sessions only",
       icon: "HR",
-      progress: Math.min(100, (monthlyHoursTotal / 40) * 100),
+      progress: Math.min(100, (totalHoursTeach / 40) * 100),
       color: "bg-emerald-100 text-emerald-700",
     },
     {
-      label: "Active Tutors",
-      value: `${activeTutorsMonth}`,
-      detail: "Tutors with confirmed sessions",
-      icon: "AT",
-      progress:
-        tutorEntries.length > 0
-          ? Math.min(100, (activeTutorsMonth / tutorEntries.length) * 100)
-          : 0,
+      label: "Tutees Served",
+      value: `${tuteesServed}`,
+      detail: "Unique students",
+      icon: "TS",
+      progress: Math.min(100, (tuteesServed / 30) * 100),
       color: "bg-purple-100 text-purple-700",
     },
     {
-      label: "Active Tutees",
-      value: `${activeTuteesMonth}`,
-      detail: "Tutees served this month",
-      icon: "TT",
-      progress: Math.min(100, (activeTuteesMonth / 30) * 100),
+      label: "Sessions Booked",
+      value: `${totalSessionsBooked}`,
+      detail: "All statuses",
+      icon: "SB",
+      progress: Math.min(100, (totalSessionsBooked / 40) * 100),
       color: "bg-amber-100 text-amber-700",
     },
     {
-      label: "Tutor Satisfaction",
-      value: overallTutorSatisfaction ? `${overallTutorSatisfaction.toFixed(2)} / 5` : "- / 5",
-      detail: "Average evaluation from tutees",
-      icon: "TS",
+      label: "Avg. Satisfaction",
+      value: averageSatisfactionDisplay,
+      detail: "Tutor evaluations",
+      icon: "AR",
       progress: overallTutorSatisfaction ? (overallTutorSatisfaction / 5) * 100 : 0,
       color: "bg-pink-100 text-pink-700",
     },
     {
-      label: "Tutee Satisfaction",
-      value: tuteeSatisfaction ? `${tuteeSatisfaction.toFixed(2)} / 5` : "- / 5",
-      detail: "LAV facility & service rating",
-      icon: "LS",
-      progress: tuteeSatisfaction ? (tuteeSatisfaction / 5) * 100 : 0,
+      label: "Cancellation Rate",
+      value: `${cancellationRate.toFixed(1)}%`,
+      detail: "Cancelled vs booked",
+      icon: "CR",
+      progress: Math.min(100, cancellationRate),
+      color: "bg-red-100 text-red-700",
+    },
+    {
+      label: "Growth vs Prev",
+      value: growthDisplay,
+      detail: comparisonLabel || "Previous period",
+      icon: "GR",
+      progress: Math.min(100, Math.abs(growthRate || 0)),
       color: "bg-indigo-100 text-indigo-700",
     },
   ];
 
-  const tutorMonthlyPerformance = tutorEntries
-    .map((entry) => ({
-      tutorId: entry.tutorId,
-      name: entry.name,
-      sessions: entry.monthly?.[currentMonthKey] || 0,
-      hours: entry.monthlyHours?.[currentMonthKey] || 0,
-    }))
-    .filter((entry) => entry.sessions > 0 || entry.hours > 0)
-    .sort((a, b) => b.hours - a.hours);
+  const tutorMonthlyPerformance = useMemo(() => {
+    const aggregate = {};
+    appointmentsInPeriod.forEach((appointment) => {
+      const tutorId = appointment.tutor_id || "unknown";
+      if (!aggregate[tutorId]) {
+        aggregate[tutorId] = {
+          tutorId,
+          name: appointment.tutor?.name || "Unknown Tutor",
+          sessions: 0,
+          hours: 0,
+        };
+      }
+      if (appointment.status === "completed") {
+        const minutes =
+          (new Date(2000-01-01T) -
+            new Date(2000-01-01T)) /
+          60000;
+        aggregate[tutorId].sessions += 1;
+        aggregate[tutorId].hours += Math.max(minutes / 60, 0);
+      }
+    });
+    return Object.values(aggregate)
+      .filter((entry) => entry.sessions > 0 || entry.hours > 0)
+      .sort((a, b) => b.hours - a.hours);
+  }, [appointmentsInPeriod]);
+
+  const maxTutorHours = tutorMonthlyPerformance.reduce(
+    (max, entry) => Math.max(max, entry.hours),
+    0
+  );
+
+  const heroStats = [
+    {
+      key: "hours",
+      label: "Total Hours Taught",
+      value: `${totalHoursTeach.toFixed(1)} hrs`,
+      helper: displayPeriodLabel,
+    },
+    {
+      key: "completed",
+      label: "Sessions Completed",
+      value: `${totalSessionsCompleted}`,
+      helper: "Confirmed sessions",
+    },
+    {
+      key: "tutees",
+      label: "Tutees Served",
+      value: `${tuteesServed}`,
+      helper: "Unique students",
+    },
+    {
+      key: "booked",
+      label: "Sessions Booked",
+      value: `${totalSessionsBooked}`,
+      helper: "All booking statuses",
+    },
+    {
+      key: "rating",
+      label: "Avg. Satisfaction",
+      value: averageSatisfactionDisplay,
+      helper: "Tutor evaluations",
+    },
+    {
+      key: "cancellation",
+      label: "Cancellation Rate",
+      value: `${cancellationRate.toFixed(1)}%`,
+      helper: "Cancelled vs booked",
+    },
+    {
+      key: "growth",
+      label: "Growth vs Last Period",
+      value: growthDisplay,
+      helper: comparisonLabel || "Previous period",
+    },
+  ];
+
+  const handleMonthlyExport = useCallback(() => {
+    if (monthlyExporting) return;
+    try {
+      setMonthlyExporting(true);
+      if (tutorMonthlyPerformance.length === 0) {
+        toast("No data to export for this period.");
+        setMonthlyExporting(false);
+        return;
+      }
+
+      const rows = [["Tutor", "Sessions", "Hours"]];
+      tutorMonthlyPerformance.forEach((entry) => {
+        rows.push([entry.name, entry.sessions, entry.hours.toFixed(2)]);
+      });
+
+      const csvContent = rows.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `tutor-report-${selectedPeriodKey}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to generate CSV");
+    } finally {
+      setMonthlyExporting(false);
+    }
+  }, [monthlyExporting, tutorMonthlyPerformance, selectedPeriodKey]);
 
   const handlePrintMonthlyReport = useCallback(() => {
     const resolvedLogo =
@@ -481,30 +701,6 @@ const Reports = () => {
       )
       .join("");
 
-    const monthlyRowsHtml =
-      tutorEntries
-        .flatMap((entry) => {
-          const monthKeys = Object.keys(entry.monthly || {}).sort();
-          if (monthKeys.length === 0) {
-            return [
-              `<tr>
-                <td>${escapeHtml(entry.name)}</td>
-                <td>-</td>
-                <td>0</td>
-              </tr>`,
-            ];
-          }
-          return monthKeys.map(
-            (key) => `
-              <tr>
-                <td>${escapeHtml(entry.name)}</td>
-                <td>${escapeHtml(key)}</td>
-                <td>${entry.monthly?.[key] || 0}</td>
-              </tr>`
-          );
-        })
-        .join("") || `<tr><td colspan="3">No monthly data available.</td></tr>`;
-
     const performanceRowsHtml =
       tutorMonthlyPerformance
         .map(
@@ -517,14 +713,14 @@ const Reports = () => {
         `
         )
         .join("") ||
-      `<tr><td colspan="3">No tutor performance data for ${escapeHtml(currentMonthLabel)}.</td></tr>`;
+      `<tr><td colspan="3">No tutor performance data for ${escapeHtml(displayPeriodLabel)}.</td></tr>`;
 
     const docHtml = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>LAV Monthly Report</title>
+          <title>LAV Period Report</title>
           <style>
             @page { margin: 25mm; }
             body {
@@ -676,7 +872,7 @@ const Reports = () => {
                 <div>
                   <div class="badge">Learning Assistance Volunteer</div>
                   <h1 class="title">Monthly Performance Report</h1>
-                  <p class="subtitle">Month of ${escapeHtml(currentMonthLabel)}</p>
+                  <p class="subtitle">Reporting period: ${escapeHtml(displayPeriodLabel)}</p>
                 </div>
               </div>
               <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
@@ -687,21 +883,7 @@ const Reports = () => {
               ${metricCardsHtml}
             </div>
 
-            <h2 class="section-title">Monthly Breakdown per Tutor</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Tutor</th>
-                  <th>Month</th>
-                  <th>Completed Sessions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${monthlyRowsHtml}
-              </tbody>
-            </table>
-
-            <h2 class="section-title">Tutor Performance (${escapeHtml(currentMonthLabel)})</h2>
+            <h2 class="section-title">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
             <table>
               <thead>
                 <tr>
@@ -714,7 +896,7 @@ const Reports = () => {
                 ${performanceRowsHtml}
               </tbody>
             </table>
-            <p class="note">This report includes only sessions marked as completed.</p>
+            <p class="note">This report includes only sessions marked as completed. Compared with ${escapeHtml(comparisonLabel || "previous period")}.</p>
           </div>
         </body>
       </html>
@@ -733,10 +915,10 @@ const Reports = () => {
   }, [
     landingImage,
     summaryMetrics,
-    tutorEntries,
     tutorMonthlyPerformance,
-    currentMonthLabel,
+    displayPeriodLabel,
     preparedDateLabel,
+    comparisonLabel,
   ]);
 
   if (loading) {
@@ -748,9 +930,8 @@ const Reports = () => {
     );
   }
 
-  const topTutorByHours = tutorEntries
-    .filter((entry) => entry.totalHours)
-    .sort((a, b) => (b.totalHours || 0) - (a.totalHours || 0))[0];
+  const topTutorByHours =
+    tutorMonthlyPerformance.length > 0 ? tutorMonthlyPerformance[0] : null;
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-8 bg-gray-50">
@@ -763,11 +944,53 @@ const Reports = () => {
           <p className="mt-2 text-sm text-gray-600">
             Top tutor by teaching time:{" "}
             <span className="font-semibold text-blue-600">
-              {topTutorByHours.name} ({topTutorByHours.totalHours.toFixed(1)} hrs)
+              {topTutorByHours.name} ({topTutorByHours.hours.toFixed(1)} hrs)
             </span>
           </p>
         )}
       </header>
+
+
+      <div className="print:hidden space-y-4 mb-6 mt-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500">Reporting Period</p>
+            <p className="text-xl font-semibold text-gray-900">{displayPeriodLabel}</p>
+            <p className="text-xs text-gray-500">
+              Compared with {comparisonLabel || "previous period"}.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {periodOptions.map((option) => (
+                <button
+                  key={option.key}
+                  onClick={() => setSelectedPeriodKey(option.key)}
+                  className={px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-colors }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {heroStats.map((stat) => (
+            <div
+              key={stat.key}
+              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-1"
+            >
+              <p className="text-xs uppercase tracking-widest text-gray-500">
+                {stat.label}
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-xs text-gray-500">{stat.helper}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -790,7 +1013,7 @@ const Reports = () => {
               <h2 className="text-2xl font-bold text-gray-800">
                 Learning Assistance Volunteer Monthly Report
               </h2>
-              <p className="text-sm text-gray-500">Month of {currentMonthLabel}</p>
+              <p className="text-sm text-gray-500">Period: {displayPeriodLabel}</p>
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -877,9 +1100,13 @@ const Reports = () => {
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Monthly Breakdown</h2>
-          <p className="text-sm text-gray-500 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <span>Completed sessions grouped by month per tutor.</span>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Performance Breakdown</h2>
+              <p className="text-sm text-gray-500">
+                Confirmed sessions recorded for {displayPeriodLabel}. Switch periods above to explore trends.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handlePrintMonthlyReport}
@@ -888,39 +1115,49 @@ const Reports = () => {
                 Download PDF
               </button>
               <button
-                onClick={() => handleMonthlyExport()}
+                onClick={handleMonthlyExport}
                 className="rounded-lg border border-blue-500 text-blue-600 px-3 py-1 text-xs font-semibold hover:bg-blue-50 transition"
                 disabled={monthlyExporting}
               >
-                {monthlyExporting ? "Preparing…" : "Download CSV"}
+                {monthlyExporting ? "Preparing..." : "Download CSV"}
               </button>
             </div>
-          </p>
+          </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4">
-          {tutorEntries.length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 py-5">
-              No data to display.
+        <div className="p-4">
+          {tutorMonthlyPerformance.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              <p>No confirmed sessions recorded for {displayPeriodLabel}.</p>
             </div>
           ) : (
-            tutorEntries.map((entry) => (
-              <div key={entry.tutorId} className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                <h3 className="font-semibold text-gray-800 mb-2">{entry.name}</h3>
-                <div className="space-y-1">
-                  {Object.keys(entry.monthly)
-                    .sort()
-                    .map((monthKey) => (
-                      <p key={monthKey} className="flex justify-between text-sm text-gray-600">
-                        <span>{monthKey}</span>
-                        <span className="font-semibold text-gray-800">{entry.monthly[monthKey]}</span>
-                      </p>
-                    ))}
-                  {Object.keys(entry.monthly).length === 0 && (
-                    <p className="text-sm text-gray-400">No completed sessions recorded.</p>
-                  )}
-                </div>
-              </div>
-            ))
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {tutorMonthlyPerformance.map((entry, index) => {
+                const progress = maxTutorHours
+                  ? Math.round((entry.hours / maxTutorHours) * 100)
+                  : 0;
+                return (
+                  <div
+                    key={entry.tutorId}
+                    className="rounded-2xl border border-gray-200 p-4 bg-gray-50 flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-800">{entry.name}</h3>
+                      <span className="text-xs font-semibold text-blue-600">#{index + 1}</span>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-gray-900">{entry.hours.toFixed(1)} hrs</p>
+                      <p className="text-sm text-gray-500">Sessions: {entry.sessions}</p>
+                    </div>
+                    <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 transition-all"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </section>
@@ -929,7 +1166,7 @@ const Reports = () => {
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Rating Averages (LAV)</h2>
           <p className="text-sm text-gray-500">
-            Aggregate feedback on the tutoring venue, scheduling experience, and overall service quality.
+            Aggregate feedback on the tutoring venue, scheduling experience, and overall service quality for {displayPeriodLabel}.
           </p>
         </div>
         <div className="p-4">
@@ -1005,7 +1242,7 @@ const Reports = () => {
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Evaluation Records</h2>
           <p className="text-sm text-gray-500">
-            Per-tutor averages for each evaluation question (anonymous comments remain hidden).
+            Per-tutor averages for each evaluation question during {displayPeriodLabel} (anonymous comments remain hidden).
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -1054,10 +1291,10 @@ const Reports = () => {
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
-            Tutor Performance — {currentMonthLabel}
+            Tutor Performance — {displayPeriodLabel}
           </h2>
           <p className="text-sm text-gray-500">
-            Total hours and completed sessions recorded per tutor for this month.
+            Total hours and completed sessions recorded per tutor for {displayPeriodLabel}.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -1073,7 +1310,7 @@ const Reports = () => {
               {tutorMonthlyPerformance.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="text-center text-gray-500 py-5">
-                    No completed sessions were logged for {currentMonthLabel}.
+                    No completed sessions were logged for {displayPeriodLabel}.
                   </td>
                 </tr>
               ) : (
