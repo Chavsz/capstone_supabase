@@ -266,10 +266,26 @@ const Appointment = () => {
         return;
       }
 
-      setFormData({
+      const minutes = getMinutesFromValue(value);
+      const otherField = field === "start_time" ? "end_time" : "start_time";
+      const otherFieldMinutes = getMinutesFromStored(formData[otherField]);
+      const updatedData = {
         ...formData,
         [field]: value.format("HH:mm"),
-      });
+      };
+
+      if (otherFieldMinutes !== null) {
+        const isInvalidOrder =
+          (field === "start_time" && otherFieldMinutes <= minutes) ||
+          (field === "end_time" && otherFieldMinutes >= minutes);
+
+        if (isInvalidOrder) {
+          toast("Adjusted other time to avoid conflicts. Please reselect it.");
+          updatedData[otherField] = "";
+        }
+      }
+
+      setFormData(updatedData);
     } else {
       setFormData({
         ...formData,

@@ -96,6 +96,7 @@ const Profile = () => {
         alert(allowedHoursMessage);
         return;
       }
+      const formatted = value.format("HH:mm");
 
       setNewTime((prev) => {
         const otherField = field === "start" ? "end" : "start";
@@ -106,8 +107,12 @@ const Profile = () => {
             (field === "start" && minutes >= otherMinutes) ||
             (field === "end" && minutes <= otherMinutes)
           ) {
-            alert("End time must be later than start time.");
-            return prev;
+            alert("Adjusted the other time to avoid conflicts. Please reselect it.");
+            return {
+              ...prev,
+              [field]: formatted,
+              [otherField]: "",
+            };
           }
 
           const startMinutes =
@@ -119,13 +124,17 @@ const Profile = () => {
             alert(
               "Start and end times need to remain within the same time block (morning or afternoon)."
             );
-            return prev;
+            return {
+              ...prev,
+              [field]: formatted,
+              [otherField]: "",
+            };
           }
         }
 
         return {
           ...prev,
-          [field]: value.format("HH:mm"),
+          [field]: formatted,
         };
       });
     } else {
