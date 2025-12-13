@@ -174,7 +174,7 @@ const Login = ({ setAuth }) => {
             </span>
             <span className="flex-1 h-px bg-gray-200" />
           </div>
-
+     
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-600">

@@ -30,12 +30,12 @@ const Profile = () => {
   const [loadingSchedules, setLoadingSchedules] = useState(false);
 
   const ALLOWED_TIME_BLOCKS = [
-    { start: 8 * 60, end: 11 * 60 + 30 },
-    { start: 13 * 60 + 30, end: 17 * 60 },
+    { start: 8 * 60, end: 12 * 60 },
+    { start: 13 * 60, end: 17 * 60 },
   ];
 
   const allowedHoursMessage =
-    "Schedules can only be between 8:00 AM - 11:30 AM or 1:30 PM - 5:00 PM.";
+    "Schedules can only be between 8:00 AM - 12:00 PM or 1:00 PM - 5:00 PM (no bookings during 12:00-1:00 PM).";
 
   const getMinutesFromDayjs = (value) =>
     value ? value.hour() * 60 + value.minute() : null;
