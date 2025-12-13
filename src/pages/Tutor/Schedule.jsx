@@ -603,6 +603,27 @@ const Schedule = () => {
   const groupedHistoryAppointments =
     groupHistoryAppointmentsByDate(historyAppointments);
 
+  const commentEntries = Object.entries(evaluations || {})
+    .filter(([, evalData]) => evalData?.tutor_comment)
+    .map(([appointmentId, evalData]) => {
+      const appointmentInfo = appointments.find(
+        (apt) => String(apt.appointment_id) === String(appointmentId)
+      );
+      const dateValue = appointmentInfo?.date
+        ? new Date(appointmentInfo.date).getTime()
+        : evalData?.created_at
+        ? new Date(evalData.created_at).getTime()
+        : 0;
+
+      return {
+        appointment: appointmentInfo,
+        evaluation: evalData,
+        appointmentId,
+        dateValue,
+      };
+    })
+    .sort((a, b) => b.dateValue - a.dateValue);
+
   return (
     <div className="py-3 px-6">
       <h1 className="text-gray-600 font-bold text-2xl mb-6">Schedules</h1>
@@ -628,6 +649,16 @@ const Schedule = () => {
           onClick={() => handleFilterChange("history")}
         >
           History
+        </button>
+        <button
+          className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
+            selectedFilter === "comments"
+              ? "border-b-blue-600 text-blue-600"
+              : "border-b-transparent"
+          }`}
+          onClick={() => handleFilterChange("comments")}
+        >
+          Comments
         </button>
       </div>
 
@@ -725,6 +756,47 @@ const Schedule = () => {
                 </div>
               )
             )
+          )}
+        </div>
+      )}
+
+      {/* Comments View */}
+      {selectedFilter === "comments" && (
+        <div className="space-y-4">
+          {commentEntries.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              <p>No anonymous comments yet.</p>
+            </div>
+          ) : (
+            commentEntries.map(({ appointment, evaluation, appointmentId }) => (
+              <div
+                key={appointmentId}
+                className="bg-white border border-blue-300 rounded-lg p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-800">
+                    Anonymous Comment
+                  </h3>
+                  {appointment?.date && (
+                    <span className="text-xs text-gray-500">
+                      {getFormattedDate(appointment.date)}
+                    </span>
+                  )}
+                </div>
+                {appointment?.subject && (
+                  <p className="text-sm text-gray-600">
+                    Subject: {appointment.subject}
+                  </p>
+                )}
+                <p className="text-sm text-gray-700 whitespace-pre-line bg-blue-50 border border-blue-100 rounded-md p-3">
+                  {evaluation.tutor_comment}
+                </p>
+                <p className="text-xs text-gray-500">
+                  These notes are submitted anonymously. Tutee information stays
+                  hidden for privacy.
+                </p>
+              </div>
+            ))
           )}
         </div>
       )}

@@ -12,6 +12,59 @@ const Switch = () => {
     setIsModalOpen(true);
   };
 
+  const syncStudentProfile = async (userId) => {
+    try {
+      const { data: tutorProfile, error: tutorProfileError } = await supabase
+        .from("profile")
+        .select("program, college, year_level, profile_image")
+        .eq("user_id", userId)
+        .single();
+
+      if (tutorProfileError && tutorProfileError.code !== "PGRST116") {
+        throw tutorProfileError;
+      }
+
+      if (!tutorProfile) {
+        return;
+      }
+
+      const payload = {
+        program: tutorProfile.program || "",
+        college: tutorProfile.college || "",
+        year_level: tutorProfile.year_level || "",
+        profile_image: tutorProfile.profile_image || "",
+      };
+
+      const { data: studentProfile, error: studentProfileError } = await supabase
+        .from("student_profile")
+        .select("profile_id")
+        .eq("user_id", userId)
+        .single();
+
+      if (studentProfileError && studentProfileError.code !== "PGRST116") {
+        throw studentProfileError;
+      }
+
+      if (studentProfile) {
+        const { error: updateError } = await supabase
+          .from("student_profile")
+          .update(payload)
+          .eq("user_id", userId);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("student_profile")
+          .insert([{ user_id: userId, ...payload }]);
+
+        if (insertError) throw insertError;
+      }
+    } catch (error) {
+      console.error("Error syncing student profile:", error);
+      throw error;
+    }
+  };
+
   const handleConfirmSwitch = async () => {
     setIsLoading(true);
     try {
@@ -21,13 +74,17 @@ const Switch = () => {
         return;
       }
 
+      const userId = session.user.id;
+
       // Update role in users table
       const { error } = await supabase
         .from("users")
         .update({ role: "student" })
-        .eq("user_id", session.user.id);
+        .eq("user_id", userId);
 
       if (error) throw error;
+
+      await syncStudentProfile(userId);
 
       // Role will be updated in App.jsx when it detects the change
       setIsModalOpen(false);

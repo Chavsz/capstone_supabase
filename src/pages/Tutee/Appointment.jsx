@@ -14,6 +14,7 @@ const Appointment = () => {
   const [tutorSchedules, setTutorSchedules] = useState({});
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [formData, setFormData] = useState({
     subject: "",
     topic: "",
@@ -31,6 +32,9 @@ const Appointment = () => {
   const getTutors = async () => {
     try {
       setLoadingProfiles(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const selfId = session?.user?.id || null;
+      setCurrentUserId(selfId);
       // Get all tutors (users with role = 'tutor')
       const { data: tutorsData, error: tutorsError } = await supabase
         .from("users")
@@ -39,10 +43,14 @@ const Appointment = () => {
 
       if (tutorsError) throw tutorsError;
 
-      setTutors(tutorsData || []);
+      const filteredTutors = (tutorsData || []).filter(
+        (tutor) => tutor.user_id !== selfId
+      );
+
+      setTutors(filteredTutors);
 
       // Get tutor profiles
-      const tutorIds = (tutorsData || []).map(t => t.user_id);
+      const tutorIds = filteredTutors.map((t) => t.user_id);
       if (tutorIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from("profile")
@@ -356,6 +364,10 @@ const Appointment = () => {
   };
 
   const handleTutorSelect = (tutor) => {
+    if (tutor.user_id === currentUserId) {
+      toast.error("You cannot book yourself as a tutor.");
+      return;
+    }
     setSelectedTutor(tutor);
     // Profiles are already loaded, only fetch schedules if not already loaded
     if (!tutorSchedules[tutor.user_id]) {
