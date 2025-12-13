@@ -74,14 +74,23 @@ const Users = () => {
   const promoteToTutor = async (user) => {
     if (!window.confirm(`Add ${user.name} as tutor?`)) return;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role: "tutor" })
-        .eq("user_id", user.user_id);
+        .eq("user_id", user.user_id)
+        .select("user_id, role");
 
       if (error) throw error;
 
-      getAllUsers();
+      if (data?.length) {
+        setAllUsers((prev) =>
+          prev.map((item) =>
+            item.user_id === data[0].user_id ? { ...item, role: data[0].role } : item
+          )
+        );
+      }
+
+      await getAllUsers();
     } catch (err) {
       console.error(err.message);
       alert("Error promoting user to tutor.");
