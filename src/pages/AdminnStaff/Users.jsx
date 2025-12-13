@@ -71,12 +71,13 @@ const Users = () => {
     || user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const promoteToTutor = async (id) => {
+  const promoteToTutor = async (user) => {
+    if (!window.confirm(`Add ${user.name} as tutor?`)) return;
     try {
       const { error } = await supabase
         .from("users")
         .update({ role: "tutor" })
-        .eq("user_id", id);
+        .eq("user_id", user.user_id);
 
       if (error) throw error;
 
@@ -171,7 +172,7 @@ const Users = () => {
                     {user.role === "student" && (
                       <button
                         className="text-gray-400 hover:text-blue-500 px-2 py-1 rounded-md"
-                        onClick={() => promoteToTutor(user.user_id)}
+                        onClick={() => promoteToTutor(user)}
                         title="Add as tutor"
                         aria-label="Add as tutor"
                       >
@@ -222,7 +223,7 @@ const Users = () => {
                 {user.role === "student" && (
                   <button
                     className="text-gray-400 hover:text-blue-500 p-2 rounded-md"
-                    onClick={() => promoteToTutor(user.user_id)}
+                    onClick={() => promoteToTutor(user)}
                     aria-label="Add as tutor"
                   >
                     <MdAdd className="w-5 h-5" />
