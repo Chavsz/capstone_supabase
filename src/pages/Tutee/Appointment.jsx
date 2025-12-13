@@ -192,12 +192,12 @@ const Appointment = () => {
   };
 
   const CLASS_TIME_RANGES = [
-    { start: { hour: 8, minute: 0 }, end: { hour: 12, minute: 0 } },
-    { start: { hour: 13, minute: 30 }, end: { hour: 17, minute: 0 } },
+    { start: { hour: 8, minute: 0 }, end: { hour: 11, minute: 30 } },
+    { start: { hour: 13, minute: 30 }, end: { hour: 17, minute: 30 } },
   ];
 
   const classHoursMessage =
-    "Class hours are 8:00 AM - 12:00 PM and 1:30 PM - 5:00 PM.";
+    "Class hours are 8:00 AM - 11:30 AM and 1:30 PM - 5:30 PM.";
 
   const isWithinClassHours = (timeValue) => {
     if (!timeValue || !timeValue.isValid()) return false;
@@ -210,7 +210,39 @@ const Appointment = () => {
   };
 
   const minClassTime = dayjs().set("hour", 8).set("minute", 0).set("second", 0).set("millisecond", 0);
-  const maxClassTime = dayjs().set("hour", 17).set("minute", 0).set("second", 0).set("millisecond", 0);
+  const maxClassTime = dayjs().set("hour", 17).set("minute", 30).set("second", 0).set("millisecond", 0);
+
+  const getMinutesFromValue = (timeValue) =>
+    timeValue ? timeValue.hour() * 60 + timeValue.minute() : null;
+
+  const getMinutesFromStored = (timeString) => {
+    if (!timeString) return null;
+    const [hours, minutes] = timeString.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const validateStartEndOrder = (field, timeValue) => {
+    const startMinutes =
+      field === "start_time"
+        ? getMinutesFromValue(timeValue)
+        : getMinutesFromStored(formData.start_time);
+    const endMinutes =
+      field === "end_time"
+        ? getMinutesFromValue(timeValue)
+        : getMinutesFromStored(formData.end_time);
+
+    if (
+      startMinutes !== null &&
+      endMinutes !== null &&
+      endMinutes <= startMinutes
+    ) {
+      toast.error("End time must be later than start time.");
+      return false;
+    }
+
+    return true;
+  };
 
   const handleTimeChange = (field, value) => {
     if (value && value.isValid()) {
@@ -220,6 +252,10 @@ const Appointment = () => {
           ...formData,
           [field]: "",
         });
+        return;
+      }
+
+      if (!validateStartEndOrder(field, value)) {
         return;
       }
 
@@ -511,7 +547,6 @@ const Appointment = () => {
                           handleTimeChange("start_time", value)
                         }
                         label="Start Time"
-                        minutesStep={30}
                         minTime={minClassTime}
                         maxTime={maxClassTime}
                       />
@@ -531,7 +566,6 @@ const Appointment = () => {
                           handleTimeChange("end_time", value)
                         }
                         label="End Time"
-                        minutesStep={30}
                         minTime={minClassTime}
                         maxTime={maxClassTime}
                       />
