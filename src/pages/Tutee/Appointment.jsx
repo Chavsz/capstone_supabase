@@ -440,6 +440,39 @@ const Appointment = () => {
       return;
     }
 
+    try {
+      const { data: conflictAppointments, error: conflictError } = await supabase
+        .from("appointment")
+        .select("start_time, end_time, status")
+        .eq("tutor_id", selectedTutor.user_id)
+        .eq("date", formData.date)
+        .eq("status", "confirmed");
+
+      if (conflictError) throw conflictError;
+
+      const hasConflict = (conflictAppointments || []).some((appointment) => {
+        const appointmentStart = getMinutesFromStored(appointment.start_time);
+        const appointmentEnd = getMinutesFromStored(appointment.end_time);
+        return (
+          appointmentStart !== null &&
+          appointmentEnd !== null &&
+          startMinutes < appointmentEnd &&
+          endMinutes > appointmentStart
+        );
+      });
+
+      if (hasConflict) {
+        toast.error(
+          "Another confirmed session overlaps with this time. Please choose a different slot."
+        );
+        return;
+      }
+    } catch (conflictCheckError) {
+      console.error(conflictCheckError.message);
+      toast.error("Unable to verify tutor availability. Please try again.");
+      return;
+    }
+
     setLoading(true);
 
     const startLabel = new Date(`2000-01-01T${formData.start_time}`).toLocaleTimeString("en-US", {
