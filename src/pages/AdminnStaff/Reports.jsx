@@ -230,9 +230,11 @@ const Reports = () => {
   const comparisonLabel = useMemo(() => {
     if (!comparisonRange) return "Previous period";
     const isYear = periodRange?.type === "year";
-    return comparisonRange.start.toLocaleDateString("en-US", isYear ? { year: "numeric" } : { month: "short", year: "numeric" });
+    return comparisonRange.start.toLocaleDateString(
+      "en-US",
+      isYear ? { year: "numeric" } : { month: "short", year: "numeric" }
+    );
   }, [comparisonRange, periodRange]);
-
 
   const formatDate = (value) =>
     new Date(value).toLocaleDateString("en-US", {
@@ -472,16 +474,6 @@ const Reports = () => {
         ? 100
         : 0
       : ((totalSessionsCompleted - comparisonCompletedCount) / comparisonCompletedCount) * 100;
-
-  const evaluationsInPeriod = useMemo(() => {
-    if (!periodRange) return [];
-    return evaluations.filter((evaluation) => {
-      const appointment = appointmentsById.get(evaluation.appointment_id);
-      if (!appointment || !appointment.date) return false;
-      const date = new Date(appointment.date);
-      return date >= periodRange.start && date < periodRange.end;
-    });
-  }, [evaluations, appointmentsById, periodRange]);
 
   const tutorEntries = Object.values(tutorStats);
   const tutorSummaryEntries = Object.values(tutorEvaluationStats);
