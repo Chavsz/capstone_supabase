@@ -209,8 +209,23 @@ const Appointment = () => {
     });
   };
 
-  const minClassTime = dayjs().set("hour", 8).set("minute", 0).set("second", 0).set("millisecond", 0);
-  const maxClassTime = dayjs().set("hour", 17).set("minute", 0).set("second", 0).set("millisecond", 0);
+  const minClassTime = dayjs()
+    .set("hour", 8)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0);
+  const maxClassTime = dayjs()
+    .set("hour", 17)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0);
+
+  const getStartDisableTimes = (timeValue, view) => {
+    if (view === "hours") {
+      return timeValue !== 8 && timeValue !== 13;
+    }
+    return false;
+  };
 
   const getMinutesFromValue = (timeValue) =>
     timeValue ? timeValue.hour() * 60 + timeValue.minute() : null;
@@ -622,6 +637,7 @@ const Appointment = () => {
                         label="Start Time"
                         minTime={minClassTime}
                         maxTime={maxClassTime}
+                        shouldDisableTime={getStartDisableTimes}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
