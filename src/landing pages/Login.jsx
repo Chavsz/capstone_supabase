@@ -175,14 +175,7 @@ const Login = ({ setAuth }) => {
             <span className="flex-1 h-px bg-gray-200" />
           </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition duration-150"
-          >
-            <FcGoogle className="text-xl" />
-            Continue with Google
-          </button>
+        
 
           <p className="mt-4 text-center text-xs text-gray-500">
             NOTE: The database uses Supabase (PostgreSQL), so configure providers, policies, and triggers with SQL terms.

@@ -271,6 +271,73 @@ const Appointment = () => {
     }
   };
 
+  const validateTutorAvailability = () => {
+    if (!selectedTutor) {
+      return { valid: false, message: "Please select a tutor first." };
+    }
+
+    const schedules = tutorSchedules[selectedTutor.user_id];
+
+    if (!schedules) {
+      return {
+        valid: false,
+        message: "Tutor availability is still loading. Please wait a moment.",
+      };
+    }
+
+    const selectedDate = formData.date
+      ? new Date(`${formData.date}T00:00:00`)
+      : null;
+
+    if (!selectedDate) {
+      return { valid: false, message: "Please select a valid date." };
+    }
+
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    const daySchedules = schedules.filter(
+      (schedule) => schedule.day === dayName
+    );
+
+    if (daySchedules.length === 0) {
+      return {
+        valid: false,
+        message: `Tutor is not available on ${dayName}. Please choose another date.`,
+      };
+    }
+
+    const startMinutes = getMinutesFromStored(formData.start_time);
+    const endMinutes = getMinutesFromStored(formData.end_time);
+
+    if (startMinutes === null || endMinutes === null) {
+      return {
+        valid: false,
+        message: "Please select a valid start and end time.",
+      };
+    }
+
+    const withinSchedule = daySchedules.some((schedule) => {
+      const scheduleStart = getMinutesFromStored(schedule.start_time);
+      const scheduleEnd = getMinutesFromStored(schedule.end_time);
+
+      if (scheduleStart === null || scheduleEnd === null) return false;
+
+      return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+    });
+
+    if (!withinSchedule) {
+      return {
+        valid: false,
+        message:
+          "Selected time does not match the tutor's available hours for that day.",
+      };
+    }
+
+    return { valid: true };
+  };
+
   const tutorsPerPage = 4;
 
   const resetTutorPagination = () => {
@@ -333,6 +400,12 @@ const Appointment = () => {
     const day = selected.getDay();
     if (day === 0 || day === 6) {
       toast.error("Selected date falls on a weekend. Please choose a weekday.");
+      return;
+    }
+
+    const availabilityCheck = validateTutorAvailability();
+    if (!availabilityCheck.valid) {
+      toast.error(availabilityCheck.message);
       return;
     }
 
