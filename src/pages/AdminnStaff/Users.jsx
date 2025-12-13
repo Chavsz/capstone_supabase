@@ -52,8 +52,9 @@ const Users = () => {
   }, []);
 
   // Filter users based on selected filter
+  const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
+
   const getFilteredUsers = () => {
-    const normalizeRole = (role) => (role || "").toLowerCase();
 
     switch (selectedFilter) {
       case "Tutor":
@@ -68,7 +69,7 @@ const Users = () => {
   const filteredUsers = getFilteredUsers();
 
   const getRoleLabel = (role) => {
-    const normalized = (role || "").toLowerCase();
+    const normalized = normalizeRole(role);
     if (normalized === "tutor") return "Tutor";
     if (normalized === "student") return "Student";
     return role || "N/A";
@@ -102,7 +103,7 @@ const Users = () => {
       await getAllUsers();
     } catch (err) {
       console.error(err.message);
-      alert("Error promoting user to tutor.");
+      alert(`Error promoting user to tutor: ${err.message}`);
     }
   };
 
@@ -187,7 +188,7 @@ const Users = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <div className="flex items-center gap-2">
-                    {user.role === "student" && (
+                    {normalizeRole(user.role) === "student" && (
                       <button
                         className="text-gray-400 hover:text-blue-500 px-2 py-1 rounded-md"
                         onClick={() => promoteToTutor(user)}
@@ -238,7 +239,7 @@ const Users = () => {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                {user.role === "student" && (
+                {normalizeRole(user.role) === "student" && (
                   <button
                     className="text-gray-400 hover:text-blue-500 p-2 rounded-md"
                     onClick={() => promoteToTutor(user)}
