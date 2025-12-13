@@ -29,17 +29,113 @@ const Profile = () => {
   const [newTime, setNewTime] = useState({ start: "", end: "" });
   const [loadingSchedules, setLoadingSchedules] = useState(false);
 
+  const ALLOWED_TIME_BLOCKS = [
+    { start: 8 * 60, end: 11 * 60 + 30 },
+    { start: 13 * 60 + 30, end: 17 * 60 },
+  ];
+
+  const allowedHoursMessage =
+    "Schedules can only be between 8:00 AM - 11:30 AM or 1:30 PM - 5:00 PM.";
+
+  const getMinutesFromDayjs = (value) =>
+    value ? value.hour() * 60 + value.minute() : null;
+
+  const getMinutesFromString = (timeString) => {
+    if (!timeString) return null;
+    const [hours, minutes] = timeString.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const isWithinAllowedBlock = (minutes) =>
+    minutes !== null &&
+    ALLOWED_TIME_BLOCKS.some(
+      (block) => minutes >= block.start && minutes <= block.end
+    );
+
+  const areWithinSameBlock = (startMinutes, endMinutes) =>
+    startMinutes !== null &&
+    endMinutes !== null &&
+    ALLOWED_TIME_BLOCKS.some(
+      (block) =>
+        startMinutes >= block.start &&
+        endMinutes <= block.end &&
+        endMinutes > startMinutes
+    );
+
+  const validateTimePair = (startTime, endTime) => {
+    const startMinutes = getMinutesFromString(startTime);
+    const endMinutes = getMinutesFromString(endTime);
+
+    if (startMinutes === null || endMinutes === null) {
+      alert("Please select both start and end times.");
+      return false;
+    }
+
+    if (!isWithinAllowedBlock(startMinutes) || !isWithinAllowedBlock(endMinutes)) {
+      alert(allowedHoursMessage);
+      return false;
+    }
+
+    if (endMinutes <= startMinutes) {
+      alert("End time must be later than start time.");
+      return false;
+    }
+
+    if (!areWithinSameBlock(startMinutes, endMinutes)) {
+      alert(
+        "Start and end times need to remain within the same time block (morning or afternoon)."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleTimeChange = (field, value) => {
     if (value && value.isValid()) {
-      setNewTime({
-        ...newTime,
-        [field]: value.format("HH:mm"),
+      const minutes = getMinutesFromDayjs(value);
+      if (!isWithinAllowedBlock(minutes)) {
+        alert(allowedHoursMessage);
+        return;
+      }
+
+      setNewTime((prev) => {
+        const otherField = field === "start" ? "end" : "start";
+        const otherMinutes = getMinutesFromString(prev[otherField]);
+
+        if (otherMinutes !== null) {
+          if (
+            (field === "start" && minutes >= otherMinutes) ||
+            (field === "end" && minutes <= otherMinutes)
+          ) {
+            alert("End time must be later than start time.");
+            return prev;
+          }
+
+          const startMinutes =
+            field === "start" ? minutes : otherMinutes;
+          const endMinutes =
+            field === "end" ? minutes : otherMinutes;
+
+          if (!areWithinSameBlock(startMinutes, endMinutes)) {
+            alert(
+              "Start and end times need to remain within the same time block (morning or afternoon)."
+            );
+            return prev;
+          }
+        }
+
+        return {
+          ...prev,
+          [field]: value.format("HH:mm"),
+        };
       });
     } else {
-      setNewTime({
-        ...newTime,
+      setNewTime((prev) => ({
+        ...prev,
         [field]: "",
-      });
+      }));
     }
   };
 
@@ -149,8 +245,20 @@ const Profile = () => {
   }, {});
 
   // Add new time slot
+  const minScheduleTime = dayjs()
+    .set("hour", 8)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0);
+  const maxScheduleTime = dayjs()
+    .set("hour", 17)
+    .set("minute", 0)
+    .set("second", 0)
+    .set("millisecond", 0);
+
   const handleAddTime = async (day) => {
     if (!newTime.start || !newTime.end) return;
+    if (!validateTimePair(newTime.start, newTime.end)) return;
     try {
       const {
         data: { session },
@@ -206,6 +314,7 @@ const Profile = () => {
 
   // Edit time slot
   const handleEditTime = async (id, start, end) => {
+    if (!validateTimePair(start, end)) return;
     try {
       const { error } = await supabase
         .from("schedule")
@@ -460,6 +569,8 @@ const Profile = () => {
                           }
                           onChange={(value) => handleTimeChange("start", value)}
                           label="Start Time"
+                          minTime={minScheduleTime}
+                          maxTime={maxScheduleTime}
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               "& fieldset": {
@@ -487,6 +598,8 @@ const Profile = () => {
                           }
                           onChange={(value) => handleTimeChange("end", value)}
                           label="End Time"
+                          minTime={minScheduleTime}
+                          maxTime={maxScheduleTime}
                           sx={{
                             "& .MuiOutlinedInput-root": {
                               "& fieldset": {

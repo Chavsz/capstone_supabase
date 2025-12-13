@@ -175,11 +175,6 @@ const Login = ({ setAuth }) => {
             <span className="flex-1 h-px bg-gray-200" />
           </div>
 
-        
-
-          <p className="mt-4 text-center text-xs text-gray-500">
-            NOTE: The database uses Supabase (PostgreSQL), so configure providers, policies, and triggers with SQL terms.
-          </p>
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-600">
