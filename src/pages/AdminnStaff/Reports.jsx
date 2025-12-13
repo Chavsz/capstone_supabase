@@ -341,15 +341,6 @@ const Reports = () => {
     };
   }, [evaluations]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-2xl font-bold text-gray-700">Reports</h1>
-        <p className="text-gray-500 mt-2 text-sm">Loading analytics...</p>
-      </div>
-    );
-  }
-
   const tutorEntries = Object.values(tutorStats);
   const tutorSummaryEntries = Object.values(tutorEvaluationStats);
 
@@ -747,6 +738,15 @@ const Reports = () => {
     currentMonthLabel,
     preparedDateLabel,
   ]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6">
+        <h1 className="text-2xl font-bold text-gray-700">Reports</h1>
+        <p className="text-gray-500 mt-2 text-sm">Loading analytics...</p>
+      </div>
+    );
+  }
 
   const topTutorByHours = tutorEntries
     .filter((entry) => entry.totalHours)
