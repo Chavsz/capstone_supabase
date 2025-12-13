@@ -192,11 +192,14 @@ const Appointment = () => {
   };
 
   const CLASS_TIME_RANGES = [
-    { start: { hour: 8, minute: 0 }, end: { hour: 17, minute: 0 } },
+    { start: { hour: 8, minute: 0 }, end: { hour: 12, minute: 0 } },
+    { start: { hour: 13, minute: 0 }, end: { hour: 17, minute: 0 } },
   ];
 
   const classHoursMessage =
-    "Class hours are 8:00 AM - 5:00 PM.";
+    "Class hours are 8:00 AM - 12:00 PM and 1:00 PM - 5:00 PM (no bookings during 12:00-1:00 PM).";
+  const blockMismatchMessage =
+    "Start and end times must stay within the same session (either 8 AM - 12 PM or 1 PM - 5 PM).";
 
   const isWithinClassHours = (timeValue) => {
     if (!timeValue || !timeValue.isValid()) return false;
@@ -227,6 +230,16 @@ const Appointment = () => {
     const [hours, minutes] = timeString.split(":").map(Number);
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
     return hours * 60 + minutes;
+  };
+
+  const getBlockIndex = (minutes) => {
+    if (minutes === null) return -1;
+
+    return CLASS_TIME_RANGES.findIndex(({ start, end }) => {
+      const startMinutes = start.hour * 60 + start.minute;
+      const endMinutes = end.hour * 60 + end.minute;
+      return minutes >= startMinutes && minutes <= endMinutes;
+    });
   };
 
   const validateStartEndOrder = (field, timeValue) => {
@@ -275,13 +288,21 @@ const Appointment = () => {
       };
 
       if (otherFieldMinutes !== null) {
-        const isInvalidOrder =
-          (field === "start_time" && otherFieldMinutes <= minutes) ||
-          (field === "end_time" && otherFieldMinutes >= minutes);
+        const blockIndex = getBlockIndex(minutes);
+        const otherBlockIndex = getBlockIndex(otherFieldMinutes);
 
-        if (isInvalidOrder) {
-          toast("Adjusted other time to avoid conflicts. Please reselect it.");
+        if (blockIndex !== otherBlockIndex) {
+          toast(blockMismatchMessage);
           updatedData[otherField] = "";
+        } else {
+          const isInvalidOrder =
+            (field === "start_time" && otherFieldMinutes <= minutes) ||
+            (field === "end_time" && otherFieldMinutes >= minutes);
+
+          if (isInvalidOrder) {
+            toast("Adjusted other time to avoid conflicts. Please reselect it.");
+            updatedData[otherField] = "";
+          }
         }
       }
 
