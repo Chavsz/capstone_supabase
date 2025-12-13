@@ -192,12 +192,11 @@ const Appointment = () => {
   };
 
   const CLASS_TIME_RANGES = [
-    { start: { hour: 8, minute: 0 }, end: { hour: 12, minute: 0 } },
-    { start: { hour: 13, minute: 0 }, end: { hour: 17, minute: 0 } },
+    { start: { hour: 8, minute: 0 }, end: { hour: 17, minute: 0 } },
   ];
 
   const classHoursMessage =
-    "Class hours are 8:00 AM - 12:00 PM and 1:00 PM - 5:00 PM (no bookings during 12:00-1:00 PM).";
+    "Class hours are 8:00 AM - 5:00 PM.";
 
   const isWithinClassHours = (timeValue) => {
     if (!timeValue || !timeValue.isValid()) return false;
@@ -219,13 +218,6 @@ const Appointment = () => {
     .set("minute", 0)
     .set("second", 0)
     .set("millisecond", 0);
-
-  const getStartDisableTimes = (timeValue, view) => {
-    if (view === "hours") {
-      return timeValue !== 8 && timeValue !== 13;
-    }
-    return false;
-  };
 
   const getMinutesFromValue = (timeValue) =>
     timeValue ? timeValue.hour() * 60 + timeValue.minute() : null;
@@ -637,7 +629,6 @@ const Appointment = () => {
                         label="Start Time"
                         minTime={minClassTime}
                         maxTime={maxClassTime}
-                        shouldDisableTime={getStartDisableTimes}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
