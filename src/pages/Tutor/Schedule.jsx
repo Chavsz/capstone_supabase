@@ -111,6 +111,35 @@ const AppointmentModal = ({
               {appointment.status}
             </span>
           </div>
+          {(appointment.resource_link || appointment.resource_note) && (
+            <div className="mt-4 p-3 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
+              <h3 className="text-sm font-semibold text-blue-900">
+                Shared Resources
+              </h3>
+              {appointment.resource_link && (
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Link: </span>
+                  <a
+                    href={appointment.resource_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline break-all"
+                  >
+                    {appointment.resource_link}
+                  </a>
+                </p>
+              )}
+              {appointment.resource_note && (
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Note:</span>{" "}
+                  {appointment.resource_note}
+                </p>
+              )}
+              <p className="text-xs text-gray-500">
+                Shared by the tutee to guide your preparation.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Evaluation Display */}

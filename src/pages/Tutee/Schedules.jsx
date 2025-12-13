@@ -508,7 +508,7 @@ const AppointmentModal = ({
       const success = await onShareResources?.(appointment.appointment_id, payload);
       if (success) {
         setResourceStatus("success");
-        setResourceMessage("Resources shared with your tutor.");
+        setResourceMessage("Shared link");
       } else {
         setResourceStatus("error");
         setResourceMessage("Unable to save link. Please try again.");
@@ -735,7 +735,7 @@ const AppointmentModal = ({
               {resourceMessage && (
                 <p
                   className={`text-xs ${
-                    resourceStatus === "success" ? "text-blue-600" : "text-red-600"
+                    resourceStatus === "success" ? "text-green-600" : "text-red-600"
                   }`}
                 >
                   {resourceMessage}
