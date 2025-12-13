@@ -185,6 +185,19 @@ const AppointmentModal = ({
                   )}
                 </p>
               </div>
+              {evaluation.tutor_comment && (
+                <div className="pt-3 border-t border-green-200">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Additional anonymous comment
+                  </p>
+                  <p className="text-sm text-gray-600 whitespace-pre-line bg-white/80 p-3 rounded-lg border border-green-100">
+                    {evaluation.tutor_comment}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Student details remain hidden—only the message is shared with you.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

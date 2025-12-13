@@ -15,6 +15,7 @@ const EvaluationModal = ({
     patience_enthusiasm: "",
     study_skills_development: "",
     positive_impact: "",
+    tutor_comment: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +29,7 @@ const EvaluationModal = ({
         patience_enthusiasm: "",
         study_skills_development: "",
         positive_impact: "",
+        tutor_comment: "",
       });
       setError("");
     }
@@ -163,6 +165,26 @@ const EvaluationModal = ({
               </div>
             </div>
           ))}
+          <div className="space-y-2 border-b border-gray-200 pb-4">
+            <label className="text-sm font-medium text-gray-700">
+              Optional comment for your tutor
+            </label>
+            <textarea
+              className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              value={evaluationData.tutor_comment}
+              onChange={(e) =>
+                setEvaluationData((prev) => ({
+                  ...prev,
+                  tutor_comment: e.target.value,
+                }))
+              }
+              placeholder="Share additional thoughts for your tutor…"
+            />
+            <p className="text-xs text-gray-500">
+              This comment is sent anonymously. Your personal details remain hidden and protected.
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -200,7 +222,86 @@ const AppointmentModal = ({
   onDelete,
   onUpdate,
   onEvaluate,
+  tutorSchedules = {},
 }) => {
+  const CLASS_TIME_BLOCKS = [
+    { start: 8 * 60, end: 12 * 60 },
+    { start: 13 * 60, end: 17 * 60 },
+  ];
+
+  const getMinutesFromString = (timeString) => {
+    if (!timeString) return null;
+    const [hours, minutes] = timeString.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const getDayName = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("en-US", { weekday: "long" });
+  };
+
+  const isWithinClassBlock = (startMinutes, endMinutes) =>
+    CLASS_TIME_BLOCKS.some(
+      (block) =>
+        startMinutes >= block.start &&
+        endMinutes <= block.end
+    );
+
+  const validateAgainstTutorSchedule = () => {
+    if (!appointment) return { valid: false, message: "Appointment information not found." };
+    const schedules = tutorSchedules[appointment.tutor_id];
+    if (!schedules || schedules.length === 0) {
+      return {
+        valid: false,
+        message: "Tutor availability is not available. Please try again later.",
+      };
+    }
+
+    const startMinutes = getMinutesFromString(formData.start_time);
+    const endMinutes = getMinutesFromString(formData.end_time);
+    if (startMinutes === null || endMinutes === null) {
+      return { valid: false, message: "Invalid start or end time." };
+    }
+
+    const dayName = getDayName(formData.date);
+    if (!dayName) {
+      return { valid: false, message: "Invalid appointment date." };
+    }
+
+    const daySchedules = schedules.filter((schedule) => schedule.day === dayName);
+    if (daySchedules.length === 0) {
+      return {
+        valid: false,
+        message: `Tutor is not available on ${dayName}. Please choose another date.`,
+      };
+    }
+
+    if (!isWithinClassBlock(startMinutes, endMinutes)) {
+      return {
+        valid: false,
+        message: "Times must fall within 8:00 AM - 12:00 PM or 1:00 PM - 5:00 PM.",
+      };
+    }
+
+    const withinSchedule = daySchedules.some((schedule) => {
+      const scheduleStart = getMinutesFromString(schedule.start_time);
+      const scheduleEnd = getMinutesFromString(schedule.end_time);
+      if (scheduleStart === null || scheduleEnd === null) return false;
+      return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+    });
+
+    if (!withinSchedule) {
+      return {
+        valid: false,
+        message: "Selected time is outside of the tutor's availability for that day.",
+      };
+    }
+
+    return { valid: true };
+  };
   const [formData, setFormData] = useState({
     date: "",
     start_time: "",
@@ -269,6 +370,12 @@ const AppointmentModal = ({
 
     if (startDate >= endDate) {
       setError("End time must be later than start time.");
+      return;
+    }
+
+    const availabilityCheck = validateAgainstTutorSchedule();
+    if (!availabilityCheck.valid) {
+      setError(availabilityCheck.message);
       return;
     }
 
@@ -536,6 +643,7 @@ const Schedules = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvaluationAppointment, setSelectedEvaluationAppointment] = useState(null);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [tutorSchedules, setTutorSchedules] = useState({});
 
   const getAppointments = async () => {
     try {
@@ -557,21 +665,49 @@ const Schedules = () => {
       // Fetch tutor profiles to get online_link and file_link
       const tutorIds = [...new Set((data || []).map(apt => apt.tutor_id))];
       let tutorProfiles = {};
+      let scheduleMap = {};
       if (tutorIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profile")
-          .select("user_id, online_link, file_link")
+          .select("user_id, profile_id, online_link, file_link")
           .in("user_id", tutorIds);
         
         if (profilesData) {
+          const profileIdToUserId = {};
           profilesData.forEach(profile => {
             tutorProfiles[profile.user_id] = {
               online_link: profile.online_link,
               file_link: profile.file_link
             };
+            if (profile.profile_id) {
+              profileIdToUserId[profile.profile_id] = profile.user_id;
+            }
           });
+
+          const profileIds = profilesData
+            .map(profile => profile.profile_id)
+            .filter(Boolean);
+
+          if (profileIds.length > 0) {
+            const { data: schedulesData } = await supabase
+              .from("schedule")
+              .select("profile_id, day, start_time, end_time")
+              .in("profile_id", profileIds);
+
+            if (schedulesData) {
+              schedulesData.forEach((slot) => {
+                const userId = profileIdToUserId[slot.profile_id];
+                if (!userId) return;
+                if (!scheduleMap[userId]) {
+                  scheduleMap[userId] = [];
+                }
+                scheduleMap[userId].push(slot);
+              });
+            }
+          }
         }
       }
+      setTutorSchedules(scheduleMap);
 
       // Check which appointments have evaluations
       const appointmentIds = (data || []).map(apt => apt.appointment_id);
@@ -782,6 +918,7 @@ const Schedules = () => {
             patience_enthusiasm: evaluationData.patience_enthusiasm,
             study_skills_development: evaluationData.study_skills_development,
             positive_impact: evaluationData.positive_impact,
+            tutor_comment: evaluationData.tutor_comment?.trim() || null,
           },
         ]);
 
@@ -1046,6 +1183,7 @@ const Schedules = () => {
         onDelete={handleDelete}
         onUpdate={handleAppointmentUpdate}
         onEvaluate={openEvaluationModal}
+        tutorSchedules={tutorSchedules}
       />
 
       {/* Evaluation Modal */}
