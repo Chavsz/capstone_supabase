@@ -585,8 +585,8 @@ const Reports = () => {
       }
       if (appointment.status === "completed") {
         const minutes =
-          (new Date(2000-01-01T) -
-            new Date(2000-01-01T)) /
+          (new Date(`2000-01-01T${appointment.end_time}`) -
+            new Date(`2000-01-01T${appointment.start_time}`)) /
           60000;
         aggregate[tutorId].sessions += 1;
         aggregate[tutorId].hours += Math.max(minutes / 60, 0);
@@ -966,7 +966,11 @@ const Reports = () => {
                 <button
                   key={option.key}
                   onClick={() => setSelectedPeriodKey(option.key)}
-                  className={px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-colors }
+                  className={`px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-colors ${
+                    selectedPeriodKey === option.key
+                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                  }`}
                 >
                   {option.label}
                 </button>
