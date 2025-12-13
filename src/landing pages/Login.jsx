@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase-client";
+import { FcGoogle } from "react-icons/fc";
 import LAVLogo from "../assets/LAV_image.png";
 
 const Login = ({ setAuth }) => {
@@ -55,6 +56,27 @@ const Login = ({ setAuth }) => {
     } catch (err) {
       console.error(err.message);
       setMessage("Incorrect email or password");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setMessage("");
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error("Google sign-in error:", err.message);
+      setMessage("Unable to continue with Google right now. Please try again.");
     }
   };
 
@@ -137,6 +159,24 @@ const Login = ({ setAuth }) => {
               Log in
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <span className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs uppercase tracking-wide text-gray-400">
+              or
+            </span>
+            <span className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition duration-150"
+          >
+            <FcGoogle className="text-xl" />
+            Continue with Google
+          </button>
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-600">
