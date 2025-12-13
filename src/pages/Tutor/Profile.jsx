@@ -505,10 +505,7 @@ const Profile = () => {
                 <span className="font-semibold">Online Link:</span>{" "}
                 <span>{profile.online_link || "Not provided"}</span>
               </p>
-              <p>
-                <span className="font-semibold">File Link:</span>{" "}
-                <span>{profile.file_link || "Not provided"}</span>
-              </p>
+              
             </div>
           </div>
         </div>

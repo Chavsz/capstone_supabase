@@ -303,6 +303,7 @@ const AppointmentModal = ({
   onDelete,
   onUpdate,
   onEvaluate,
+  onShareResources,
   tutorSchedules = {},
 }) => {
   const CLASS_TIME_BLOCKS = [
@@ -392,6 +393,11 @@ const AppointmentModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [resourceLink, setResourceLink] = useState("");
+  const [resourceNote, setResourceNote] = useState("");
+  const [resourceMessage, setResourceMessage] = useState("");
+  const [resourceStatus, setResourceStatus] = useState("");
+  const [isResourceSaving, setIsResourceSaving] = useState(false);
 
   const initializeForm = useCallback(
     (sourceAppointment) => {
@@ -417,6 +423,10 @@ const AppointmentModal = ({
         end_time: normalizeTime(sourceAppointment.end_time),
         mode_of_session: sourceAppointment.mode_of_session || "",
       });
+      setResourceLink(sourceAppointment.resource_link || "");
+      setResourceNote(sourceAppointment.resource_note || "");
+      setResourceMessage("");
+      setResourceStatus("");
     },
     []
   );
@@ -427,6 +437,8 @@ const AppointmentModal = ({
       setError("");
       setIsSaving(false);
       setIsEditing(false);
+      setResourceMessage("");
+      setResourceStatus("");
     }
   }, [appointment, initializeForm, isOpen]);
 
@@ -476,6 +488,37 @@ const AppointmentModal = ({
     setIsEditing(false);
     setError("");
     initializeForm(appointment);
+  };
+
+  const handleResourceSave = async () => {
+    if (!appointment) return;
+    if (!resourceLink.trim()) {
+      setResourceStatus("error");
+      setResourceMessage("Please provide a valid resource link before sharing.");
+      return;
+    }
+    const payload = {
+      resource_link: resourceLink.trim() || null,
+      resource_note: resourceNote.trim() || null,
+    };
+    setIsResourceSaving(true);
+    setResourceMessage("");
+    setResourceStatus("");
+    try {
+      const success = await onShareResources?.(appointment.appointment_id, payload);
+      if (success) {
+        setResourceStatus("success");
+        setResourceMessage("Resources shared with your tutor.");
+      } else {
+        setResourceStatus("error");
+        setResourceMessage("Unable to save link. Please try again.");
+      }
+    } catch (err) {
+      setResourceStatus("error");
+      setResourceMessage("Unable to save link. Please try again.");
+    } finally {
+      setIsResourceSaving(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -653,6 +696,65 @@ const AppointmentModal = ({
           )}
         </div>
 
+        {(appointment.status === "confirmed" ||
+          appointment.status === "started" ||
+          appointment.status === "completed") && (
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              Share resources with your tutor
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Paste a Google Drive or resource link along with notes about the topic or specific
+              pages your tutor should focus on.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                  Resource Link
+                </label>
+                <input
+                  type="url"
+                  value={resourceLink}
+                  onChange={(e) => setResourceLink(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                  Note to Tutor
+                </label>
+                <textarea
+                  value={resourceNote}
+                  onChange={(e) => setResourceNote(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add page numbers, chapters, or quick instructions for the tutor."
+                />
+              </div>
+              {resourceMessage && (
+                <p
+                  className={`text-xs ${
+                    resourceStatus === "success" ? "text-blue-600" : "text-red-600"
+                  }`}
+                >
+                  {resourceMessage}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleResourceSave}
+                  className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  disabled={isResourceSaving}
+                >
+                  {isResourceSaving ? "Saving..." : "Share Link"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         {error && (
           <p className="text-sm text-red-600 mb-2" role="alert">
@@ -811,7 +913,9 @@ const Schedules = () => {
           tutor_name: appointment.tutor?.name || null,
           hasEvaluation: evaluatedAppointmentIds.has(appointment.appointment_id),
           online_link: appointment.online_link || profileLinks.online_link || null,
-          file_link: appointment.file_link || profileLinks.file_link || null
+          file_link: appointment.file_link || profileLinks.file_link || null,
+          resource_link: appointment.resource_link || null,
+          resource_note: appointment.resource_note || null,
         };
       });
 
@@ -866,6 +970,25 @@ const Schedules = () => {
     } catch (err) {
       console.error(err.message);
       toast.error("Error updating appointment");
+      return false;
+    }
+  };
+
+  const handleResourceShare = async (appointmentId, payload) => {
+    try {
+      const { error } = await supabase
+        .from("appointment")
+        .update(payload)
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
+      toast.success("Resources shared with your tutor.");
+      await getAppointments();
+      return true;
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Unable to save resources.");
       return false;
     }
   };
@@ -1264,6 +1387,7 @@ const Schedules = () => {
         onDelete={handleDelete}
         onUpdate={handleAppointmentUpdate}
         onEvaluate={openEvaluationModal}
+        onShareResources={handleResourceShare}
         tutorSchedules={tutorSchedules}
       />
 
