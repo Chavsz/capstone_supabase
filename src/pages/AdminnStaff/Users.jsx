@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdAdd } from "react-icons/md";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,6 +70,22 @@ const Users = () => {
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
     || user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const promoteToTutor = async (id) => {
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ role: "tutor" })
+        .eq("user_id", id);
+
+      if (error) throw error;
+
+      getAllUsers();
+    } catch (err) {
+      console.error(err.message);
+      alert("Error promoting user to tutor.");
+    }
+  };
 
   // Pagination calculations
   const totalPages = Math.ceil(searchfilteredUsers.length / itemsPerPage);
@@ -151,12 +167,25 @@ const Users = () => {
                   {user.role === "tutor" ? "Tutor" : "Student"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <button
-                    className="text-gray-400 hover:text-red-500 px-2 py-1 rounded-md"
-                    onClick={() => deleteUser(user.user_id)}
-                  >
-                    <MdDelete />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {user.role === "student" && (
+                      <button
+                        className="text-gray-400 hover:text-blue-500 px-2 py-1 rounded-md"
+                        onClick={() => promoteToTutor(user.user_id)}
+                        title="Add as tutor"
+                        aria-label="Add as tutor"
+                      >
+                        <MdAdd />
+                      </button>
+                    )}
+                    <button
+                      className="text-gray-400 hover:text-red-500 px-2 py-1 rounded-md"
+                      onClick={() => deleteUser(user.user_id)}
+                      aria-label="Delete user"
+                    >
+                      <MdDelete />
+                    </button>
+                  </div>
                 </td>
               </tr>
             )) : (
@@ -189,13 +218,24 @@ const Users = () => {
                   {user.role === "tutor" ? "Tutor" : "Student"}
                 </span>
               </div>
-              <button
-                className="text-gray-400 hover:text-red-500 p-2 rounded-md ml-2"
-                onClick={() => deleteUser(user.user_id)}
-                aria-label="Delete user"
-              >
-                <MdDelete className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                {user.role === "student" && (
+                  <button
+                    className="text-gray-400 hover:text-blue-500 p-2 rounded-md"
+                    onClick={() => promoteToTutor(user.user_id)}
+                    aria-label="Add as tutor"
+                  >
+                    <MdAdd className="w-5 h-5" />
+                  </button>
+                )}
+                <button
+                  className="text-gray-400 hover:text-red-500 p-2 rounded-md"
+                  onClick={() => deleteUser(user.user_id)}
+                  aria-label="Delete user"
+                >
+                  <MdDelete className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         )) : (
