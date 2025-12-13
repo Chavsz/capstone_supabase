@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
@@ -17,6 +17,14 @@ const lavRatingFields = [
   { key: "lav_book_again", label: "Book Again" },
   { key: "lav_value", label: "Value for Time" },
 ];
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const Reports = () => {
   const [appointments, setAppointments] = useState([]);
@@ -461,6 +469,285 @@ const Reports = () => {
     .filter((entry) => entry.sessions > 0 || entry.hours > 0)
     .sort((a, b) => b.hours - a.hours);
 
+  const handlePrintMonthlyReport = useCallback(() => {
+    const resolvedLogo =
+      landingImage && !landingImage.startsWith("http")
+        ? new URL(landingImage, window.location.origin).href
+        : landingImage;
+
+    const metricCardsHtml = summaryMetrics
+      .map(
+        (metric) => `
+        <div class="metric-card">
+          <div class="metric-icon">${escapeHtml(metric.icon)}</div>
+          <p class="metric-label">${escapeHtml(metric.label)}</p>
+          <p class="metric-value">${escapeHtml(metric.value)}</p>
+          <p class="metric-detail">${escapeHtml(metric.detail)}</p>
+          <div class="metric-progress">
+            <div class="metric-progress-bar" style="width:${metric.progress ?? 0}%;"></div>
+          </div>
+        </div>`
+      )
+      .join("");
+
+    const monthlyRowsHtml =
+      tutorEntries
+        .flatMap((entry) => {
+          const monthKeys = Object.keys(entry.monthly || {}).sort();
+          if (monthKeys.length === 0) {
+            return [
+              `<tr>
+                <td>${escapeHtml(entry.name)}</td>
+                <td>-</td>
+                <td>0</td>
+              </tr>`,
+            ];
+          }
+          return monthKeys.map(
+            (key) => `
+              <tr>
+                <td>${escapeHtml(entry.name)}</td>
+                <td>${escapeHtml(key)}</td>
+                <td>${entry.monthly?.[key] || 0}</td>
+              </tr>`
+          );
+        })
+        .join("") || `<tr><td colspan="3">No monthly data available.</td></tr>`;
+
+    const performanceRowsHtml =
+      tutorMonthlyPerformance
+        .map(
+          (entry) => `
+          <tr>
+            <td>${escapeHtml(entry.name)}</td>
+            <td>${entry.sessions}</td>
+            <td>${entry.hours.toFixed(1)} hrs</td>
+          </tr>
+        `
+        )
+        .join("") ||
+      `<tr><td colspan="3">No tutor performance data for ${escapeHtml(currentMonthLabel)}.</td></tr>`;
+
+    const docHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>LAV Monthly Report</title>
+          <style>
+            @page { margin: 25mm; }
+            body {
+              font-family: 'Inter', Arial, sans-serif;
+              margin: 0;
+              background: #f8fafc;
+              color: #0f172a;
+            }
+            .container {
+              padding: 32px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 32px;
+            }
+            .header-left {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+            }
+            .header-logo {
+              width: 72px;
+              height: 72px;
+              border-radius: 16px;
+              object-fit: contain;
+              border: 1px solid #e2e8f0;
+              background: #fff;
+              padding: 8px;
+            }
+            .title {
+              font-size: 24px;
+              margin: 0;
+              color: #0f172a;
+            }
+            .subtitle {
+              margin: 4px 0 0;
+              color: #475569;
+              font-size: 14px;
+            }
+            .badge {
+              background: #eff6ff;
+              padding: 6px 12px;
+              border-radius: 999px;
+              color: #2563eb;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.06em;
+            }
+            .section-title {
+              font-size: 18px;
+              color: #0f172a;
+              margin: 24px 0 12px;
+            }
+            .metric-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+              gap: 16px;
+            }
+            .metric-card {
+              background: #fff;
+              border-radius: 18px;
+              border: 1px solid #e2e8f0;
+              padding: 16px;
+              box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+            }
+            .metric-icon {
+              width: 38px;
+              height: 38px;
+              border-radius: 12px;
+              background: #eff6ff;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 13px;
+              font-weight: 600;
+              color: #1d4ed8;
+            }
+            .metric-label {
+              margin: 12px 0 0;
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: #94a3b8;
+            }
+            .metric-value {
+              margin: 4px 0 0;
+              font-size: 24px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .metric-detail {
+              margin: 0;
+              font-size: 12px;
+              color: #64748b;
+            }
+            .metric-progress {
+              margin-top: 14px;
+              height: 6px;
+              background: #e2e8f0;
+              border-radius: 999px;
+              overflow: hidden;
+            }
+            .metric-progress-bar {
+              height: 6px;
+              background: linear-gradient(90deg, #2563eb, #7c3aed);
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 12px;
+              background: #fff;
+              border-radius: 16px;
+              overflow: hidden;
+            }
+            th, td {
+              padding: 12px 16px;
+              border-bottom: 1px solid #e2e8f0;
+              font-size: 13px;
+            }
+            th {
+              background: #f1f5f9;
+              text-align: left;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              font-weight: 600;
+              color: #475569;
+            }
+            tr:last-child td {
+              border-bottom: none;
+            }
+            .note {
+              font-size: 12px;
+              color: #94a3b8;
+              margin-top: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="header-left">
+                ${
+                  resolvedLogo
+                    ? `<img src="${resolvedLogo}" class="header-logo" alt="LAV logo" />`
+                    : '<div class="header-logo" style="display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;">LAV</div>'
+                }
+                <div>
+                  <div class="badge">Learning Assistance Volunteer</div>
+                  <h1 class="title">Monthly Performance Report</h1>
+                  <p class="subtitle">Month of ${escapeHtml(currentMonthLabel)}</p>
+                </div>
+              </div>
+              <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
+            </div>
+
+            <h2 class="section-title">Key Metrics</h2>
+            <div class="metric-grid">
+              ${metricCardsHtml}
+            </div>
+
+            <h2 class="section-title">Monthly Breakdown per Tutor</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tutor</th>
+                  <th>Month</th>
+                  <th>Completed Sessions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${monthlyRowsHtml}
+              </tbody>
+            </table>
+
+            <h2 class="section-title">Tutor Performance (${escapeHtml(currentMonthLabel)})</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tutor</th>
+                  <th>Sessions</th>
+                  <th>Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${performanceRowsHtml}
+              </tbody>
+            </table>
+            <p class="note">This report includes only sessions marked as completed.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const reportWindow = window.open("", "_blank", "width=900,height=650");
+    if (!reportWindow) {
+      toast.error("Please allow pop-ups to print the report.");
+      return;
+    }
+    reportWindow.document.open();
+    reportWindow.document.write(docHtml);
+    reportWindow.document.close();
+    reportWindow.focus();
+    reportWindow.print();
+  }, [
+    landingImage,
+    summaryMetrics,
+    tutorEntries,
+    tutorMonthlyPerformance,
+    currentMonthLabel,
+    preparedDateLabel,
+  ]);
+
   const topTutorByHours = tutorEntries
     .filter((entry) => entry.totalHours)
     .sort((a, b) => (b.totalHours || 0) - (a.totalHours || 0))[0];
@@ -595,10 +882,10 @@ const Reports = () => {
             <span>Completed sessions grouped by month per tutor.</span>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => window.print()}
+                onClick={handlePrintMonthlyReport}
                 className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-blue-500 transition"
               >
-                Print
+                Download PDF
               </button>
               <button
                 onClick={() => handleMonthlyExport()}
