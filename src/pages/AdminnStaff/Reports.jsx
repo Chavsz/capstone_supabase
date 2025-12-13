@@ -2,12 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
-const ratingFields = [
+const tutorRatingFields = [
   { key: "presentation_clarity", label: "Presentation" },
   { key: "drills_sufficiency", label: "Drills" },
   { key: "patience_enthusiasm", label: "Patience" },
   { key: "study_skills_development", label: "Study Skills" },
   { key: "positive_impact", label: "Impact" },
+];
+
+const lavRatingFields = [
+  { key: "lav_environment", label: "Environment" },
+  { key: "lav_scheduling", label: "Scheduling" },
+  { key: "lav_support", label: "Support" },
+  { key: "lav_book_again", label: "Book Again" },
+  { key: "lav_value", label: "Value for Time" },
 ];
 
 const Reports = () => {
@@ -41,7 +49,21 @@ const Reports = () => {
       const { data: evaluationData, error: evaluationError } = await supabase
         .from("evaluation")
         .select(
-          "appointment_id, tutor_id, user_id, presentation_clarity, drills_sufficiency, patience_enthusiasm, study_skills_development, positive_impact"
+          [
+            "appointment_id",
+            "tutor_id",
+            "user_id",
+            "presentation_clarity",
+            "drills_sufficiency",
+            "patience_enthusiasm",
+            "study_skills_development",
+            "positive_impact",
+            "lav_environment",
+            "lav_scheduling",
+            "lav_support",
+            "lav_book_again",
+            "lav_value",
+          ].join(", ")
         );
       if (evaluationError) throw evaluationError;
 
@@ -205,7 +227,7 @@ const Reports = () => {
     return stats;
   }, [appointments]);
 
-  const ratingStats = useMemo(() => {
+  const tutorEvaluationStats = useMemo(() => {
     const map = {};
 
     evaluations.forEach((evaluation) => {
@@ -217,7 +239,7 @@ const Reports = () => {
             appointments.find((apt) => apt.tutor_id === tutorId)?.tutor?.name || "Unknown Tutor",
           overallSum: 0,
           overallCount: 0,
-          fields: ratingFields.reduce(
+          fields: tutorRatingFields.reduce(
             (acc, field) => ({
               ...acc,
               [field.key]: { sum: 0, count: 0 },
@@ -229,7 +251,7 @@ const Reports = () => {
 
       const entry = map[tutorId];
 
-      ratingFields.forEach((field) => {
+      tutorRatingFields.forEach((field) => {
         const value = Number(evaluation[field.key]);
         if (!Number.isNaN(value)) {
           entry.fields[field.key].sum += value;
@@ -241,24 +263,6 @@ const Reports = () => {
     });
 
     return map;
-  }, [evaluations, appointments]);
-
-  const evaluationRecords = useMemo(() => {
-    return evaluations.map((evaluation) => {
-      const ratings = ratingFields
-        .map((field) => Number(evaluation[field.key]))
-        .filter((value) => !Number.isNaN(value));
-      return {
-        id: `${evaluation.tutor_id}-${evaluation.user_id}-${evaluation.appointment_id || Math.random()}`,
-        tutor: appointments.find((apt) => apt.tutor_id === evaluation.tutor_id)?.tutor?.name || "Unknown Tutor",
-        studentId: evaluation.user_id,
-        overall: ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2) : "—",
-        ratings: ratingFields.map((field) => ({
-          key: field.key,
-          value: Number(evaluation[field.key]) || null,
-        })),
-      };
-    });
   }, [evaluations, appointments]);
 
   const schedulesByTutor = useMemo(() => {
@@ -285,7 +289,43 @@ const Reports = () => {
   }
 
   const tutorEntries = Object.values(tutorStats);
-  const ratingEntries = Object.values(ratingStats);
+  const tutorSummaryEntries = Object.values(tutorEvaluationStats);
+
+  const lavStats = useMemo(() => {
+    const totals = lavRatingFields.reduce(
+      (acc, field) => ({
+        ...acc,
+        [field.key]: { sum: 0, count: 0 },
+      }),
+      {}
+    );
+
+    evaluations.forEach((evaluation) => {
+      lavRatingFields.forEach((field) => {
+        const value = Number(evaluation[field.key]);
+        if (!Number.isNaN(value)) {
+          totals[field.key].sum += value;
+          totals[field.key].count += 1;
+        }
+      });
+    });
+
+    let overallSum = 0;
+    let overallCount = 0;
+    const averages = {};
+
+    lavRatingFields.forEach((field) => {
+      const { sum, count } = totals[field.key];
+      averages[field.key] = count ? sum / count : null;
+      overallSum += sum;
+      overallCount += count;
+    });
+
+    return {
+      averages,
+      overallAverage: overallCount ? overallSum / overallCount : null,
+    };
+  }, [evaluations]);
   const topTutorByHours = tutorEntries
     .filter((entry) => entry.totalHours)
     .sort((a, b) => (b.totalHours || 0) - (a.totalHours || 0))[0];
@@ -342,7 +382,7 @@ const Reports = () => {
                     <td className="px-4 py-3 text-center">{entry.thisMonth}</td>
                     <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.total}</td>
                     <td className="px-4 py-3 text-center">
-                      {entry.totalHours ? entry.totalHours.toFixed(1) : "—"}
+                      {entry.totalHours ? entry.totalHours.toFixed(1) : "-"}
                     </td>
                   </tr>
                 ))
@@ -404,49 +444,40 @@ const Reports = () => {
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Rating Averages</h2>
-          <p className="text-sm text-gray-500"></p>
+          <h2 className="text-lg font-semibold text-gray-800">Rating Averages (LAV)</h2>
+          <p className="text-sm text-gray-500">
+            Aggregate feedback on the tutoring venue, scheduling experience, and overall service quality.
+          </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
-                <th className="text-left px-4 py-3">Tutor</th>
-                <th className="text-center px-4 py-3">Overall</th>
-                {ratingFields.map((field) => (
-                  <th key={field.key} className="text-center px-4 py-3">
+        <div className="p-4">
+          {evaluations.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-6">No LAV feedback has been submitted yet.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {lavRatingFields.map((field) => (
+                <div key={field.key} className="rounded-xl border border-gray-200 p-4 bg-gray-50">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {field.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ratingEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={ratingFields.length + 2} className="text-center text-gray-500 py-5">
-                    No evaluations yet.
-                  </td>
-                </tr>
-              ) : (
-                ratingEntries.map((entry) => (
-                  <tr key={entry.tutorId} className="border-t border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                      {entry.overallCount ? (entry.overallSum / entry.overallCount).toFixed(2) : "—"}
-                    </td>
-                    {ratingFields.map((field) => {
-                      const stat = entry.fields[field.key];
-                      return (
-                        <td key={field.key} className="px-4 py-3 text-center">
-                          {stat.count ? (stat.sum / stat.count).toFixed(1) : "—"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                  </p>
+                  <p className="text-3xl font-bold text-gray-800 mt-2">
+                    {lavStats.averages[field.key] !== null
+                      ? lavStats.averages[field.key].toFixed(2)
+                      : "-"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Average rating</p>
+                </div>
+              ))}
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-col justify-center">
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                  Overall Average
+                </p>
+                <p className="text-4xl font-bold text-blue-700 mt-2">
+                  {lavStats.overallAverage !== null ? lavStats.overallAverage.toFixed(2) : "-"}
+                </p>
+                <p className="text-xs text-blue-700 mt-1">Combined LAV score across all submissions</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -488,16 +519,17 @@ const Reports = () => {
       <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Evaluation Records</h2>
-          <p className="text-sm text-gray-500">Individual submissions without private comments.</p>
+          <p className="text-sm text-gray-500">
+            Per-tutor averages for each evaluation question (anonymous comments remain hidden).
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="text-left px-4 py-3">Tutor</th>
-                <th className="text-left px-4 py-3">Student ID</th>
                 <th className="text-center px-4 py-3">Overall</th>
-                {ratingFields.map((field) => (
+                {tutorRatingFields.map((field) => (
                   <th key={field.key} className="text-center px-4 py-3">
                     {field.label}
                   </th>
@@ -505,25 +537,27 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {evaluationRecords.length === 0 ? (
+              {tutorSummaryEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={ratingFields.length + 3} className="text-center text-gray-500 py-5">
-                    No evaluations submitted.
+                  <td colSpan={tutorRatingFields.length + 2} className="text-center text-gray-500 py-5">
+                    No tutor evaluations submitted.
                   </td>
                 </tr>
               ) : (
-                evaluationRecords.map((record) => (
-                  <tr key={record.id} className="border-t border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-800">{record.tutor}</td>
-                    <td className="px-4 py-3 text-gray-600">{record.studentId || "Unknown"}</td>
+                tutorSummaryEntries.map((entry) => (
+                  <tr key={entry.tutorId} className="border-t border-gray-100">
+                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
                     <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                      {record.overall}
+                      {entry.overallCount ? (entry.overallSum / entry.overallCount).toFixed(2) : "-"}
                     </td>
-                    {record.ratings.map((rating) => (
-                      <td key={rating.key} className="px-4 py-3 text-center">
-                        {rating.value ? rating.value.toFixed(1) : "—"}
-                      </td>
-                    ))}
+                    {tutorRatingFields.map((field) => {
+                      const stat = entry.fields[field.key];
+                      return (
+                        <td key={field.key} className="px-4 py-3 text-center">
+                          {stat.count ? (stat.sum / stat.count).toFixed(1) : "-"}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))
               )}

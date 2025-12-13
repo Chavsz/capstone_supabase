@@ -9,6 +9,7 @@ const EvaluationModal = ({
   onClose,
   onEvaluate,
 }) => {
+  const [activeTab, setActiveTab] = useState("tutor");
   const [evaluationData, setEvaluationData] = useState({
     presentation_clarity: "",
     drills_sufficiency: "",
@@ -16,6 +17,11 @@ const EvaluationModal = ({
     study_skills_development: "",
     positive_impact: "",
     tutor_comment: "",
+    lav_environment: "",
+    lav_scheduling: "",
+    lav_support: "",
+    lav_book_again: "",
+    lav_value: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -30,8 +36,14 @@ const EvaluationModal = ({
         study_skills_development: "",
         positive_impact: "",
         tutor_comment: "",
+        lav_environment: "",
+        lav_scheduling: "",
+        lav_support: "",
+        lav_book_again: "",
+        lav_value: "",
       });
       setError("");
+      setActiveTab("tutor");
     }
   }, [isOpen, appointment]);
 
@@ -85,7 +97,7 @@ const EvaluationModal = ({
     { value: "N/A", label: "N/A - Not Applicable" },
   ];
 
-  const criteria = [
+  const tutorCriteria = [
     {
       key: "presentation_clarity",
       label: "Clear and organized presentation of the lessons by the peer tutor.",
@@ -105,6 +117,41 @@ const EvaluationModal = ({
     {
       key: "positive_impact",
       label: "Positive impact in my progress in this subject as a result of the tutorial session.",
+    },
+  ];
+
+  const lavCriteria = [
+    {
+      key: "lav_environment",
+      label: "The comfort and cleanliness of the tutoring environment (physical or virtual).",
+      options: ratingOptions,
+    },
+    {
+      key: "lav_scheduling",
+      label: "The convenience of scheduling and availability of tutors through the organization.",
+      options: ratingOptions,
+    },
+    {
+      key: "lav_support",
+      label: "The level of support and communication provided by the organization before and after the tutoring sessions.",
+      options: ratingOptions,
+    },
+    {
+      key: "lav_book_again",
+      label: "The likelihood that I would book another session with the organization based on my experience.",
+      options: [
+        { value: "5", label: "5 - Very Likely" },
+        { value: "4", label: "4 - Likely" },
+        { value: "3", label: "3 - Neutral" },
+        { value: "2", label: "2 - Unlikely" },
+        { value: "1", label: "1 - Very Unlikely" },
+        { value: "N/A", label: "N/A - Not Applicable" },
+      ],
+    },
+    {
+      key: "lav_value",
+      label: "How satisfied I am with the overall value of the tutoring services in relation to the cost (if applicable).",
+      options: ratingOptions,
     },
   ];
 
@@ -135,56 +182,90 @@ const EvaluationModal = ({
           </p>
         </div>
 
+        <div className="mb-5 flex gap-3 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab("tutor")}
+            className={`px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "tutor"
+                ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
+                : "text-gray-500"
+            }`}
+          >
+            Evaluate Tutor
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("lav")}
+            className={`px-3 py-2 text-sm font-semibold transition-colors ${
+              activeTab === "lav"
+                ? "text-blue-600 border-b-2 border-blue-600 -mb-px"
+                : "text-gray-500"
+            }`}
+          >
+            Evaluate LAV
+          </button>
+        </div>
+
         <div className="space-y-6 mb-6">
-          {criteria.map((criterion, index) => (
-            <div key={criterion.key} className="border-b border-gray-200 pb-4">
-              <p className="text-sm font-medium text-gray-700 mb-3">
-                {index + 1}. {criterion.label}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {ratingOptions.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name={criterion.key}
-                      value={option.value}
-                      checked={evaluationData[criterion.key] === option.value}
-                      onChange={() =>
-                        handleRatingChange(criterion.key, option.value)
-                      }
-                      className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      {option.label}
-                    </span>
-                  </label>
-                ))}
+          {(activeTab === "tutor" ? tutorCriteria : lavCriteria).map(
+            (criterion, index) => (
+              <div key={criterion.key} className="border-b border-gray-200 pb-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">
+                  {index + 1}. {criterion.label}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {(criterion.options || ratingOptions).map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name={criterion.key}
+                        value={option.value}
+                        checked={evaluationData[criterion.key] === option.value}
+                        onChange={() =>
+                          handleRatingChange(criterion.key, option.value)
+                        }
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {option.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
+            )
+          )}
+
+          {activeTab === "tutor" ? (
+            <div className="space-y-2 border-b border-gray-200 pb-4">
+              <label className="text-sm font-medium text-gray-700">
+                Optional comment for your tutor
+              </label>
+              <textarea
+                className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                value={evaluationData.tutor_comment}
+                onChange={(e) =>
+                  setEvaluationData((prev) => ({
+                    ...prev,
+                    tutor_comment: e.target.value,
+                  }))
+                }
+                placeholder="Share additional thoughts for your tutor"
+              />
+              <p className="text-xs text-gray-500">
+                This comment is sent anonymously. Your personal details remain hidden and protected.
+              </p>
             </div>
-          ))}
-          <div className="space-y-2 border-b border-gray-200 pb-4">
-            <label className="text-sm font-medium text-gray-700">
-              Optional comment for your tutor
-            </label>
-            <textarea
-              className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              value={evaluationData.tutor_comment}
-              onChange={(e) =>
-                setEvaluationData((prev) => ({
-                  ...prev,
-                  tutor_comment: e.target.value,
-                }))
-              }
-              placeholder="Share additional thoughts for your tutor…"
-            />
-            <p className="text-xs text-gray-500">
-              This comment is sent anonymously. Your personal details remain hidden and protected.
+          ) : (
+            <p className="text-xs text-gray-500 border-b border-gray-200 pb-4">
+              LAV responses are optional and help improve the overall peer tutoring experience. You can still submit even if these items are blank.
             </p>
-          </div>
+          )}
         </div>
 
         {error && (
