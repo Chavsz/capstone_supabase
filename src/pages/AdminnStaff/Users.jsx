@@ -26,24 +26,76 @@ const Users = () => {
     }
   };
 
-  //delete user
+  // Delete a user (and related records) from the database
   const deleteUser = async (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        // Note: This will also delete the user from auth.users via cascade or trigger
-        // You may need to handle auth user deletion separately if needed
-        const { error } = await supabase
-          .from("users")
+    if (!window.confirm("Delete this user and all of their records? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Remove schedules tied to the tutor's profile first
+      const { data: tutorProfiles, error: tutorProfileError } = await supabase
+        .from("profile")
+        .select("profile_id")
+        .eq("user_id", id);
+      if (tutorProfileError && tutorProfileError.code !== "PGRST116") throw tutorProfileError;
+
+      const profileIds = (tutorProfiles || [])
+        .map((profile) => profile.profile_id)
+        .filter(Boolean);
+
+      if (profileIds.length > 0) {
+        const { error: scheduleError } = await supabase
+          .from("schedule")
           .delete()
-          .eq("user_id", id);
-
-        if (error) throw error;
-
-        getAllUsers();
-      } catch (err) {
-        console.error(err.message);
-        alert("Error deleting user. They may have related data that needs to be removed first.");
+          .in("profile_id", profileIds);
+        if (scheduleError && scheduleError.code !== "PGRST116") throw scheduleError;
       }
+
+      // Remove tutor/student profile entries
+      const profileTables = ["profile", "student_profile"];
+      for (const table of profileTables) {
+        const { error } = await supabase.from(table).delete().eq("user_id", id);
+        if (error && error.code !== "PGRST116") throw error;
+      }
+
+      // Remove appointments and evaluations referencing the user
+      const relationalDeletes = [
+        {
+          table: "appointment",
+          filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
+        },
+        {
+          table: "evaluation",
+          filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
+        },
+      ];
+
+      for (const { table, filter } of relationalDeletes) {
+        const query = supabase.from(table).delete();
+        const { error } = await filter(query);
+        if (error && error.code !== "PGRST116") throw error;
+      }
+
+      // Finally delete the user row
+      const { error: userError } = await supabase.from("users").delete().eq("user_id", id);
+      if (userError) throw userError;
+
+      // Attempt to remove from Supabase Auth (requires service role key)
+      try {
+        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        if (authError) {
+          console.warn("Unable to delete auth user:", authError.message);
+        }
+      } catch (authAdminError) {
+        console.warn("Auth admin unavailable:", authAdminError.message);
+      }
+
+      await getAllUsers();
+      alert("User deleted successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting user. Please remove related records first or contact support.");
     }
   };
 
