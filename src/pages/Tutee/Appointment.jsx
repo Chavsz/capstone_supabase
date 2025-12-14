@@ -465,7 +465,15 @@ const Appointment = () => {
       return;
     }
 
+    let session;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      session = sessionData?.session;
+      if (!session) {
+        toast.error("You must be logged in to create an appointment");
+        return;
+      }
+
       const { data: conflictAppointments, error: conflictError } = await supabase
         .from("appointment")
         .select("start_time, end_time, status")
@@ -492,9 +500,36 @@ const Appointment = () => {
         );
         return;
       }
+
+      const { data: userConflictAppointments, error: userConflictError } = await supabase
+        .from("appointment")
+        .select("start_time, end_time, status")
+        .eq("user_id", session.user.id)
+        .eq("date", formData.date)
+        .neq("status", "cancelled");
+
+      if (userConflictError) throw userConflictError;
+
+      const hasUserConflict = (userConflictAppointments || []).some((appointment) => {
+        const appointmentStart = getMinutesFromStored(appointment.start_time);
+        const appointmentEnd = getMinutesFromStored(appointment.end_time);
+        return (
+          appointmentStart !== null &&
+          appointmentEnd !== null &&
+          startMinutes < appointmentEnd &&
+          endMinutes > appointmentStart
+        );
+      });
+
+      if (hasUserConflict) {
+        toast.error(
+          "You already have another appointment at this time. Cancel it before booking a new one."
+        );
+        return;
+      }
     } catch (conflictCheckError) {
       console.error(conflictCheckError.message);
-      toast.error("Unable to verify tutor availability. Please try again.");
+      toast.error("Unable to verify appointment availability. Please try again.");
       return;
     }
 
@@ -515,12 +550,6 @@ const Appointment = () => {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("You must be logged in to create an appointment");
-        return;
-      }
-
       const { error } = await supabase
         .from("appointment")
         .insert([

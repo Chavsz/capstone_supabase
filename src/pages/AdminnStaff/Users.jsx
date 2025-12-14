@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 
-import { MdDelete, MdAdd } from "react-icons/md";
+import { MdDelete, MdAdd, MdPersonRemove } from "react-icons/md";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,6 +160,32 @@ const Users = () => {
     }
   };
 
+  const demoteToStudent = async (user) => {
+    if (!window.confirm(`Move ${user.name} back to student?`)) return;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .update({ role: "student" })
+        .eq("user_id", user.user_id)
+        .select("user_id, role");
+
+      if (error) throw error;
+
+      if (data?.length) {
+        setAllUsers((prev) =>
+          prev.map((item) =>
+            item.user_id === data[0].user_id ? { ...item, role: data[0].role } : item
+          )
+        );
+      }
+
+      await getAllUsers();
+    } catch (err) {
+      console.error(err.message);
+      alert(`Error moving user back to student: ${err.message}`);
+    }
+  };
+
   // Pagination calculations
   const totalPages = Math.ceil(searchfilteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -251,6 +277,16 @@ const Users = () => {
                         <MdAdd />
                       </button>
                     )}
+                    {normalizeRole(user.role) === "tutor" && (
+                      <button
+                        className="text-gray-400 hover:text-orange-500 px-2 py-1 rounded-md"
+                        onClick={() => demoteToStudent(user)}
+                        title="Send back to student list"
+                        aria-label="Demote to student"
+                      >
+                        <MdPersonRemove />
+                      </button>
+                    )}
                     <button
                       className="text-gray-400 hover:text-red-500 px-2 py-1 rounded-md"
                       onClick={() => deleteUser(user.user_id)}
@@ -299,6 +335,15 @@ const Users = () => {
                     aria-label="Add as tutor"
                   >
                     <MdAdd className="w-5 h-5" />
+                  </button>
+                )}
+                {normalizeRole(user.role) === "tutor" && (
+                  <button
+                    className="text-gray-400 hover:text-orange-500 p-2 rounded-md"
+                    onClick={() => demoteToStudent(user)}
+                    aria-label="Demote to student"
+                  >
+                    <MdPersonRemove className="w-5 h-5" />
                   </button>
                 )}
                 <button
