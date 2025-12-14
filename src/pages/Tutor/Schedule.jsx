@@ -3,6 +3,17 @@ import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
+const STATUS_META = {
+  pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-800" },
+  started: { label: "In Session", badge: "bg-sky-100 text-sky-800" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-orange-100 text-orange-800" },
+  completed: { label: "Completed", badge: "bg-blue-100 text-blue-800" },
+  declined: { label: "Declined", badge: "bg-red-100 text-red-800" },
+  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-800" },
+};
+const statusBadge = (status = "") => STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
+const formatStatusLabel = (status = "") => STATUS_META[status]?.label || status.replace(/_/g, " ");
 
 // Modal component for appointment details
 const AppointmentModal = ({
@@ -28,40 +39,6 @@ const AppointmentModal = ({
       hour12: true,
     });
   };
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "started":
-        return "bg-sky-100 text-sky-800";
-      case "awaiting_feedback":
-        return "bg-amber-100 text-amber-800";
-      case "declined":
-        return "bg-red-100 text-red-800";
-      case "cancelled":
-        return "bg-gray-100 text-gray-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const STATUS_LABELS = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  started: "In Session",
-  awaiting_feedback: "Awaiting Feedback",
-  completed: "Completed",
-  declined: "Declined",
-  cancelled: "Cancelled",
-};
-
-const formatStatusLabel = (status = "") =>
-  STATUS_LABELS[status] || status.replace(/_/g, " ");
 
   const getRatingLabel = (rating) => {
     const labels = {
@@ -157,7 +134,7 @@ const formatStatusLabel = (status = "") =>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-700">Status:</span>
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
                 appointment.status
               )}`}
             >
@@ -853,11 +830,13 @@ const Schedule = () => {
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
                           </div>
-                          {appointment.status === "cancelled" && appointment.tutee_decline_reason && (
-                            <div className="mt-2 text-xs text-red-600 font-medium">
-                              Tutee reason: {appointment.tutee_decline_reason}
-                            </div>
-                          )}
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              appointment.status
+                            )}`}
+                          >
+                            {formatStatusLabel(appointment.status)}
+                          </span>
                           {appointment.status === "cancelled" && appointment.tutee_decline_reason && (
                             <div className="mt-2 text-xs text-red-600 font-medium">
                               Tutee reason: {appointment.tutee_decline_reason}
@@ -897,17 +876,46 @@ const Schedule = () => {
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
                         onClick={() => openModal(appointment)}
                       >
-                        <div className="pl-3 border-l-3 border-blue-300">
-                          <div className="font-medium text-gray-900 mb-1">
+                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
+                          <div className="font-medium text-gray-900">
                             {appointment.student_name}
                           </div>
-                          <div className="text-sm text-gray-600 mb-1">
+                          <div className="text-sm text-gray-600">
                             {formatTime(appointment.start_time)} -{" "}
                             {formatTime(appointment.end_time)}
                           </div>
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
                           </div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              appointment.status
+                            )}`}
+                          >
+                            {formatStatusLabel(appointment.status)}
+                          </span>
+                          {appointment.status === "cancelled" &&
+                            appointment.tutee_decline_reason && (
+                              <div className="mt-2 text-xs text-red-600 font-medium">
+                                Tutee reason: {appointment.tutee_decline_reason}
+                              </div>
+                            )}
+                          {appointment.status === "declined" &&
+                            appointment.tutor_decline_reason && (
+                              <div className="mt-2 text-xs text-red-600 font-medium">
+                                Tutor note: {appointment.tutor_decline_reason}
+                              </div>
+                            )}
+                          {appointment.status === "awaiting_feedback" && (
+                            <div className="mt-2 text-xs text-amber-600 font-medium">
+                              Awaiting tutee feedback
+                            </div>
+                          )}
+                          {appointment.status === "completed" && (
+                            <div className="mt-2 text-xs text-emerald-600 font-medium">
+                              Evaluated
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

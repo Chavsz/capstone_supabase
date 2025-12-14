@@ -4,6 +4,22 @@ import { toast } from "react-hot-toast";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
 
+const STATUS_META = {
+  pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-800" },
+  started: { label: "In Session", badge: "bg-sky-100 text-sky-800" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-orange-100 text-orange-800" },
+  completed: { label: "Completed", badge: "bg-blue-100 text-blue-800" },
+  declined: { label: "Declined", badge: "bg-red-100 text-red-800" },
+  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-800" },
+};
+
+const formatStatusLabel = (status = "") =>
+  STATUS_META[status]?.label || status.replace(/_/g, " ");
+
+const statusBadge = (status = "") =>
+  STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
+
 // Evaluation Modal component
 const EvaluationModal = ({
   appointment,
@@ -311,7 +327,6 @@ const AppointmentModal = ({
   appointment,
   isOpen,
   onClose,
-  onDelete,
   onUpdate,
   onEvaluate,
   onShareResources,
@@ -567,11 +582,6 @@ const AppointmentModal = ({
   if (!isOpen || !appointment) return null;
   const canShareResources =
     ["confirmed", "started"].includes(appointment.status);
-  const canDeleteAppointment = ![
-    "confirmed",
-    "awaiting_feedback",
-    "completed",
-  ].includes(appointment.status);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -588,40 +598,6 @@ const AppointmentModal = ({
       hour12: true,
     });
   };
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "started":
-        return "bg-sky-100 text-sky-800";
-      case "awaiting_feedback":
-        return "bg-amber-100 text-amber-800";
-      case "declined":
-        return "bg-red-100 text-red-800";
-      case "cancelled":
-        return "bg-gray-100 text-gray-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const STATUS_LABELS = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  started: "In Session",
-  awaiting_feedback: "Awaiting Feedback",
-  completed: "Completed",
-  declined: "Declined",
-  cancelled: "Cancelled",
-};
-
-const formatStatusLabel = (status = "") =>
-  STATUS_LABELS[status] || status.replace(/_/g, " ");
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -730,7 +706,7 @@ const formatStatusLabel = (status = "") =>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Status:</span>
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
                 appointment.status
               )}`}
             >
@@ -1047,27 +1023,6 @@ const Schedules = () => {
       channel.unsubscribe();
     };
   }, [currentUserId, getAppointments]);
-
-  const handleDelete = async (appointmentId) => {
-    if (!window.confirm("Are you sure you want to delete this appointment?")) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("appointment")
-        .delete()
-        .eq("appointment_id", appointmentId);
-
-      if (error) throw error;
-
-      getAppointments(); // Refresh the list
-      toast.success("Appointment deleted successfully");
-    } catch (err) {
-      console.error(err.message);
-      toast.error("Error deleting appointment");
-    }
-  };
 
   const handleAppointmentUpdate = async (appointmentId, updatedFields) => {
     try {
@@ -1471,11 +1426,34 @@ const Schedules = () => {
                           <div className="text-sm text-gray-500 mb-1">
                             {appointment.mode_of_session}
                           </div>
-                          {/* {appointment.status === "confirmed" && appointment.online_link && (
-                            <div className="text-xs text-green-600 font-medium">
-                              Online link available
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              appointment.status
+                            )}`}
+                          >
+                            {formatStatusLabel(appointment.status)}
+                          </span>
+                          {appointment.status === "declined" && appointment.tutor_decline_reason && (
+                            <div className="mt-2 text-xs text-red-600 font-medium">
+                              Tutor note: {appointment.tutor_decline_reason}
                             </div>
-                          )} */}
+                          )}
+                          {appointment.status === "awaiting_feedback" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEvaluationModal(appointment);
+                              }}
+                              className="mt-2 bg-green-600 text-white text-xs px-3 py-1 rounded hover:bg-green-700"
+                            >
+                              Evaluate
+                            </button>
+                          )}
+                          {appointment.status === "completed" && (
+                            <div className="mt-2 text-xs text-emerald-600 font-medium">
+                              Evaluated
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1510,25 +1488,33 @@ const Schedules = () => {
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
                         onClick={() => openModal(appointment)}
                       >
-                        <div className="pl-3 border-l-3 border-blue-300">
-                          <div className="font-medium text-gray-900 mb-1">
+                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
+                          <div className="font-medium text-gray-900">
                             {appointment.tutor_name}
                           </div>
-                          <div className="text-sm text-gray-600 mb-1">
+                          <div className="text-sm text-gray-600">
                             {formatTime(appointment.start_time)} -{" "}
                             {formatTime(appointment.end_time)}
                           </div>
-                      <div className="text-sm text-gray-500 mb-1">
-                        {appointment.mode_of_session}
-                      </div>
-                      {appointment.status === "declined" && appointment.tutor_decline_reason && (
-                        <div className="mt-2 text-xs text-red-600 font-medium">
-                          Tutor note: {appointment.tutor_decline_reason}
-                        </div>
-                      )}
-                      {appointment.status === "awaiting_feedback" && (
-                        <button
-                          onClick={(e) => {
+                          <div className="text-sm text-gray-500">
+                            {appointment.mode_of_session}
+                          </div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              appointment.status
+                            )}`}
+                          >
+                            {formatStatusLabel(appointment.status)}
+                          </span>
+                          {appointment.status === "declined" &&
+                            appointment.tutor_decline_reason && (
+                              <div className="mt-2 text-xs text-red-600 font-medium">
+                                Tutor note: {appointment.tutor_decline_reason}
+                              </div>
+                            )}
+                          {appointment.status === "awaiting_feedback" && (
+                            <button
+                              onClick={(e) => {
                                 e.stopPropagation();
                                 openEvaluationModal(appointment);
                               }}
@@ -1538,8 +1524,8 @@ const Schedules = () => {
                             </button>
                           )}
                           {appointment.status === "completed" && (
-                            <div className="mt-2 text-xs text-green-600 font-medium">
-                              ✓ Evaluated
+                            <div className="mt-2 text-xs text-emerald-600 font-medium">
+                              Evaluated
                             </div>
                           )}
                         </div>
@@ -1558,7 +1544,6 @@ const Schedules = () => {
         appointment={selectedAppointment}
         isOpen={isModalOpen}
         onClose={closeModal}
-        onDelete={handleDelete}
         onUpdate={handleAppointmentUpdate}
         onEvaluate={openEvaluationModal}
         onShareResources={handleResourceShare}
