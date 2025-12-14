@@ -401,7 +401,8 @@ const Schedule = () => {
         .from("appointment")
         .select(`
           *,
-          student:users!appointment_user_id_fkey(name)
+          student:users!appointment_user_id_fkey(name),
+          tutee_decline_reason
         `)
         .eq("tutor_id", session.user.id)
         .order("date", { ascending: true })
@@ -410,10 +411,11 @@ const Schedule = () => {
       if (error) throw error;
 
       // Format data to match expected structure
-      const formattedData = (data || []).map(appointment => ({
-        ...appointment,
-        student_name: appointment.student?.name || null
-      }));
+        const formattedData = (data || []).map(appointment => ({
+          ...appointment,
+          student_name: appointment.student?.name || null,
+          tutee_decline_reason: appointment.tutee_decline_reason || null,
+        }));
 
       setAppointments(formattedData);
 
@@ -851,6 +853,16 @@ const Schedule = () => {
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
                           </div>
+                          {appointment.status === "cancelled" && appointment.tutee_decline_reason && (
+                            <div className="mt-2 text-xs text-red-600 font-medium">
+                              Tutee reason: {appointment.tutee_decline_reason}
+                            </div>
+                          )}
+                          {appointment.status === "cancelled" && appointment.tutee_decline_reason && (
+                            <div className="mt-2 text-xs text-red-600 font-medium">
+                              Tutee reason: {appointment.tutee_decline_reason}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

@@ -286,18 +286,7 @@ const TuteeDashboard = () => {
           </div>
         </div>
 
-        {/* Top Tutors, Top Colleges, Top Reasons */}
-        <div className="flex flex-col">
-          <div>
-            <CardsOne title="Top Tutors" />
-          </div>
-          <div>
-            <CardsOne title="Top Colleges" />
-          </div>
-          <div>
-            <CardsOne title="Top Reasons" />
-          </div>
-        </div>
+       
       </div>
     </div>
   );

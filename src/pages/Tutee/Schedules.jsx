@@ -904,17 +904,6 @@ const formatStatusLabel = (status = "") =>
               Evaluate Session
             </button>
           )}
-          {!isEditing && canDeleteAppointment && (
-            <button
-              onClick={() => {
-                onDelete(appointment.appointment_id);
-                onClose();
-              }}
-              className="bg-red-500 text-white font-medium rounded-md px-4 py-2 text-sm hover:bg-red-600 flex-1"
-            >
-              Delete Appointment
-            </button>
-          )}
         </div>
       </div>
     </div>
