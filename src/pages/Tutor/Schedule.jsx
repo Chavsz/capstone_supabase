@@ -659,7 +659,7 @@ const Schedule = () => {
 
   const confirmedAppointments = appointments.filter(
     (appointment) =>
-      ["confirmed", "started"].includes(appointment.status) &&
+      ["pending", "confirmed", "started"].includes(appointment.status) &&
       matchesSearch(appointment)
   );
 
@@ -671,7 +671,7 @@ const Schedule = () => {
       matchesSearch(appointment)
   );
 
-  const confirmedStatusOrder = ["confirmed", "started"];
+  const confirmedStatusOrder = ["pending", "confirmed", "started"];
   const confirmedByStatus = confirmedStatusOrder.reduce((acc, status) => {
     acc[status] = confirmedAppointments.filter(
       (appointment) => appointment.status === status
