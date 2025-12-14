@@ -327,6 +327,7 @@ const AppointmentModal = ({
   appointment,
   isOpen,
   onClose,
+  onDelete,
   onUpdate,
   onEvaluate,
   onShareResources,
@@ -580,8 +581,21 @@ const AppointmentModal = ({
   };
 
   if (!isOpen || !appointment) return null;
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const canShareResources =
     ["confirmed", "started"].includes(appointment.status);
+  const canDeleteAppointment = appointment.status === "pending";
+
+  const handleDeleteClick = async () => {
+    if (!onDelete || !appointment) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(appointment.appointment_id);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -845,7 +859,7 @@ const AppointmentModal = ({
             <button
               onClick={() => setIsEditing(true)}
               className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1"
-            >
+              >
               Update Appointment
             </button>
           )}
@@ -881,6 +895,24 @@ const AppointmentModal = ({
             </button>
           )}
         </div>
+        {canDeleteAppointment && (
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">
+              Remove pending request
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              You can only delete appointments while they are still pending.
+            </p>
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="w-full bg-red-600 text-white rounded-md px-4 py-2 text-sm hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Appointment"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -986,6 +1018,7 @@ const Schedules = () => {
           file_link: appointment.file_link || profileLinks.file_link || null,
           resource_link: appointment.resource_link || null,
           resource_note: appointment.resource_note || null,
+          tutor_note: appointment.tutor_note || null,
           tutor_decline_reason: appointment.tutor_decline_reason || null,
         };
       });
@@ -1041,6 +1074,36 @@ const Schedules = () => {
     } catch (err) {
       console.error(err.message);
       toast.error("Error updating appointment");
+      return false;
+    }
+  };
+
+  const handleDelete = async (appointmentId) => {
+    const target = appointments.find((apt) => apt.appointment_id === appointmentId);
+    if (!target || target.status !== "pending") {
+      toast.error("Only pending requests can be deleted.");
+      return false;
+    }
+    if (!window.confirm("Remove this pending appointment?")) {
+      return false;
+    }
+    try {
+      const { error } = await supabase
+        .from("appointment")
+        .delete()
+        .eq("appointment_id", appointmentId)
+        .eq("status", "pending");
+
+      if (error) throw error;
+
+      toast.success("Appointment deleted");
+      await getAppointments();
+      setIsModalOpen(false);
+      setSelectedAppointment(null);
+      return true;
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Unable to delete appointment");
       return false;
     }
   };
@@ -1454,6 +1517,16 @@ const Schedules = () => {
                               Evaluated
                             </div>
                           )}
+                          {appointment.tutor_note && (
+                            <div className="mt-2 text-xs text-gray-600 font-medium">
+                              Tutor note: {appointment.tutor_note}
+                            </div>
+                          )}
+                          {appointment.tutor_note && (
+                            <div className="mt-2 text-xs text-gray-600 font-medium">
+                              Tutor note: {appointment.tutor_note}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1544,6 +1617,7 @@ const Schedules = () => {
         appointment={selectedAppointment}
         isOpen={isModalOpen}
         onClose={closeModal}
+        onDelete={handleDelete}
         onUpdate={handleAppointmentUpdate}
         onEvaluate={openEvaluationModal}
         onShareResources={handleResourceShare}

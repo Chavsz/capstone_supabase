@@ -14,6 +14,21 @@ const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
 const isFinishedStatus = (status = "") =>
   FINISHED_STATUSES.has(String(status).toLowerCase());
 
+const STATUS_META = {
+  pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
+  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-800" },
+  started: { label: "In Session", badge: "bg-sky-100 text-sky-800" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-orange-100 text-orange-800" },
+  completed: { label: "Completed", badge: "bg-blue-100 text-blue-800" },
+  declined: { label: "Declined", badge: "bg-red-100 text-red-800" },
+  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-800" },
+};
+
+const formatStatusLabel = (status = "") =>
+  STATUS_META[status]?.label || status.replace(/_/g, " ");
+const statusBadge = (status = "") =>
+  STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
+
 const TuteeDashboard = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -149,6 +164,13 @@ const TuteeDashboard = () => {
     isFinishedStatus(a.status)
   );
 
+  const historySessions = appointments.filter(
+    (a) =>
+      !["pending", "confirmed", "started"].includes(
+        (a.status || "").toLowerCase()
+      )
+  );
+
   return (
     <div className="flex-1 flex flex-col px-6 py-3">
       <div className="flex justify-between items-center">
@@ -238,15 +260,29 @@ const TuteeDashboard = () => {
               </p>
             </div>
           )}
+        <div className="flex justify-end mt-3">
+          <Link
+            to="/dashboard/schedules"
+            className="text-xs text-blue-600 font-semibold hover:text-blue-800"
+          >
+            View schedule details →
+          </Link>
+        </div>
         </div>
       </div>
 
       <div className="mt-6 grid sm:grid-cols-1 md:grid-cols-3 grid-rows-3 gap-7">
         <div className="row-span-3 col-span-2">
           <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF] flex-1">
-            <div className="flex gap-4 text-center">
+            <div className="flex gap-4 text-center items-center">
             <p className="text-blue-600 text-2xl"><MdOutlineWorkHistory /></p>
             <p className="text-gray-600 font-semibold">Session History</p>
+            <Link
+              to="/dashboard/schedules"
+              className="text-xs text-blue-600 font-semibold hover:text-blue-800 ml-auto"
+            >
+              View all
+            </Link>
             </div>
 
             {/*Completed Sessions */}
@@ -259,45 +295,63 @@ const TuteeDashboard = () => {
                     <th className="text-left font-bold py-3 px-2">Time</th>
                     <th className="text-left font-bold py-3 px-2">Subject</th>
                     <th className="text-left font-bold py-3 px-2">Topic</th>
+                    <th className="text-left font-bold py-3 px-2">Status</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {completedSessions.map((session) => (
-                    <tr
-                      key={session.appointment_id}
-                      className="border-b border-[#EBEDEF]"
-                    >
-                      <td className="py-3 px-2">
-                        {session.tutor_name || "N/A"}
+                  {historySessions.length > 0 ? (
+                    historySessions.map((session) => (
+                      <tr
+                        key={session.appointment_id}
+                        className="border-b border-[#EBEDEF]"
+                      >
+                        <td className="py-3 px-2">
+                          {session.tutor_name || "N/A"}
+                        </td>
+                        <td className="py-3 px-2">{formatDate(session.date)}</td>
+                        <td className="py-3 px-2">
+                          {formatTime(session.start_time)} -{" "}
+                          {formatTime(session.end_time)}
+                        </td>
+                        <td className="py-3 px-2">{session.subject || "N/A"}</td>
+                        <td className="py-3 px-2">{session.topic || "N/A"}</td>
+                        <td className="py-3 px-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              session.status
+                            )}`}
+                          >
+                            {formatStatusLabel(session.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-6 px-2 text-center text-sm text-gray-500"
+                      >
+                        No historical sessions yet.
                       </td>
-                      <td className="py-3 px-2">{formatDate(session.date)}</td>
-                      <td className="py-3 px-2">
-                        {formatTime(session.start_time)} -{" "}
-                        {formatTime(session.end_time)}
-                      </td>
-                      <td className="py-3 px-2">{session.subject || "N/A"}</td>
-                      <td className="py-3 px-2">{session.topic || "N/A"}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
+            </div>
+            <div className="flex justify-end mt-3">
+              <Link
+                to="/dashboard/schedules"
+                className="text-xs text-blue-600 font-semibold hover:text-blue-800"
+              >
+                Go to schedules →
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Top Tutors, Top Colleges, Top Reasons */}
-        <div className="flex flex-col">
-          <div>
-            <CardsOne title="Top Tutors" />
-          </div>
-          <div>
-            <CardsOne title="Top Colleges" />
-          </div>
-          <div>
-            <CardsOne title="Top Reasons" />
-          </div>
-        </div>
+      
       </div>
     </div>
   );

@@ -45,7 +45,13 @@ function Dashboard() {
         .from("student_profile")
         .select("college");
 
-      if (error) throw error;
+      if (error) {
+        if (error.status === 406) {
+          setCollegeData([]);
+          return;
+        }
+        throw error;
+      }
 
       // Count students by college
       const collegeCounts = {};

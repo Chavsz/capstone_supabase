@@ -41,7 +41,11 @@ const Switch = () => {
         .eq("user_id", userId)
         .single();
 
-      if (studentProfileError && studentProfileError.code !== "PGRST116") {
+      if (
+        studentProfileError &&
+        studentProfileError.code !== "PGRST116" &&
+        studentProfileError.status !== 406
+      ) {
         throw studentProfileError;
       }
 

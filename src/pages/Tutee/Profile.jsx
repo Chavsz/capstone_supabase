@@ -42,7 +42,7 @@ const Profile = () => {
         .eq("user_id", session.user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== 'PGRST116' && error.status !== 406) {
         throw error;
       }
 
