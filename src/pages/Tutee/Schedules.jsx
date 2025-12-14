@@ -99,14 +99,6 @@ const EvaluationModal = ({
   };
 
   if (!isOpen || !appointment) return null;
-  const canShareResources =
-    ["confirmed", "started"].includes(appointment.status);
-  const canDeleteAppointment = ![
-    "confirmed",
-    "awaiting_feedback",
-    "completed",
-  ].includes(appointment.status);
-
   const ratingOptions = [
     { value: "5", label: "5 - Outstanding" },
     { value: "4", label: "4 - Very Satisfactory" },
@@ -572,6 +564,15 @@ const AppointmentModal = ({
     }
   };
 
+  if (!isOpen || !appointment) return null;
+  const canShareResources =
+    ["confirmed", "started"].includes(appointment.status);
+  const canDeleteAppointment = ![
+    "confirmed",
+    "awaiting_feedback",
+    "completed",
+  ].includes(appointment.status);
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -621,8 +622,6 @@ const STATUS_LABELS = {
 
 const formatStatusLabel = (status = "") =>
   STATUS_LABELS[status] || status.replace(/_/g, " ");
-
-  if (!isOpen || !appointment) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -743,7 +742,7 @@ const formatStatusLabel = (status = "") =>
               Tutor note: {appointment.tutor_decline_reason}
             </div>
           )}
-          {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
+        {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Online Link:</span>
               <a
@@ -756,7 +755,7 @@ const formatStatusLabel = (status = "") =>
               </a>
             </div>
           )}
-          {(appointment.status === "confirmed" || appointment.status === "started") && appointment.file_link && (
+        {(appointment.status === "confirmed" || appointment.status === "started") && appointment.file_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Materials:</span>
               <a
