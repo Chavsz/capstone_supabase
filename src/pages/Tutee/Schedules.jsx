@@ -57,8 +57,7 @@ const EvaluationModal = ({
   };
 
   const handleSubmit = async () => {
-    // Validate that all fields are filled
-    const requiredFields = [
+    const tutorRequired = [
       "presentation_clarity",
       "drills_sufficiency",
       "patience_enthusiasm",
@@ -66,12 +65,23 @@ const EvaluationModal = ({
       "positive_impact",
     ];
 
-    const missingFields = requiredFields.filter(
+    const lavRequired = [
+      "lav_environment",
+      "lav_scheduling",
+      "lav_support",
+      "lav_book_again",
+      "lav_value",
+    ];
+
+    const missingTutor = tutorRequired.filter(
       (field) => !evaluationData[field]
     );
+    const missingLav = lavRequired.filter((field) => !evaluationData[field]);
 
-    if (missingFields.length > 0) {
-      setError("Please rate all criteria before submitting.");
+    if (missingTutor.length > 0 || missingLav.length > 0) {
+      setError(
+        "Please provide ratings for every Tutor and LAV criterion before submitting."
+      );
       return;
     }
 
@@ -89,6 +99,13 @@ const EvaluationModal = ({
   };
 
   if (!isOpen || !appointment) return null;
+  const canShareResources =
+    ["confirmed", "started"].includes(appointment.status);
+  const canDeleteAppointment = ![
+    "confirmed",
+    "awaiting_feedback",
+    "completed",
+  ].includes(appointment.status);
 
   const ratingOptions = [
     { value: "5", label: "5 - Outstanding" },
@@ -245,7 +262,7 @@ const EvaluationModal = ({
           {activeTab === "tutor" ? (
             <div className="space-y-2 border-b border-gray-200 pb-4">
               <label className="text-sm font-medium text-gray-700">
-                Optional comment for your tutor
+                Optional message (visible to your tutor only)
               </label>
               <textarea
                 className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -260,12 +277,12 @@ const EvaluationModal = ({
                 placeholder="Share additional thoughts for your tutor"
               />
               <p className="text-xs text-gray-500">
-                This comment is sent anonymously. Your personal details remain hidden and protected.
+                Only your tutor can read this message. It remains anonymous and your personal details are protected.
               </p>
             </div>
           ) : (
             <p className="text-xs text-gray-500 border-b border-gray-200 pb-4">
-              LAV responses are optional and help improve the overall peer tutoring experience. You can still submit even if these items are blank.
+              LAV responses are required and are shared only with Learning Assistance Volunteer administrators to improve the program. Tutors do not see these ratings.
             </p>
           )}
         </div>
@@ -306,6 +323,7 @@ const AppointmentModal = ({
   onUpdate,
   onEvaluate,
   onShareResources,
+  onDeclineConfirmed,
   tutorSchedules = {},
 }) => {
   const CLASS_TIME_BLOCKS = [
@@ -400,6 +418,9 @@ const AppointmentModal = ({
   const [resourceMessage, setResourceMessage] = useState("");
   const [resourceStatus, setResourceStatus] = useState("");
   const [isResourceSaving, setIsResourceSaving] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineError, setDeclineError] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
 
   const initializeForm = useCallback(
     (sourceAppointment) => {
@@ -441,8 +462,36 @@ const AppointmentModal = ({
       setIsEditing(false);
       setResourceMessage("");
       setResourceStatus("");
+      setDeclineReason("");
+      setDeclineError("");
+      setIsDeclining(false);
     }
   }, [appointment, initializeForm, isOpen]);
+
+  const handleConfirmedDecline = async () => {
+    if (!declineReason.trim()) {
+      setDeclineError("Please provide a short reason for declining.");
+      return;
+    }
+    if (!onDeclineConfirmed || !appointment) return;
+
+    setDeclineError("");
+    setIsDeclining(true);
+    try {
+      await onDeclineConfirmed({
+        appointment,
+        reason: declineReason.trim(),
+      });
+      setDeclineReason("");
+      onClose();
+    } catch (err) {
+      setDeclineError(
+        err?.message || "Unable to decline this appointment. Please try again."
+      );
+    } finally {
+      setIsDeclining(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -539,11 +588,11 @@ const AppointmentModal = ({
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+const getStatusColor = (status) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "confirmed":
         return "bg-green-100 text-green-800";
       case "started":
         return "bg-sky-100 text-sky-800";
@@ -555,10 +604,23 @@ const AppointmentModal = ({
         return "bg-gray-100 text-gray-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const STATUS_LABELS = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  started: "In Session",
+  awaiting_feedback: "Awaiting Feedback",
+  completed: "Completed",
+  declined: "Declined",
+  cancelled: "Cancelled",
+};
+
+const formatStatusLabel = (status = "") =>
+  STATUS_LABELS[status] || status.replace(/_/g, " ");
 
   if (!isOpen || !appointment) return null;
 
@@ -673,7 +735,7 @@ const AppointmentModal = ({
                 appointment.status
               )}`}
             >
-              {appointment.status}
+              {formatStatusLabel(appointment.status)}
             </span>
           </div>
           {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
@@ -704,10 +766,7 @@ const AppointmentModal = ({
           )}
         </div>
 
-        {(appointment.status === "confirmed" ||
-          appointment.status === "started" ||
-          appointment.status === "awaiting_feedback" ||
-          appointment.status === "completed") && (
+        {canShareResources && (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
               Share resources with your tutor
@@ -764,6 +823,37 @@ const AppointmentModal = ({
           </div>
         )}
 
+        {appointment.status === "confirmed" && (
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              Decline confirmed session
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              If you can no longer attend, tell your tutor why. The session will be cancelled and the tutor will receive your message.
+            </p>
+            <textarea
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Explain why you need to cancel..."
+            />
+            {declineError && (
+              <p className="text-xs text-red-600 mt-1" role="alert">
+                {declineError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleConfirmedDecline}
+              className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm hover:bg-red-700 w-full disabled:bg-red-300 disabled:cursor-not-allowed"
+              disabled={isDeclining}
+            >
+              {isDeclining ? "Sending..." : "Decline Appointment"}
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         {error && (
           <p className="text-sm text-red-600 mb-2" role="alert">
@@ -810,7 +900,7 @@ const AppointmentModal = ({
               Evaluate Session
             </button>
           )}
-          {!isEditing && (
+          {!isEditing && canDeleteAppointment && (
             <button
               onClick={() => {
                 onDelete(appointment.appointment_id);
@@ -999,6 +1089,51 @@ const Schedules = () => {
       console.error(err.message);
       toast.error("Unable to save resources.");
       return false;
+    }
+  };
+
+  const handleConfirmedDecline = async ({ appointment, reason }) => {
+    if (!appointment) return;
+    try {
+      const { error } = await supabase
+        .from("appointment")
+        .update({ status: "cancelled" })
+        .eq("appointment_id", appointment.appointment_id)
+        .eq("status", "confirmed");
+
+      if (error) throw error;
+
+      if (appointment.tutor_id) {
+        const formattedDate = new Date(appointment.date).toLocaleDateString(
+          "en-US",
+          { month: "long", day: "numeric", year: "numeric" }
+        );
+        const formattedTime = formatTime(appointment.start_time);
+        const notificationMessage = `Your tutee cancelled the session for ${
+          appointment.subject || "a session"
+        }${appointment.topic ? ` - ${appointment.topic}` : ""} on ${
+          formattedDate || appointment.date
+        } at ${formattedTime}. Reason: ${reason}`;
+
+        const { error: notificationError } = await supabase
+          .from("notification")
+          .insert([
+            {
+              user_id: appointment.tutor_id,
+              notification_content: notificationMessage,
+              status: "unread",
+            },
+          ]);
+
+        if (notificationError) throw notificationError;
+      }
+
+      toast.success("Session cancelled and your tutor has been notified.");
+      await getAppointments();
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Unable to cancel this appointment right now.");
+      throw err;
     }
   };
 
@@ -1405,6 +1540,7 @@ const Schedules = () => {
         onUpdate={handleAppointmentUpdate}
         onEvaluate={openEvaluationModal}
         onShareResources={handleResourceShare}
+        onDeclineConfirmed={handleConfirmedDecline}
         tutorSchedules={tutorSchedules}
       />
 

@@ -29,11 +29,11 @@ const AppointmentModal = ({
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
+const getStatusColor = (status) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "confirmed":
         return "bg-green-100 text-green-800";
       case "started":
         return "bg-sky-100 text-sky-800";
@@ -45,10 +45,23 @@ const AppointmentModal = ({
         return "bg-gray-100 text-gray-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+const STATUS_LABELS = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  started: "In Session",
+  awaiting_feedback: "Awaiting Feedback",
+  completed: "Completed",
+  declined: "Declined",
+  cancelled: "Cancelled",
+};
+
+const formatStatusLabel = (status = "") =>
+  STATUS_LABELS[status] || status.replace(/_/g, " ");
 
   const getRatingLabel = (rating) => {
     const labels = {
@@ -116,7 +129,7 @@ const AppointmentModal = ({
                 appointment.status
               )}`}
             >
-              {appointment.status}
+              {formatStatusLabel(appointment.status)}
             </span>
           </div>
           {(appointment.resource_link || appointment.resource_note) && (
