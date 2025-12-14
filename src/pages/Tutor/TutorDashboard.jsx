@@ -25,6 +25,10 @@ import { LuChartLine } from "react-icons/lu";
 // Components
 import { Cards } from "../../components/cards";
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 const TutorDashboard = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -143,8 +147,8 @@ const TutorDashboard = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
 
-  const completedAppointments = appointments.filter(
-    (a) => a.status === "completed"
+  const completedAppointments = appointments.filter((a) =>
+    isFinishedStatus(a.status)
   );
 
   const cancelledAppointments = appointments.filter(
@@ -160,7 +164,7 @@ const TutorDashboard = () => {
   const areaChartData = sortedDates.map((date) => {
     const booked = filteredAppointments.filter((a) => a.date === date).length;
     const completed = filteredAppointments.filter(
-      (a) => a.date === date && a.status === "completed"
+      (a) => a.date === date && isFinishedStatus(a.status)
     ).length;
     const cancelled = filteredAppointments.filter(
       (a) =>

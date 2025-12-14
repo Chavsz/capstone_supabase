@@ -10,6 +10,10 @@ import { PiSpeakerHigh } from "react-icons/pi";
 import { AiOutlineSchedule } from "react-icons/ai";
 import { MdOutlineWorkHistory } from "react-icons/md";
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 const TuteeDashboard = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -141,8 +145,8 @@ const TuteeDashboard = () => {
     });
   };
 
-  const completedSessions = appointments.filter(
-    (a) => a.status === "completed"
+  const completedSessions = appointments.filter((a) =>
+    isFinishedStatus(a.status)
   );
 
   return (

@@ -18,6 +18,10 @@ const lavRatingFields = [
   { key: "lav_value", label: "Value for Time" },
 ];
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 const escapeHtml = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -277,7 +281,7 @@ const Reports = () => {
     const thisWeek = weekInfo(today);
 
     appointments
-      .filter((apt) => apt.status === "completed")
+      .filter((apt) => isFinishedStatus(apt.status))
       .forEach((appointment) => {
         const tutorId = appointment.tutor_id || "unknown";
         if (!stats[tutorId]) {
@@ -440,7 +444,7 @@ const Reports = () => {
   }, [appointments, periodRange]);
 
   const completedAppointmentsInPeriod = useMemo(
-    () => appointmentsInPeriod.filter((apt) => apt.status === "completed"),
+    () => appointmentsInPeriod.filter((apt) => isFinishedStatus(apt.status)),
     [appointmentsInPeriod]
   );
 
@@ -470,7 +474,7 @@ const Reports = () => {
   const comparisonCompletedCount = useMemo(() => {
     if (!comparisonRange) return null;
     return appointments.filter((appointment) => {
-      if (appointment.status !== "completed" || !appointment.date) return false;
+      if (!isFinishedStatus(appointment.status) || !appointment.date) return false;
       const date = new Date(appointment.date);
       return date >= comparisonRange.start && date < comparisonRange.end;
     }).length;
@@ -585,7 +589,7 @@ const Reports = () => {
           hours: 0,
         };
       }
-      if (appointment.status === "completed") {
+      if (isFinishedStatus(appointment.status)) {
         const minutes =
           (new Date(`2000-01-01T${appointment.end_time}`) -
             new Date(`2000-01-01T${appointment.start_time}`)) /

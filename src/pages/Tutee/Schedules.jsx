@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
+const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
+
 // Evaluation Modal component
 const EvaluationModal = ({
   appointment,
@@ -543,8 +545,14 @@ const AppointmentModal = ({
         return "bg-yellow-100 text-yellow-800";
       case "confirmed":
         return "bg-green-100 text-green-800";
+      case "started":
+        return "bg-sky-100 text-sky-800";
+      case "awaiting_feedback":
+        return "bg-amber-100 text-amber-800";
       case "declined":
         return "bg-red-100 text-red-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
       default:
@@ -698,6 +706,7 @@ const AppointmentModal = ({
 
         {(appointment.status === "confirmed" ||
           appointment.status === "started" ||
+          appointment.status === "awaiting_feedback" ||
           appointment.status === "completed") && (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
@@ -788,7 +797,7 @@ const AppointmentModal = ({
               </button>
             </>
           )}
-          {appointment.status === "completed" && appointment.hasEvaluation === false && (
+          {appointment.status === "awaiting_feedback" && (
             <button
               onClick={() => {
                 onClose();
@@ -1128,6 +1137,14 @@ const Schedules = () => {
 
       if (error) throw error;
 
+      const { error: statusError } = await supabase
+        .from("appointment")
+        .update({ status: "completed" })
+        .eq("appointment_id", appointmentId)
+        .eq("status", "awaiting_feedback");
+
+      if (statusError) throw statusError;
+
       toast.success("Evaluation submitted successfully!");
       await getAppointments(); // Refresh appointments
     } catch (err) {
@@ -1159,7 +1176,7 @@ const Schedules = () => {
 
   const historyAppointments = appointments.filter(
     (appointment) =>
-      appointment.status === "completed" ||
+      FINISHED_STATUSES.includes(appointment.status) ||
       appointment.status === "declined" ||
       appointment.status === "cancelled"
   );
@@ -1352,7 +1369,7 @@ const Schedules = () => {
                           <div className="text-sm text-gray-500 mb-1">
                             {appointment.mode_of_session}
                           </div>
-                          {appointment.status === "completed" && !appointment.hasEvaluation && (
+                          {appointment.status === "awaiting_feedback" && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1363,7 +1380,7 @@ const Schedules = () => {
                               Evaluate
                             </button>
                           )}
-                          {appointment.status === "completed" && appointment.hasEvaluation && (
+                          {appointment.status === "completed" && (
                             <div className="mt-2 text-xs text-green-600 font-medium">
                               ✓ Evaluated
                             </div>

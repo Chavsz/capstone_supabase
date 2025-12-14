@@ -12,6 +12,10 @@ import {
   AppointmentsAreaChart,
 } from "../../components/graphs";
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 function Dashboard() {
   const [appointments, setAppointments] = useState([]);
   const [collegeData, setCollegeData] = useState([]);
@@ -76,8 +80,8 @@ function Dashboard() {
   );
 
   //Total number of completed appointments
-  const completedAppointments = appointments.filter(
-    (a) => a.status === "completed"
+  const completedAppointments = appointments.filter((a) =>
+    isFinishedStatus(a.status)
   );
 
 

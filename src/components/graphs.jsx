@@ -5,6 +5,10 @@ import { AiOutlineSchedule } from "react-icons/ai";
 import { IoPieChart } from "react-icons/io5"; //pie
 import { TiChartAreaOutline } from "react-icons/ti"; //area
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 import {
   BarChart,
   Bar,
@@ -113,7 +117,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
     (a) =>
       a.status === "confirmed" ||
       a.status === "started" ||
-      a.status === "completed"
+      isFinishedStatus(a.status)
   );
   const weekdayCounts = confirmedAppointments.reduce((acc, appt) => {
     const weekday = getWeekday(appt.date);
@@ -191,7 +195,7 @@ export const AppointmentsAreaChart = ({ appointmentsData }) => {
   const areaChartData = sortedDates.map((date) => {
     const booked = filteredAppointments.filter((a) => a.date === date).length;
     const completed = filteredAppointments.filter(
-      (a) => a.date === date && a.status === "completed"
+      (a) => a.date === date && isFinishedStatus(a.status)
     ).length;
     const cancelled = filteredAppointments.filter(
       (a) => a.date === date && a.status === "cancelled"

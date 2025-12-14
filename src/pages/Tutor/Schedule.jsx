@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
+const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
+
 // Modal component for appointment details
 const AppointmentModal = ({
   appointment,
@@ -33,8 +35,14 @@ const AppointmentModal = ({
         return "bg-yellow-100 text-yellow-800";
       case "confirmed":
         return "bg-green-100 text-green-800";
+      case "started":
+        return "bg-sky-100 text-sky-800";
+      case "awaiting_feedback":
+        return "bg-amber-100 text-amber-800";
       case "declined":
         return "bg-red-100 text-red-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
       default:
@@ -273,19 +281,19 @@ const AppointmentModal = ({
                 }}
                 className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
               >
-                Cancel
+                Decline Session
               </button>
             </>
           )}
           {appointment.status === "started" && (
             <button
               onClick={() => {
-                onStatusUpdate(appointment.appointment_id, "completed");
+                onStatusUpdate(appointment.appointment_id, "awaiting_feedback");
                 onClose();
               }}
               className="bg-[#16a34a] text-white rounded-md px-4 py-2 text-sm hover:bg-[#166534] w-full"
             >
-              Complete Appointment
+              End Session (Awaiting Feedback)
             </button>
           )}
         </div>
@@ -330,7 +338,7 @@ const Schedule = () => {
 
       // Fetch evaluations for completed appointments
       const appointmentIds = formattedData
-        .filter(apt => apt.status === "completed")
+        .filter(apt => FINISHED_STATUSES.includes(apt.status))
         .map(apt => apt.appointment_id);
 
       if (appointmentIds.length > 0) {
@@ -549,16 +557,13 @@ const Schedule = () => {
     setSelectedFilter(filter);
   };
 
-  const confirmedAndPendingAppointmets = appointments.filter(
-    (appointment) =>
-      appointment.status === "confirmed" ||
-      appointment.status === "pending" ||
-      appointment.status === "started"
+  const confirmedAndPendingAppointmets = appointments.filter((appointment) =>
+    ["confirmed", "pending", "started"].includes(appointment.status)
   );
 
   const historyAppointments = appointments.filter(
     (appointment) =>
-      appointment.status === "completed" ||
+      FINISHED_STATUSES.includes(appointment.status) ||
       appointment.status === "declined" ||
       appointment.status === "cancelled"
   );

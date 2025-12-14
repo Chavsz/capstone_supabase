@@ -7,6 +7,7 @@ const STATUS_META = {
   confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-700" },
   declined: { label: "Declined", badge: "bg-rose-100 text-rose-700" },
   started: { label: "In Session", badge: "bg-sky-100 text-sky-700" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-yellow-100 text-yellow-700" },
   completed: { label: "Completed", badge: "bg-indigo-100 text-indigo-700" },
   cancelled: { label: "Cancelled", badge: "bg-gray-200 text-gray-600" },
 };
