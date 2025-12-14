@@ -916,11 +916,6 @@ const Schedule = () => {
                               Evaluated
                             </div>
                           )}
-                          {appointment.tutee_note && (
-                            <div className="mt-2 text-xs text-gray-600 font-medium">
-                              Tutee note: {appointment.tutee_note}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}

@@ -1132,7 +1132,10 @@ const Schedules = () => {
     try {
       const { error } = await supabase
         .from("appointment")
-        .update({ status: "cancelled" })
+        .update({
+          status: "cancelled",
+          tutee_decline_reason: reason,
+        })
         .eq("appointment_id", appointment.appointment_id)
         .eq("status", "confirmed");
 
