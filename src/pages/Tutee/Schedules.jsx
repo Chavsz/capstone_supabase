@@ -429,6 +429,7 @@ const AppointmentModal = ({
   const [declineReason, setDeclineReason] = useState("");
   const [declineError, setDeclineError] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const initializeForm = useCallback(
     (sourceAppointment) => {
@@ -581,7 +582,6 @@ const AppointmentModal = ({
   };
 
   if (!isOpen || !appointment) return null;
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const canShareResources =
     ["confirmed", "started"].includes(appointment.status);
