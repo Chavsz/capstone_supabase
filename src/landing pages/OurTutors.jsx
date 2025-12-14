@@ -7,37 +7,35 @@ function OurTutors() {
 
   const fetchTutors = async () => {
     try {
-      // Fetch tutors with their profiles
-      const { data: tutorsData, error: tutorsError } = await supabase
-        .from("users")
-        .select("user_id, name, email")
-        .eq("role", "tutor");
+      const { data, error } = await supabase
+        .from("profile")
+        .select(`
+          user_id,
+          subject,
+          specialization,
+          profile_image,
+          user:users (
+            name,
+            email,
+            role
+          )
+        `)
+        .eq("user.role", "tutor");
 
-      if (tutorsError) throw tutorsError;
+      if (error) throw error;
 
-      // Fetch tutor profiles
-      const tutorIds = (tutorsData || []).map(t => t.user_id);
-      if (tutorIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profile")
-          .select("user_id, subject, specialization, profile_image")
-          .in("user_id", tutorIds);
+      const tutorsFromProfile = (data || [])
+        .filter((record) => record.user?.role === "tutor")
+        .map((record) => ({
+          user_id: record.user_id,
+          name: record.user?.name || "Tutor",
+          email: record.user?.email || "",
+          subject: record.subject,
+          specialization: record.specialization,
+          profile_image: record.profile_image,
+        }));
 
-        if (profilesError) throw profilesError;
-
-        // Combine user data with profile data
-        const tutorsWithProfiles = (tutorsData || []).map(tutor => {
-          const profile = (profilesData || []).find(p => p.user_id === tutor.user_id);
-          return {
-            ...tutor,
-            subject: profile?.subject || null,
-            specialization: profile?.specialization || null,
-            profile_image: profile?.profile_image || null,
-          };
-        });
-
-        setTutors(tutorsWithProfiles);
-      }
+      setTutors(tutorsFromProfile);
     } catch (error) {
       console.error("Error fetching tutors:", error);
     }
