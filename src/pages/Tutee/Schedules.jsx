@@ -3,6 +3,18 @@ import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
+const UPCOMING_STATUS_TABS = [
+  { status: "all", label: "All" },
+  { status: "pending", label: "Pending" },
+  { status: "confirmed", label: "Confirmed" },
+  { status: "started", label: "In Session" },
+];
+const HISTORY_STATUS_TABS = [
+  { status: "awaiting_feedback", label: "Awaiting Feedback" },
+  { status: "completed", label: "Completed" },
+  { status: "declined", label: "Declined" },
+  { status: "cancelled", label: "Cancelled" },
+];
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
@@ -929,6 +941,8 @@ const Schedules = () => {
   const [tutorSchedules, setTutorSchedules] = useState({});
   const [currentUserId, setCurrentUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1033,9 +1047,29 @@ const Schedules = () => {
     }
   }, []);
 
+  const fetchNotificationCount = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { count, error } = await supabase
+        .from("notification")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("status", "unread");
+
+      if (error) throw error;
+
+      setNotificationCount(count || 0);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }, []);
+
   useEffect(() => {
     getAppointments();
-  }, [getAppointments]);
+    fetchNotificationCount();
+  }, [getAppointments, fetchNotificationCount]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -1383,19 +1417,56 @@ const Schedules = () => {
     return acc;
   }, {});
 
+  useEffect(() => {
+    setStatusFilter("all");
+  }, [selectedFilter]);
+
+  const statusTabs =
+    selectedFilter === "upcoming" ? UPCOMING_STATUS_TABS : HISTORY_STATUS_TABS;
+
+  const baseAppointments =
+    selectedFilter === "upcoming" ? upcomingAppointments : historyAppointments;
+
+  const getStatusCount = (status) => {
+    if (status === "all") return baseAppointments.length;
+    return baseAppointments.filter((apt) => apt.status === status).length;
+  };
+
+  const shouldShowStatus = (status) =>
+    statusFilter === "all" || statusFilter === status;
+
   return (
     <div className="py-3 px-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
         <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tutor, subject or topic"
-            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tutor, subject or topic"
+          className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+        {statusTabs.map((tab) => (
+          <button
+            key={tab.status}
+            onClick={() => setStatusFilter(tab.status)}
+            className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
+              statusFilter === tab.status
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-600 border-gray-300 hover:border-blue-500"
+            }`}
+          >
+            {tab.label}
+            <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
+              {getStatusCount(tab.status)}
+            </span>
+          </button>
+        ))}
+        <span className="ml-auto text-xs font-semibold text-blue-600">
+          Unread notifications: {notificationCount}
+        </span>
       </div>
 
       {/* Filter Buttons */}
@@ -1433,6 +1504,7 @@ const Schedules = () => {
             upcomingStatusOrder.map((status) => {
               const list = upcomingByStatus[status] || [];
               if (list.length === 0) return null;
+              if (!shouldShowStatus(status)) return null;
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
@@ -1512,6 +1584,7 @@ const Schedules = () => {
             historyStatusOrder.map((status) => {
               const list = historyByStatus[status] || [];
               if (list.length === 0) return null;
+              if (!shouldShowStatus(status)) return null;
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
