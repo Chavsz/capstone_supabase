@@ -1428,6 +1428,11 @@ const Schedules = () => {
   const displayHistoryStatuses =
     statusFilter === "all" ? historyStatusOrder : [statusFilter];
 
+  const shouldShowStatus = (status) => {
+    if (!status) return false;
+    return (historyByStatus[status] || []).length > 0;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen p-6">
