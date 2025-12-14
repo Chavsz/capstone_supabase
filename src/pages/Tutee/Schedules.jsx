@@ -820,7 +820,7 @@ const AppointmentModal = ({
         {appointment.status === "confirmed" && (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
-              Decline confirmed session
+              Cancel confirmed session
             </h3>
             <p className="text-xs text-gray-500 mb-3">
               If you can no longer attend, tell your tutor why. The session will be cancelled and the tutor will receive your message.
@@ -843,7 +843,7 @@ const AppointmentModal = ({
               className="mt-3 bg-red-600 text-white rounded-md px-4 py-2 text-sm hover:bg-red-700 w-full disabled:bg-red-300 disabled:cursor-not-allowed"
               disabled={isDeclining}
             >
-              {isDeclining ? "Sending..." : "Decline Appointment"}
+              {isDeclining ? "Sending..." : "Cancel Appointment"}
             </button>
           </div>
         )}
@@ -928,6 +928,7 @@ const Schedules = () => {
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [tutorSchedules, setTutorSchedules] = useState({});
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1340,92 +1341,62 @@ const Schedules = () => {
     setSelectedFilter(filter);
   };
 
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const matchesSearch = (appointment) => {
+    if (!normalizedSearch) return true;
+    const haystack = `${appointment.tutor_name || ""} ${appointment.subject || ""} ${appointment.topic || ""}`.toLowerCase();
+    return haystack.includes(normalizedSearch);
+  };
+
   const upcomingAppointments = appointments.filter(
     (appointment) =>
-      appointment.status === "confirmed" ||
-      appointment.status === "pending" ||
-      appointment.status === "started"
+      ["confirmed", "pending", "started"].includes(appointment.status) &&
+      matchesSearch(appointment)
   );
 
   const historyAppointments = appointments.filter(
     (appointment) =>
-      FINISHED_STATUSES.includes(appointment.status) ||
-      appointment.status === "declined" ||
-      appointment.status === "cancelled"
+      (FINISHED_STATUSES.includes(appointment.status) ||
+        appointment.status === "declined" ||
+        appointment.status === "cancelled") &&
+      matchesSearch(appointment)
   );
 
-  // Group appointments by date
-  const groupAppointmentsByDate = (appointmentsList) => {
-    const grouped = {};
-    appointmentsList.forEach((appointment) => {
-      const dateKey = getDateLabel(appointment.date);
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(appointment);
-    });
-
-    // Sort the grouped appointments by date priority
-    const sortedKeys = Object.keys(grouped).sort((a, b) => {
-      // Priority order: Today, Tomorrow, then chronological
-      if (a === "Today") return -1;
-      if (b === "Today") return 1;
-      if (a === "Tomorrow") return -1;
-      if (b === "Tomorrow") return 1;
-
-      // For other dates, sort chronologically
-      const dateA = new Date(
-        appointmentsList.find((apt) => getDateLabel(apt.date) === a)?.date
-      );
-      const dateB = new Date(
-        appointmentsList.find((apt) => getDateLabel(apt.date) === b)?.date
-      );
-      return dateA - dateB;
-    });
-
-    // Create new sorted object
-    const sortedGrouped = {};
-    sortedKeys.forEach((key) => {
-      sortedGrouped[key] = grouped[key];
-    });
-
-    return sortedGrouped;
-  };
-
-  // Group appointments for history: use pure date keys and uniform display labels
-  const groupHistoryAppointmentsByDate = (appointmentsList) => {
-    const grouped = {};
-    appointmentsList.forEach((appointment) => {
-      const d = new Date(appointment.date);
-      const isoKey = new Date(
-        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
-      )
-        .toISOString()
-        .slice(0, 10); // YYYY-MM-DD
-      if (!grouped[isoKey]) grouped[isoKey] = [];
-      grouped[isoKey].push(appointment);
-    });
-
-    const sortedKeys = Object.keys(grouped).sort(
-      (a, b) => new Date(b) - new Date(a)
+  const upcomingStatusOrder = ["pending", "confirmed", "started"];
+  const upcomingByStatus = upcomingStatusOrder.reduce((acc, status) => {
+    acc[status] = upcomingAppointments.filter(
+      (appointment) => appointment.status === status
     );
+    return acc;
+  }, {});
 
-    const sortedGrouped = {};
-    sortedKeys.forEach((key) => {
-      sortedGrouped[key] = grouped[key];
-    });
-    return sortedGrouped;
-  };
-
-  const groupedUpcomingAppointments = groupAppointmentsByDate(
-    upcomingAppointments
-  );
-  const groupedHistoryAppointments =
-    groupHistoryAppointmentsByDate(historyAppointments);
+  const historyStatusOrder = [
+    "awaiting_feedback",
+    "completed",
+    "declined",
+    "cancelled",
+  ];
+  const historyByStatus = historyStatusOrder.reduce((acc, status) => {
+    acc[status] = historyAppointments.filter(
+      (appointment) => appointment.status === status
+    );
+    return acc;
+  }, {});
 
   return (
     <div className="py-3 px-6">
-      <h1 className="text-gray-600 font-bold text-2xl mb-6">Schedules</h1>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+        <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tutor, subject or topic"
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
 
       {/* Filter Buttons */}
       <div className="flex gap-3 mb-6">
@@ -1454,111 +1425,21 @@ const Schedules = () => {
       {/* Upcoming Appointments View */}
       {selectedFilter === "upcoming" && (
         <div className="space-y-6">
-          {Object.keys(groupedUpcomingAppointments).length === 0 ? (
+          {Object.values(upcomingByStatus).every((list) => list.length === 0) ? (
             <div className="text-center text-gray-500 py-8">
-              <p>
-                No upcoming appointments found. Book your first appointment!
-              </p>
+              <p>No upcoming appointments match this search.</p>
             </div>
           ) : (
-            Object.entries(groupedUpcomingAppointments).map(
-              ([date, appointments]) => (
-                <div key={date}>
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-700">
-                      {date}
-                    </h3>
-                    {getDateSubtitle(appointments[0]?.date) && (
-                      <p className="text-sm text-gray-500">
-                        {getDateSubtitle(appointments[0]?.date)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {appointments.map((appointment) => (
-                      <div
-                        key={appointment.appointment_id}
-                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
-                        onClick={() => openModal(appointment)}
-                      >
-                        <div className="pl-3 border-l-3 border-blue-300">
-                          <div className="font-medium text-gray-900 mb-1">
-                            {appointment.tutor_name}
-                          </div>
-                          <div className="text-sm text-gray-600 mb-1">
-                            {formatTime(appointment.start_time)} -{" "}
-                            {formatTime(appointment.end_time)}
-                          </div>
-                          <div className="text-sm text-gray-500 mb-1">
-                            {appointment.mode_of_session}
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                              appointment.status
-                            )}`}
-                          >
-                            {formatStatusLabel(appointment.status)}
-                          </span>
-                          {appointment.status === "declined" && appointment.tutor_decline_reason && (
-                            <div className="mt-2 text-xs text-red-600 font-medium">
-                              Tutor note: {appointment.tutor_decline_reason}
-                            </div>
-                          )}
-                          {appointment.status === "awaiting_feedback" && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEvaluationModal(appointment);
-                              }}
-                              className="mt-2 bg-green-600 text-white text-xs px-3 py-1 rounded hover:bg-green-700"
-                            >
-                              Evaluate
-                            </button>
-                          )}
-                          {appointment.status === "completed" && (
-                            <div className="mt-2 text-xs text-emerald-600 font-medium">
-                              Evaluated
-                            </div>
-                          )}
-                          {appointment.tutor_note && (
-                            <div className="mt-2 text-xs text-gray-600 font-medium">
-                              Tutor note: {appointment.tutor_note}
-                            </div>
-                          )}
-                          {appointment.tutor_note && (
-                            <div className="mt-2 text-xs text-gray-600 font-medium">
-                              Tutor note: {appointment.tutor_note}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            )
-          )}
-        </div>
-      )}
-
-      {/* History View */}
-      {selectedFilter === "history" && (
-        <div className="space-y-6">
-          {Object.keys(groupedHistoryAppointments).length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No appointment history found.</p>
-            </div>
-          ) : (
-            Object.entries(groupedHistoryAppointments).map(
-              ([isoDate, appointments]) => (
-                <div key={isoDate}>
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-700">
-                      {getFormattedDate(appointments[0]?.date)}
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {appointments.map((appointment) => (
+            upcomingStatusOrder.map((status) => {
+              const list = upcomingByStatus[status] || [];
+              if (list.length === 0) return null;
+              return (
+                <section key={status}>
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    {formatStatusLabel(status)} appointments
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    {list.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
@@ -1604,13 +1485,76 @@ const Schedules = () => {
                               Evaluated
                             </div>
                           )}
+                          {appointment.tutor_note && (
+                            <div className="mt-2 text-xs text-gray-600 font-medium">
+                              Tutor note: {appointment.tutor_note}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )
-            )
+                </section>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* History View */}
+      {selectedFilter === "history" && (
+        <div className="space-y-6">
+          {Object.values(historyByStatus).every((list) => list.length === 0) ? (
+            <div className="text-center text-gray-500 py-8">
+              <p>No historical appointments match this search.</p>
+            </div>
+          ) : (
+            historyStatusOrder.map((status) => {
+              const list = historyByStatus[status] || [];
+              if (list.length === 0) return null;
+              return (
+                <section key={status}>
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    {formatStatusLabel(status)} history
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    {list.map((appointment) => (
+                      <div
+                        key={appointment.appointment_id}
+                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
+                        onClick={() => openModal(appointment)}
+                      >
+                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
+                          <div className="font-medium text-gray-900">
+                            {appointment.tutor_name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {formatTime(appointment.start_time)} -{" "}
+                            {formatTime(appointment.end_time)}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {appointment.mode_of_session}
+                          </div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                              appointment.status
+                            )}`}
+                          >
+                            {formatStatusLabel(appointment.status)}
+                          </span>
+                          {appointment.status === "declined" &&
+                            appointment.tutor_decline_reason && (
+                              <div className="mt-2 text-xs text-red-600 font-medium">
+                                Tutor note: {appointment.tutor_decline_reason}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })
           )}
         </div>
       )}
