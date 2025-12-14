@@ -1432,8 +1432,10 @@ const Schedules = () => {
     return baseAppointments.filter((apt) => apt.status === status).length;
   };
 
-  const shouldShowStatus = (status) =>
-    statusFilter === "all" || statusFilter === status;
+  const displayUpcomingStatuses =
+    statusFilter === "all" ? upcomingStatusOrder : [statusFilter];
+  const displayHistoryStatuses =
+    statusFilter === "all" ? historyStatusOrder : [statusFilter];
 
   return (
     <div className="py-3 px-6">
@@ -1501,10 +1503,9 @@ const Schedules = () => {
               <p>No upcoming appointments match this search.</p>
             </div>
           ) : (
-            upcomingStatusOrder.map((status) => {
+            displayUpcomingStatuses.map((status) => {
               const list = upcomingByStatus[status] || [];
               if (list.length === 0) return null;
-              if (!shouldShowStatus(status)) return null;
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
@@ -1581,7 +1582,7 @@ const Schedules = () => {
               <p>No historical appointments match this search.</p>
             </div>
           ) : (
-            historyStatusOrder.map((status) => {
+            displayHistoryStatuses.map((status) => {
               const list = historyByStatus[status] || [];
               if (list.length === 0) return null;
               if (!shouldShowStatus(status)) return null;
