@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
@@ -73,6 +73,38 @@ const formatStatusLabel = (status = "") =>
       "N/A": "Not Applicable",
     };
     return labels[rating] || rating;
+  };
+
+  const [declineMode, setDeclineMode] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineError, setDeclineError] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
+
+  useEffect(() => {
+    setDeclineMode(false);
+    setDeclineReason("");
+    setDeclineError("");
+    setIsDeclining(false);
+  }, [appointment, isOpen]);
+
+  const handleDeclineSubmit = async () => {
+    if (!declineReason.trim()) {
+      setDeclineError("Please share a brief reason.");
+      return;
+    }
+    if (!appointment) return;
+    setDeclineError("");
+    setIsDeclining(true);
+    try {
+      await onStatusUpdate(appointment.appointment_id, "declined", {
+        reason: declineReason.trim(),
+      });
+      onClose();
+    } catch (err) {
+      setDeclineError(err?.message || "Unable to decline this appointment.");
+    } finally {
+      setIsDeclining(false);
+    }
   };
 
   if (!isOpen || !appointment) return null;
@@ -256,24 +288,60 @@ const formatStatusLabel = (status = "") =>
         <div className="flex gap-2 flex-wrap">
           {appointment.status === "pending" && (
             <>
-              <button
-                onClick={() => {
-                  onStatusUpdate(appointment.appointment_id, "confirmed");
-                  onClose();
-                }}
-                className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => {
-                  onStatusUpdate(appointment.appointment_id, "declined");
-                  onClose();
-                }}
-                className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
-              >
-                Decline
-              </button>
+              {!declineMode ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onStatusUpdate(appointment.appointment_id, "confirmed");
+                      onClose();
+                    }}
+                    className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeclineMode(true);
+                    }}
+                    className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
+                  >
+                    Decline
+                  </button>
+                </>
+              ) : (
+                <div className="w-full space-y-2">
+                  <textarea
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Share the reason for declining so the tutee understands why."
+                  />
+                  {declineError && (
+                    <p className="text-xs text-red-600">{declineError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeclineSubmit}
+                      className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:bg-red-300 disabled:cursor-not-allowed"
+                      disabled={isDeclining}
+                    >
+                      {isDeclining ? "Declining..." : "Confirm Decline"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeclineMode(false);
+                        setDeclineReason("");
+                        setDeclineError("");
+                      }}
+                      className="bg-gray-200 text-gray-800 rounded-md px-4 py-2 text-sm hover:bg-gray-300 flex-1"
+                      disabled={isDeclining}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
           {appointment.status === "confirmed" && (
@@ -324,7 +392,7 @@ const Schedule = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [evaluations, setEvaluations] = useState({});
 
-  const getAppointments = async () => {
+  const getAppointments = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -374,7 +442,7 @@ const Schedule = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Get current tutor's user id
   const getUserId = async () => {
@@ -399,10 +467,33 @@ const Schedule = () => {
   useEffect(() => {
     getAppointments();
     getUserId();
-  }, []);
+  }, [getAppointments]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`tutor-appointments-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointment",
+          filter: `tutor_id=eq.${userId}`,
+        },
+        () => {
+          getAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [userId, getAppointments]);
 
 
-  const handleStatusUpdate = async (appointmentId, status) => {
+  const handleStatusUpdate = async (appointmentId, status, metadata = {}) => {
     try {
       // First, get the appointment details to get the tutee's user_id
       const { data: appointmentData, error: fetchError } = await supabase
@@ -414,9 +505,13 @@ const Schedule = () => {
       if (fetchError) throw fetchError;
 
       // Update the appointment status
+      const updates = { status };
+      if (status === "declined") {
+        updates.tutor_decline_reason = metadata.reason || null;
+      }
       const { error } = await supabase
         .from("appointment")
-        .update({ status })
+        .update(updates)
         .eq("appointment_id", appointmentId);
 
       if (error) throw error;
@@ -439,6 +534,9 @@ const Schedule = () => {
           notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed.`;
         } else if (status === "declined") {
           notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined.`;
+          if (metadata.reason) {
+            notificationMessage += ` Reason: ${metadata.reason}`;
+          }
         } else if (status === "cancelled") {
           notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled.`;
         }
@@ -462,9 +560,11 @@ const Schedule = () => {
 
       getAppointments(); // Refresh the list
       toast.success(`Appointment ${status} successfully`);
+      return true;
     } catch (err) {
       console.error(err.message);
       toast.error("Error updating appointment status");
+      throw err;
     }
   };
 
@@ -820,16 +920,9 @@ const Schedule = () => {
                 key={appointmentId}
                 className="bg-white border border-blue-300 rounded-lg p-4 space-y-3"
               >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">
-                    Anonymous Comment
-                  </h3>
-                  {appointment?.date && (
-                    <span className="text-xs text-gray-500">
-                      {getFormattedDate(appointment.date)}
-                    </span>
-                  )}
-                </div>
+                <h3 className="font-semibold text-gray-800">
+                  Anonymous Comment
+                </h3>
                 <p className="text-sm text-gray-700 whitespace-pre-line bg-blue-50 border border-blue-100 rounded-md p-3">
                   {evaluation.tutor_comment}
                 </p>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -26,6 +26,7 @@ const Appointment = () => {
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [currentTutorPage, setCurrentTutorPage] = useState(0);
+  const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
 
   const subjects = ["Programming", "Calculus", "Chemistry", "Physics"];
 
@@ -35,6 +36,9 @@ const Appointment = () => {
       const { data: { session } } = await supabase.auth.getSession();
       const selfId = session?.user?.id || null;
       setCurrentUserId(selfId);
+      if (selfId) {
+        await checkPendingEvaluations(selfId);
+      }
       // Get all tutors (users with role = 'tutor')
       const { data: tutorsData, error: tutorsError } = await supabase
         .from("users")
@@ -80,6 +84,27 @@ const Appointment = () => {
       setLoadingProfiles(false);
     }
   };
+
+  const checkPendingEvaluations = useCallback(
+    async (userIdOverride) => {
+      try {
+        const targetUserId = userIdOverride || currentUserId;
+        if (!targetUserId) return;
+        const { data, error } = await supabase
+          .from("appointment")
+          .select("appointment_id")
+          .eq("user_id", targetUserId)
+          .eq("status", "awaiting_feedback")
+          .limit(1);
+
+        if (error) throw error;
+        setHasPendingEvaluation((data || []).length > 0);
+      } catch (err) {
+        console.error("Unable to check pending evaluations:", err.message);
+      }
+    },
+    [currentUserId]
+  );
 
   const getTutorDetails = async (tutorId) => {
     try {
@@ -607,11 +632,37 @@ const Appointment = () => {
 
   const minDate = formatDateYMD(getMinSelectableDate());
 
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel(`appointment-awaiting-${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointment",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => checkPendingEvaluations(currentUserId)
+      );
+
+    channel.subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [currentUserId, checkPendingEvaluations]);
+
   return (
     <div className="py-3 px-6">
       <h1 className="text-gray-600 font-bold text-2xl mb-6">
         Make Appointment
       </h1>
+      {hasPendingEvaluation && (
+        <p className="mb-4 text-sm text-red-600 font-semibold">
+          You still have a session awaiting feedback. Please evaluate your last tutor before booking a new appointment.
+        </p>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-9">
         {/* Left Panel - Appointment Form */}
@@ -824,8 +875,8 @@ const Appointment = () => {
             {/* Book Appointment Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white rounded-md p-3 w-full disabled:opacity-50 hover:bg-blue-700 transition-colors"
+              disabled={loading || hasPendingEvaluation}
+              className="bg-blue-600 text-white rounded-md p-3 w-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
             >
               {loading ? "Creating..." : "Book Appointment"}
             </button>

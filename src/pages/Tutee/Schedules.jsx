@@ -738,6 +738,11 @@ const formatStatusLabel = (status = "") =>
               {formatStatusLabel(appointment.status)}
             </span>
           </div>
+          {appointment.status === "declined" && appointment.tutor_decline_reason && (
+            <div className="mt-3 bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+              Tutor note: {appointment.tutor_decline_reason}
+            </div>
+          )}
           {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Online Link:</span>
@@ -926,11 +931,13 @@ const Schedules = () => {
   const [selectedEvaluationAppointment, setSelectedEvaluationAppointment] = useState(null);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [tutorSchedules, setTutorSchedules] = useState({});
+  const [currentUserId, setCurrentUserId] = useState(null);
 
-  const getAppointments = async () => {
+  const getAppointments = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
+      setCurrentUserId(session.user.id);
 
       const { data, error } = await supabase
         .from("appointment")
@@ -1015,6 +1022,7 @@ const Schedules = () => {
           file_link: appointment.file_link || profileLinks.file_link || null,
           resource_link: appointment.resource_link || null,
           resource_note: appointment.resource_note || null,
+          tutor_decline_reason: appointment.tutor_decline_reason || null,
         };
       });
 
@@ -1025,11 +1033,32 @@ const Schedules = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     getAppointments();
-  }, []);
+  }, [getAppointments]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel(`tutee-appointments-${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointment",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => getAppointments()
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [currentUserId, getAppointments]);
 
   const handleDelete = async (appointmentId) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) {
@@ -1501,12 +1530,17 @@ const Schedules = () => {
                             {formatTime(appointment.start_time)} -{" "}
                             {formatTime(appointment.end_time)}
                           </div>
-                          <div className="text-sm text-gray-500 mb-1">
-                            {appointment.mode_of_session}
-                          </div>
-                          {appointment.status === "awaiting_feedback" && (
-                            <button
-                              onClick={(e) => {
+                      <div className="text-sm text-gray-500 mb-1">
+                        {appointment.mode_of_session}
+                      </div>
+                      {appointment.status === "declined" && appointment.tutor_decline_reason && (
+                        <div className="mt-2 text-xs text-red-600 font-medium">
+                          Tutor note: {appointment.tutor_decline_reason}
+                        </div>
+                      )}
+                      {appointment.status === "awaiting_feedback" && (
+                        <button
+                          onClick={(e) => {
                                 e.stopPropagation();
                                 openEvaluationModal(appointment);
                               }}
