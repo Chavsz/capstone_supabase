@@ -91,9 +91,10 @@ function OurTutors() {
 
         <div className="space-y-16">
           {specializations.map((spec, specIndex) => {
-            const filteredTutors = tutors.filter(
-              (tutor) => tutor.specialization === spec.name
-            );
+            const filteredTutors = tutors.filter((tutor) => {
+              const subjectKey = tutor.subject || tutor.specialization;
+              return subjectKey === spec.name;
+            });
 
             return (
               <motion.div
