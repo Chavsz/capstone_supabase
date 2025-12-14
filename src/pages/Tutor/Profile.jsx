@@ -741,17 +741,24 @@ const Profile = () => {
                     <option value="4th Year">4th Year</option>
                   </select>
                 </div>
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Subject
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="subject"
                     value={form.subject || ""}
                     onChange={handleChange}
                     className="block w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
+                  >
+                    <option value="Programming">Programming</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Calculus and Statistics">Calculus and Statistics</option>
+                    <option value="Psychology and Language">Psychology and Language</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Accountancy and Economics">Accountancy and Economics</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

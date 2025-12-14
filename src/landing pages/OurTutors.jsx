@@ -45,28 +45,44 @@ function OurTutors() {
     fetchTutors();
   }, []);
 
-  const specializations = [
-    {
-      name: "Programming",
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "bg-blue-50",
-    },
-    {
-      name: "Chemistry",
-      color: "from-green-500 to-emerald-500",
-      bgColor: "bg-green-50",
-    },
-    {
-      name: "Physics",
-      color: "from-purple-500 to-pink-500",
-      bgColor: "bg-purple-50",
-    },
-    {
-      name: "Calculus",
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-50",
-    },
-  ];
+ const specializations = [
+  {
+    name: "Programming",
+    color: "from-blue-500 to-cyan-500",
+    bgColor: "bg-blue-50",
+  },
+  {
+    name: "Chemistry",
+    color: "from-green-500 to-emerald-500",
+    bgColor: "bg-green-50",
+  },
+  {
+    name: "Physics",
+    color: "from-purple-500 to-pink-500",
+    bgColor: "bg-purple-50",
+  },
+  {
+    name: "Calculus and Statistics",
+    color: "from-orange-500 to-red-500",
+    bgColor: "bg-orange-50",
+  },
+  {
+    name: "Psychology and Language",
+    color: "from-teal-500 to-lime-500",
+    bgColor: "bg-teal-50",
+  },
+  {
+    name: "Engineering",
+    color: "from-indigo-500 to-blue-600",
+    bgColor: "bg-indigo-50",
+  },
+  {
+    name: "Accountancy and Economics",
+    color: "from-yellow-500 to-amber-500",
+    bgColor: "bg-yellow-50",
+  },
+];
+
 
   return (
     <section className="py-20 bg-white relative overflow-hidden">
