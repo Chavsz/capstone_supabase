@@ -1362,15 +1362,6 @@ const Schedules = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
-        <div className="mt-6 text-center">Loading appointments...</div>
-      </div>
-    );
-  }
-
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);
   };
@@ -1436,6 +1427,15 @@ const Schedules = () => {
     statusFilter === "all" ? upcomingStatusOrder : [statusFilter];
   const displayHistoryStatuses =
     statusFilter === "all" ? historyStatusOrder : [statusFilter];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen p-6">
+        <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
+        <div className="mt-6 text-center">Loading appointments...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-3 px-6">
