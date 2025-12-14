@@ -379,8 +379,7 @@ const Schedule = () => {
         .select(`
           *,
           student:users!appointment_user_id_fkey(name),
-          tutee_decline_reason,
-          tutee_note
+          tutee_decline_reason
         `)
         .eq("tutor_id", session.user.id)
         .order("date", { ascending: true })
@@ -393,7 +392,6 @@ const Schedule = () => {
           ...appointment,
           student_name: appointment.student?.name || null,
           tutee_decline_reason: appointment.tutee_decline_reason || null,
-          tutee_note: appointment.tutee_note || null,
         }));
 
       setAppointments(formattedData);
@@ -916,11 +914,6 @@ const Schedule = () => {
                           {appointment.status === "completed" && (
                             <div className="mt-2 text-xs text-emerald-600 font-medium">
                               Evaluated
-                            </div>
-                          )}
-                          {appointment.tutee_note && (
-                            <div className="mt-2 text-xs text-gray-600 font-medium">
-                              Tutee note: {appointment.tutee_note}
                             </div>
                           )}
                           {appointment.tutee_note && (
