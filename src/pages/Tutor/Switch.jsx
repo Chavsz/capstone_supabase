@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import ConfirmationModal from "../../components/ConfirmationModal";
@@ -6,7 +6,33 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 const Switch = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLoginPhoto = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("login_photo")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        if (data?.login_photo) {
+          setLoginPhoto(data.login_photo);
+        }
+      } catch (err) {
+        console.error("Unable to load login photo:", err.message);
+      }
+    };
+
+    fetchLoginPhoto();
+  }, []);
 
   const handleSwitchClick = () => {
     setIsModalOpen(true);
@@ -131,6 +157,15 @@ const Switch = () => {
               </div>
             </div>
             <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl p-6 w-full md:w-80 shadow-lg">
+              {loginPhoto && (
+                <div className="mb-4 rounded-xl overflow-hidden border border-white/30 shadow-md">
+                  <img
+                    src={loginPhoto}
+                    alt="Login visual"
+                    className="w-full h-36 object-cover"
+                  />
+                </div>
+              )}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs uppercase tracking-widest text-blue-100">Current role</p>
@@ -149,7 +184,7 @@ const Switch = () => {
               <button
                 onClick={handleSwitchClick}
                 disabled={isLoading}
-                className="mt-6 w-full bg-white text-blue-700 font-semibold rounded-lg py-3 shadow hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="lav-btn lav-btn-primary mt-6 w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Switching..." : "Switch to Student"}
               </button>

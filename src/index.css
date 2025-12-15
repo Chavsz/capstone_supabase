@@ -5,6 +5,142 @@ html {
   scroll-behavior: smooth;
 }
 
+:root {
+  --lav-indigo: #4c4ba2;
+  --lav-deep: #132c91;
+  --lav-sky: #76acf5;
+  --lav-amber: #f9d31a;
+  --lav-amber-soft: #fff67f;
+  --lav-cream: #f4ece6;
+  --lav-mint: #def0e4;
+  --lav-navy: #4257a9;
+  --lav-accent: #4766fe;
+  --lav-dark: #323335;
+  --lav-error: #935226;
+}
+
+body {
+  background: var(--lav-cream);
+  color: var(--lav-dark);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--lav-dark);
+  font-weight: 700;
+}
+
+.lav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.2rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.lav-btn-primary {
+  background: var(--lav-amber);
+  color: #181718;
+  border: 1px solid #e1b80f;
+}
+
+.lav-btn-primary:hover {
+  background: #e6c115;
+  transform: translateY(-1px);
+}
+
+.lav-btn-secondary {
+  background: var(--lav-mint);
+  color: var(--lav-dark);
+  border: 1px solid #c1dfcd;
+}
+
+.lav-btn-secondary:hover {
+  background: var(--lav-amber-soft);
+  border-color: #eadf7a;
+  transform: translateY(-1px);
+}
+
+.lav-btn-ghost {
+  background: transparent;
+  color: var(--lav-dark);
+  border: 1px solid var(--lav-dark);
+}
+
+.lav-btn-ghost:hover {
+  background: rgba(50, 51, 53, 0.06);
+}
+
+.lav-input {
+  border: 1px solid #d5d7dc;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  background: white;
+  color: var(--lav-dark);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lav-input:focus {
+  border-color: var(--lav-amber);
+  box-shadow: 0 0 0 3px rgba(249, 211, 26, 0.3);
+  outline: none;
+}
+
+.lav-label {
+  color: var(--lav-indigo);
+  font-weight: 600;
+}
+
+.lav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+}
+
+.lav-badge-green {
+  background: var(--lav-sky);
+  color: #0f2d58;
+}
+
+.lav-badge-amber {
+  background: var(--lav-amber);
+  color: #181718;
+}
+
+.lav-badge-red {
+  background: #181718;
+  color: #fff;
+}
+
+.lav-badge-gray {
+  background: #e6e7ea;
+  color: var(--lav-dark);
+}
+
+.lav-card {
+  background: white;
+  border: 1px solid #e3e6ef;
+  border-radius: 1rem;
+  box-shadow: 0 6px 18px rgba(19, 44, 145, 0.05);
+}
+
+.lav-nav {
+  background: var(--lav-indigo);
+  color: white;
+}
+
+.lav-nav a.active {
+  background: var(--lav-navy);
+  color: white;
+}
+
 /* Custom focus styles */
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;

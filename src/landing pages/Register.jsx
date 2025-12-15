@@ -135,11 +135,11 @@ const Register = ({ setAuth }) => {
 
             {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium lav-label mb-2">
                 Name
               </label>
               <input
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="lav-input w-full"
                 type="text"
                 name="name"
                 placeholder="Name"
@@ -151,11 +151,11 @@ const Register = ({ setAuth }) => {
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium lav-label mb-2">
                 Email
               </label>
               <input
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="lav-input w-full"
                 type="email"
                 name="email"
                 placeholder="Enter your email"
@@ -167,11 +167,11 @@ const Register = ({ setAuth }) => {
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium lav-label mb-2">
                 Password
               </label>
               <input
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="lav-input w-full"
                 type="password"
                 name="password"
                 placeholder="Enter your password"
@@ -183,7 +183,7 @@ const Register = ({ setAuth }) => {
             
             {/* Sign Up Button */}
             <button
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="lav-btn lav-btn-primary w-full text-base"
               type="submit"
             >
               Sign up

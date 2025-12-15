@@ -18,13 +18,13 @@ const HISTORY_STATUS_TABS = [
 const ITEMS_PER_PAGE = 6;
 
 const STATUS_META = {
-  pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
-  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-800" },
-  started: { label: "In Session", badge: "bg-sky-100 text-sky-800" },
-  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-orange-100 text-orange-800" },
-  completed: { label: "Completed", badge: "bg-blue-100 text-blue-800" },
-  declined: { label: "Declined", badge: "bg-red-100 text-red-800" },
-  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-800" },
+  pending: { label: "Pending", badge: "bg-[#e6e7ea] text-[#323335]" },
+  confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
+  started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
+  completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
+  declined: { label: "Declined", badge: "bg-[#181718] text-white" },
+  cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
 };
 
 const formatStatusLabel = (status = "") =>
