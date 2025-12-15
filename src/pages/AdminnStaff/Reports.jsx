@@ -920,9 +920,7 @@ const Reports = () => {
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500">Reporting Period</p>
             <p className="text-xl font-semibold text-gray-900">{displayPeriodLabel}</p>
-            <p className="text-xs text-gray-500">
-              Compared with {comparisonLabel || "previous period"}.
-            </p>
+           
           </div>
           <div className="flex justify-end">
             <div className="flex gap-2 overflow-x-auto pb-1">
