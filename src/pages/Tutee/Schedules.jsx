@@ -2,15 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
-const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
+const FINISHED_STATUSES = ["completed"];
 const UPCOMING_STATUS_TABS = [
   { status: "all", label: "All" },
   { status: "pending", label: "Pending" },
   { status: "confirmed", label: "Confirmed" },
   { status: "started", label: "In Session" },
+  { status: "awaiting_feedback", label: "Awaiting Feedback" },
 ];
 const HISTORY_STATUS_TABS = [
-  { status: "awaiting_feedback", label: "Awaiting Feedback" },
   { status: "completed", label: "Completed" },
   { status: "declined", label: "Declined" },
   { status: "cancelled", label: "Cancelled" },
@@ -715,14 +715,16 @@ const AppointmentModal = ({
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Mode:</span>
             {appointment.status === "pending" && isEditing ? (
-              <input
-                type="text"
+              <select
                 name="mode_of_session"
                 value={formData.mode_of_session}
                 onChange={handleInputChange}
-                placeholder="Mode of session"
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 w-40"
-              />
+              >
+                <option value="">Select mode</option>
+                <option value="Face-to-Face">Face-to-Face</option>
+                <option value="Online">Online</option>
+              </select>
             ) : (
               <span className="text-gray-900">
                 {appointment.mode_of_session || "Not specified"}
@@ -1340,6 +1342,11 @@ const Schedules = () => {
             study_skills_development: evaluationData.study_skills_development,
             positive_impact: evaluationData.positive_impact,
             tutor_comment: evaluationData.tutor_comment?.trim() || null,
+            lav_environment: evaluationData.lav_environment,
+            lav_scheduling: evaluationData.lav_scheduling,
+            lav_support: evaluationData.lav_support,
+            lav_book_again: evaluationData.lav_book_again,
+            lav_value: evaluationData.lav_value,
           },
         ]);
 
@@ -1375,8 +1382,9 @@ const Schedules = () => {
 
   const upcomingAppointments = appointments.filter(
     (appointment) =>
-      ["confirmed", "pending", "started"].includes(appointment.status) &&
-      matchesSearch(appointment)
+      ["pending", "confirmed", "started", "awaiting_feedback"].includes(
+        appointment.status
+      ) && matchesSearch(appointment)
   );
 
   const historyAppointments = appointments.filter(
@@ -1387,7 +1395,12 @@ const Schedules = () => {
       matchesSearch(appointment)
   );
 
-  const upcomingStatusOrder = ["pending", "confirmed", "started"];
+  const upcomingStatusOrder = [
+    "pending",
+    "confirmed",
+    "started",
+    "awaiting_feedback",
+  ];
   const upcomingByStatus = upcomingStatusOrder.reduce((acc, status) => {
     acc[status] = upcomingAppointments.filter(
       (appointment) => appointment.status === status
@@ -1395,12 +1408,7 @@ const Schedules = () => {
     return acc;
   }, {});
 
-  const historyStatusOrder = [
-    "awaiting_feedback",
-    "completed",
-    "declined",
-    "cancelled",
-  ];
+  const historyStatusOrder = ["completed", "declined", "cancelled"];
   const historyByStatus = historyStatusOrder.reduce((acc, status) => {
     acc[status] = historyAppointments.filter(
       (appointment) => appointment.status === status

@@ -22,13 +22,22 @@ const Appointment = () => {
     date: "",
     start_time: "",
     end_time: "",
+    number_of_tutees: "1",
   });
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [currentTutorPage, setCurrentTutorPage] = useState(0);
   const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
 
-  const subjects = ["Programming", "Calculus", "Chemistry", "Physics"];
+  const subjects = [
+    "Programming",
+    "Chemistry",
+    "Physics",
+    "Calculus and Statistics",
+    "Psychology and Language",
+    "Engineering",
+    "Accountancy and Economics",
+  ];
 
   const getTutors = async () => {
     try {
@@ -158,9 +167,22 @@ const Appointment = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let nextValue = value;
+    if (name === "number_of_tutees") {
+      if (!value) {
+        nextValue = "";
+      } else {
+        const numeric = Number(value);
+        if (Number.isNaN(numeric)) {
+          nextValue = "";
+        } else {
+          nextValue = Math.max(1, Math.min(10, numeric)).toString();
+        }
+      }
+    }
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: nextValue,
     });
   };
 
@@ -408,15 +430,23 @@ const Appointment = () => {
       return;
     }
 
+    const tuteeCount = Number(formData.number_of_tutees);
     if (
       !formData.subject ||
       !formData.topic ||
       !formData.mode_of_session ||
       !formData.date ||
       !formData.start_time ||
-      !formData.end_time
+      !formData.end_time ||
+      !formData.number_of_tutees ||
+      Number.isNaN(tuteeCount)
     ) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (tuteeCount < 1 || tuteeCount > 10) {
+      toast.error("Number of tutees must be between 1 and 10.");
       return;
     }
 
@@ -474,16 +504,18 @@ const Appointment = () => {
         return;
       }
 
-      const { data: conflictAppointments, error: conflictError } = await supabase
+      const blockingStatuses = ["pending", "confirmed", "started"];
+
+      const { data: tutorAppointments, error: tutorError } = await supabase
         .from("appointment")
         .select("start_time, end_time, status")
         .eq("tutor_id", selectedTutor.user_id)
         .eq("date", formData.date)
-        .eq("status", "confirmed");
+        .in("status", blockingStatuses);
 
-      if (conflictError) throw conflictError;
+      if (tutorError) throw tutorError;
 
-      const hasConflict = (conflictAppointments || []).some((appointment) => {
+      const hasTutorConflict = (tutorAppointments || []).some((appointment) => {
         const appointmentStart = getMinutesFromStored(appointment.start_time);
         const appointmentEnd = getMinutesFromStored(appointment.end_time);
         return (
@@ -494,23 +526,23 @@ const Appointment = () => {
         );
       });
 
-      if (hasConflict) {
+      if (hasTutorConflict) {
         toast.error(
-          "Another confirmed session overlaps with this time. Please choose a different slot."
+          "That tutor already has a session at the selected time. Please choose another slot."
         );
         return;
       }
 
-      const { data: userConflictAppointments, error: userConflictError } = await supabase
+      const { data: userAppointments, error: userError } = await supabase
         .from("appointment")
         .select("start_time, end_time, status")
         .eq("user_id", session.user.id)
         .eq("date", formData.date)
-        .neq("status", "cancelled");
+        .in("status", blockingStatuses);
 
-      if (userConflictError) throw userConflictError;
+      if (userError) throw userError;
 
-      const hasUserConflict = (userConflictAppointments || []).some((appointment) => {
+      const hasUserConflict = (userAppointments || []).some((appointment) => {
         const appointmentStart = getMinutesFromStored(appointment.start_time);
         const appointmentEnd = getMinutesFromStored(appointment.end_time);
         return (
@@ -562,6 +594,7 @@ const Appointment = () => {
             date: formData.date,
             start_time: formData.start_time,
             end_time: formData.end_time,
+            number_of_tutees: tuteeCount,
             status: "pending",
           },
         ]);
@@ -576,6 +609,7 @@ const Appointment = () => {
         date: "",
         start_time: "",
         end_time: "",
+        number_of_tutees: "1",
       });
       setSelectedTutor(null);
       setSelectedSubject("");
@@ -730,6 +764,24 @@ const Appointment = () => {
                 className="border border-gray-300 rounded-md p-3 w-full"
                 required
               />
+            </div>
+
+            {/* Number of Tutees */}
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Number of Tutees</h3>
+              <input
+                type="number"
+                name="number_of_tutees"
+                value={formData.number_of_tutees}
+                onChange={handleInputChange}
+                min={1}
+                max={10}
+                className="border border-gray-300 rounded-md p-3 w-full"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum of 10 tutees per booking. Values outside 1–10 are blocked.
+              </p>
             </div>
 
             {/* Mode of Session */}

@@ -713,6 +713,8 @@ const Schedule = () => {
     })
     .sort((a, b) => b.dateValue - a.dateValue);
 
+  const shuffledComments = commentEntries.slice().sort(() => Math.random() - 0.5);
+
   return (
     <div className="py-3 px-6">
       <h1 className="text-gray-600 font-bold text-2xl mb-6">Schedules</h1>
@@ -871,12 +873,12 @@ const Schedule = () => {
       {/* Comments View */}
       {selectedFilter === "comments" && (
         <div className="space-y-4">
-          {commentEntries.length === 0 ? (
+          {shuffledComments.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               <p>No anonymous comments yet.</p>
             </div>
           ) : (
-            commentEntries.map(({ appointment, evaluation, appointmentId }) => (
+            shuffledComments.map(({ appointment, evaluation, appointmentId }) => (
               <div
                 key={appointmentId}
                 className="bg-white border border-blue-300 rounded-lg p-4 space-y-3"
