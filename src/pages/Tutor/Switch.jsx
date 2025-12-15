@@ -111,27 +111,61 @@ const Switch = () => {
   };
 
   return (
-    <div className="py-3 px-6">
-      <h1 className="text-gray-600 font-bold text-2xl mb-6">Switch</h1>
-      <div>
-        <h1 className="text-sm font-medium text-gray-600 mb-2">Switch to Student</h1>
-        <button 
-          onClick={handleSwitchClick}
-          disabled={isLoading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 hover:translate-y-[-2px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? "Switching..." : "Switch"}
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-10 px-6 flex items-center justify-center">
+      <div className="w-full max-w-3xl">
+        <div className="bg-white/80 backdrop-blur rounded-2xl border border-blue-100 shadow-lg shadow-blue-100 p-6 md:p-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">
+                Role Switch
+              </p>
+              <h1 className="text-3xl font-bold text-gray-800">Switch to Student</h1>
+              <p className="text-gray-600 max-w-xl">
+                Move to the student experience to book tutors, manage your sessions, and submit evaluations.
+                You can switch back to the tutor view anytime if your account permits.
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-blue-700">
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Requires confirmation</span>
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Instant redirect</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl p-6 w-full md:w-80 shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-blue-100">Current role</p>
+                  <p className="text-lg font-semibold">Tutor</p>
+                </div>
+                <div className="text-3xl">⇆</div>
+              </div>
+              <div className="space-y-2 text-sm text-blue-50">
+                <p>Switch to student to:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Book sessions as a tutee</li>
+                  <li>View tutor availability</li>
+                  <li>Submit evaluations</li>
+                </ul>
+              </div>
+              <button
+                onClick={handleSwitchClick}
+                disabled={isLoading}
+                className="mt-6 w-full bg-white text-blue-700 font-semibold rounded-lg py-3 shadow hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Switching..." : "Switch to Student"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <ConfirmationModal
         isOpen={isModalOpen}
         onClose={handleCancelSwitch}
         onConfirm={handleConfirmSwitch}
-        title="Switch to Student Role"
-        message="Are you sure you want to switch to the Student interface? This will permanently change your role in the database and affect your available features."
-        confirmText="Switch to Student"
-        cancelText="Cancel"
+        title="Confirm role switch"
+        message="You are about to switch to the Student interface. This updates your role in the database and will log you into the student dashboard. Continue?"
+        confirmText="Yes, switch me"
+        cancelText="Stay as Tutor"
       />
     </div>
   );
