@@ -14,6 +14,7 @@ const STATUS_META = {
 };
 const statusBadge = (status = "") => STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
 const formatStatusLabel = (status = "") => STATUS_META[status]?.label || status.replace(/_/g, " ");
+const ITEMS_PER_PAGE = 6;
 
 // Modal component for appointment details
 const AppointmentModal = ({
@@ -356,6 +357,10 @@ const Schedule = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [evaluations, setEvaluations] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [appointmentPages, setAppointmentPages] = useState({});
+  const [historyPages, setHistoryPages] = useState({});
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
 
   const getAppointments = useCallback(async () => {
     try {
@@ -659,6 +664,9 @@ const Schedule = () => {
   );
 
   const confirmedStatusOrder = ["pending", "confirmed", "started"];
+  const appointmentStatusTabs = [{ status: "all", label: "All" }].concat(
+    confirmedStatusOrder.map((status) => ({ status, label: formatStatusLabel(status) }))
+  );
   const confirmedByStatus = confirmedStatusOrder.reduce((acc, status) => {
     acc[status] = confirmedAppointments.filter(
       (appointment) => appointment.status === status
@@ -672,6 +680,9 @@ const Schedule = () => {
     "declined",
     "cancelled",
   ];
+  const historyStatusTabs = [{ status: "all", label: "All" }].concat(
+    historyStatusOrder.map((status) => ({ status, label: formatStatusLabel(status) }))
+  );
   const historyByStatus = historyStatusOrder.reduce((acc, status) => {
     acc[status] = historyAppointments.filter(
       (appointment) => appointment.status === status
@@ -701,6 +712,33 @@ const Schedule = () => {
     .sort((a, b) => b.dateValue - a.dateValue);
 
   const shuffledComments = commentEntries.slice().sort(() => Math.random() - 0.5);
+
+  const displayConfirmedStatuses =
+    appointmentStatusFilter === "all" ? confirmedStatusOrder : [appointmentStatusFilter];
+  const displayHistoryStatuses =
+    historyStatusFilter === "all" ? historyStatusOrder : [historyStatusFilter];
+
+  const getAppointmentCount = (status) =>
+    status === "all"
+      ? confirmedAppointments.length
+      : (confirmedByStatus[status] || []).length;
+  const getHistoryCount = (status) =>
+    status === "all" ? historyAppointments.length : (historyByStatus[status] || []).length;
+
+  const getCurrentPage = (status, isAppointments, totalPages) => {
+    const pages = isAppointments ? appointmentPages : historyPages;
+    const current = pages[status] || 1;
+    return Math.min(Math.max(current, 1), Math.max(totalPages, 1));
+  };
+
+  const handlePageChange = (status, delta, isAppointments, totalPages) => {
+    const setter = isAppointments ? setAppointmentPages : setHistoryPages;
+    setter((prev) => {
+      const current = Math.max(1, Math.min(prev[status] || 1, totalPages));
+      const next = Math.min(Math.max(current + delta, 1), totalPages);
+      return { ...prev, [status]: next };
+    });
+  };
 
   return (
     <div className="py-3 px-6">
@@ -752,21 +790,45 @@ const Schedule = () => {
       {/* Appointments View */}
       {selectedFilter === "confirmed" && (
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {appointmentStatusTabs.map((tab) => (
+              <button
+                key={tab.status}
+                onClick={() => setAppointmentStatusFilter(tab.status)}
+                className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
+                  appointmentStatusFilter === tab.status
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "text-gray-600 border-gray-300 hover:border-blue-500"
+                }`}
+              >
+                {tab.label}
+                <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
+                  {getAppointmentCount(tab.status)}
+                </span>
+              </button>
+            ))}
+          </div>
           {Object.values(confirmedByStatus).every((list) => list.length === 0) ? (
             <div className="text-center text-gray-500 py-8">
               <p>No appointments found. Students will appear here when they book sessions with you.</p>
             </div>
           ) : (
-            confirmedStatusOrder.map((status) => {
+            displayConfirmedStatuses.map((status) => {
               const list = confirmedByStatus[status] || [];
               if (list.length === 0) return null;
+              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+              const currentPage = getCurrentPage(status, true, totalPages);
+              const pagedList = list.slice(
+                (currentPage - 1) * ITEMS_PER_PAGE,
+                currentPage * ITEMS_PER_PAGE
+              );
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} sessions
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {list.map((appointment) => (
+                    {pagedList.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
@@ -796,6 +858,35 @@ const Schedule = () => {
                       </div>
                     ))}
                   </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                      <button
+                        className={`px-3 py-1 rounded border ${
+                          currentPage === 1
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-gray-600 border-gray-300 hover:border-blue-500"
+                        }`}
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(status, -1, true, totalPages)}
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        className={`px-3 py-1 rounded border ${
+                          currentPage === totalPages
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-gray-600 border-gray-300 hover:border-blue-500"
+                        }`}
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(status, 1, true, totalPages)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </section>
               );
             })
@@ -806,21 +897,45 @@ const Schedule = () => {
       {/* History View */}
       {selectedFilter === "history" && (
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {historyStatusTabs.map((tab) => (
+              <button
+                key={tab.status}
+                onClick={() => setHistoryStatusFilter(tab.status)}
+                className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
+                  historyStatusFilter === tab.status
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "text-gray-600 border-gray-300 hover:border-blue-500"
+                }`}
+              >
+                {tab.label}
+                <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
+                  {getHistoryCount(tab.status)}
+                </span>
+              </button>
+            ))}
+          </div>
           {Object.values(historyByStatus).every((list) => list.length === 0) ? (
             <div className="text-center text-gray-500 py-8">
               <p>No historical appointments match this search.</p>
             </div>
           ) : (
-            historyStatusOrder.map((status) => {
+            displayHistoryStatuses.map((status) => {
               const list = historyByStatus[status] || [];
               if (list.length === 0) return null;
+              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+              const currentPage = getCurrentPage(status, false, totalPages);
+              const pagedList = list.slice(
+                (currentPage - 1) * ITEMS_PER_PAGE,
+                currentPage * ITEMS_PER_PAGE
+              );
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} history
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {list.map((appointment) => (
+                    {pagedList.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
@@ -856,6 +971,35 @@ const Schedule = () => {
                       </div>
                     ))}
                   </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                      <button
+                        className={`px-3 py-1 rounded border ${
+                          currentPage === 1
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-gray-600 border-gray-300 hover:border-blue-500"
+                        }`}
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(status, -1, false, totalPages)}
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        className={`px-3 py-1 rounded border ${
+                          currentPage === totalPages
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-gray-600 border-gray-300 hover:border-blue-500"
+                        }`}
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(status, 1, false, totalPages)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </section>
               );
             })
