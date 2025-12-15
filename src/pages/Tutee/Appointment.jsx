@@ -718,8 +718,8 @@ const Appointment = () => {
   }, [currentUserId, checkPendingEvaluations]);
 
   return (
-    <div className="py-3 px-6">
-      <h1 className="text-gray-600 font-bold text-2xl mb-6">
+    <div className="py-3 px-6 bg-[#f4ece6] min-h-screen">
+        <h1 className="text-gray-600 font-bold text-2xl mb-6">
         Make Appointment
       </h1>
       {hasPendingEvaluation && (

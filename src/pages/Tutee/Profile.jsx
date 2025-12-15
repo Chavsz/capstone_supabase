@@ -165,19 +165,19 @@ const Profile = () => {
   };
 
   return (
-    <div className="py-3 px-6">
+    <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
       {/* Page Header */}
-      <h1 className="text-2xl font-bold text-gray-600 mb-6">My Profile</h1>
+      <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
 
       {/* Student Information Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 max-w-full">
+      <div className="lav-card p-6 mb-6 max-w-full">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-[#323335]">
             Student Information
           </h2>
           <button
             onClick={handleEdit}
-            className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#e6e7ea] transition"
           >
             <span>Edit</span>
             <FaEdit size={12} />
