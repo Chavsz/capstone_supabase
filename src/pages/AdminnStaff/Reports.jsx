@@ -639,8 +639,8 @@ const Reports = () => {
     {
       key: "tutees",
       label: "Tutees Served",
-      value: `${tuteesServed}`,
-      helper: "Unique students",
+      value: `${totalTuteesServed}`,
+      helper: "Counting groups",
     },
     {
       key: "booked",
