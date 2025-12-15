@@ -378,13 +378,13 @@ const Header = () => {
   const totalNotifications = unreadCount + upcomingSessions.length;
 
   return (
-    <div className="pt-3 px-3 text-[#323335]">
+    <div className="pt-3 px-3 text-[#323335] bg-[#f4ece6]">
       <div className="flex gap-2 justify-end items-center text-[#323335] text-xl">
         {/* Notification Icon with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleDropdown}
-            className="relative p-1 hover:bg-[#e6e7ea] rounded-full transition-colors"
+            className="relative p-1 hover:bg-[#f4ece6] rounded-full transition-colors"
           >
             <IoIosNotifications />
             {totalNotifications > 0 && (
