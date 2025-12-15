@@ -250,6 +250,20 @@ const Reports = () => {
     );
   }, [comparisonRange, periodRange]);
 
+  const pdfPeriod = useMemo(() => {
+    if (selectedPeriod?.type === "month") return selectedPeriod;
+    return periodOptions.find((option) => option.type === "month") || null;
+  }, [selectedPeriod, periodOptions]);
+
+  const pdfRange = useMemo(() => {
+    if (!pdfPeriod) return null;
+    return {
+      label: pdfPeriod.label,
+      start: new Date(pdfPeriod.year, pdfPeriod.month, 1),
+      end: new Date(pdfPeriod.year, pdfPeriod.month + 1, 1),
+    };
+  }, [pdfPeriod]);
+
   const evaluationsInPeriod = useMemo(() => {
     if (!periodRange) return [];
     return evaluations.filter((evaluation) => {
@@ -480,6 +494,20 @@ const Reports = () => {
     [appointmentsInPeriod]
   );
 
+  const appointmentsInPdfRange = useMemo(() => {
+    if (!pdfRange) return [];
+    return appointments.filter((appointment) => {
+      if (!appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= pdfRange.start && date < pdfRange.end;
+    });
+  }, [appointments, pdfRange]);
+
+  const completedAppointmentsInPdfRange = useMemo(
+    () => appointmentsInPdfRange.filter((apt) => isFinishedStatus(apt.status)),
+    [appointmentsInPdfRange]
+  );
+
   const totalHoursTeach = useMemo(() => {
     return completedAppointmentsInPeriod.reduce((sum, appointment) => {
       const minutes =
@@ -499,6 +527,26 @@ const Reports = () => {
         : 1;
     return sum + count;
   }, 0);
+
+  const pdfTotalSessionsBooked = appointmentsInPdfRange.length;
+  const pdfTotalSessionsCompleted = completedAppointmentsInPdfRange.length;
+  const pdfTotalTuteesServed = completedAppointmentsInPdfRange.reduce((sum, appointment) => {
+    const count =
+      appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+        ? Number(appointment.number_of_tutees)
+        : 1;
+    return sum + count;
+  }, 0);
+  const pdfTotalHoursTeach = useMemo(() => {
+    return completedAppointmentsInPdfRange.reduce((sum, appointment) => {
+      const minutes =
+        (new Date(`2000-01-01T${appointment.end_time}`) -
+          new Date(`2000-01-01T${appointment.start_time}`)) /
+        60000;
+      return sum + Math.max(minutes / 60, 0);
+    }, 0);
+  }, [completedAppointmentsInPdfRange]);
+
   const cancelledSessions = appointmentsInPeriod.filter(
     (appointment) => appointment.status === "cancelled"
   ).length;
@@ -644,6 +692,38 @@ const Reports = () => {
       .sort((a, b) => b.hours - a.hours);
   }, [appointmentsInPeriod]);
 
+  const pdfTutorMonthlyPerformance = useMemo(() => {
+    const aggregate = {};
+    appointmentsInPdfRange.forEach((appointment) => {
+      const tutorId = appointment.tutor_id || "unknown";
+      if (!aggregate[tutorId]) {
+        aggregate[tutorId] = {
+          tutorId,
+          name: appointment.tutor?.name || "Unknown Tutor",
+          sessions: 0,
+          hours: 0,
+          totalTutees: 0,
+        };
+      }
+      if (isFinishedStatus(appointment.status)) {
+        const minutes =
+          (new Date(`2000-01-01T${appointment.end_time}`) -
+            new Date(`2000-01-01T${appointment.start_time}`)) /
+          60000;
+        const appointmentTutees =
+          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+            ? Number(appointment.number_of_tutees)
+            : 1;
+        aggregate[tutorId].sessions += 1;
+        aggregate[tutorId].hours += Math.max(minutes / 60, 0);
+        aggregate[tutorId].totalTutees += appointmentTutees;
+      }
+    });
+    return Object.values(aggregate)
+      .filter((entry) => entry.sessions > 0 || entry.hours > 0)
+      .sort((a, b) => b.hours - a.hours);
+  }, [appointmentsInPdfRange]);
+
   const maxTutorHours = tutorMonthlyPerformance.reduce(
     (max, entry) => Math.max(max, entry.hours),
     0
@@ -735,23 +815,33 @@ const Reports = () => {
         ? `${lavStatsYear.overallAverage.toFixed(2)} / 5`
         : "- / 5";
 
-    const metricCardsHtml = summaryMetrics
-      .map(
-        (metric) => `
-        <div class="metric-card">
-          <div class="metric-icon">${escapeHtml(metric.icon)}</div>
-          <p class="metric-label">${escapeHtml(metric.label)}</p>
-          <p class="metric-value">${escapeHtml(metric.value)}</p>
-          <p class="metric-detail">${escapeHtml(metric.detail)}</p>
-          <div class="metric-progress">
-            <div class="metric-progress-bar" style="width:${metric.progress ?? 0}%;"></div>
-          </div>
-        </div>`
-      )
-      .join("");
+    const pdfSummaryHtml = `
+      <div class="summary-grid">
+        <div class="summary-card">
+          <p class="summary-label">Total Hours Taught</p>
+          <p class="summary-value">${escapeHtml(`${pdfTotalHoursTeach.toFixed(1)} hrs`)}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Sessions Completed</p>
+          <p class="summary-value">${escapeHtml(`${pdfTotalSessionsCompleted}`)}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Sessions Booked</p>
+          <p class="summary-value">${escapeHtml(`${pdfTotalSessionsBooked}`)}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Total Tutees Served</p>
+          <p class="summary-value">${escapeHtml(`${pdfTotalTuteesServed}`)}</p>
+        </div>
+        <div class="summary-card">
+          <p class="summary-label">Overall Average</p>
+          <p class="summary-value">${escapeHtml(averageSatisfactionDisplay)}</p>
+        </div>
+      </div>
+    `;
 
     const performanceRowsHtml =
-      tutorMonthlyPerformance
+      pdfTutorMonthlyPerformance
         .map(
         (entry) => `
           <tr>
@@ -763,7 +853,9 @@ const Reports = () => {
         `
         )
         .join("") ||
-      `<tr><td colspan="4">No tutor performance data for ${escapeHtml(displayPeriodLabel)}.</td></tr>`;
+      `<tr><td colspan="4">No tutor performance data for ${escapeHtml(
+        pdfRange?.label || displayPeriodLabel
+      )}.</td></tr>`;
 
     const docHtml = `
       <!DOCTYPE html>
@@ -889,44 +981,25 @@ const Reports = () => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="header-left">
-                ${
-                  resolvedLogo
-                    ? `<img src="${resolvedLogo}" class="header-logo" alt="LAV logo" />`
-                    : '<div class="header-logo" style="display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;">LAV</div>'
-                }
-                <div>
-                  <div class="badge">Learning Assistance Volunteer</div>
-                  <h1 class="title">Monthly Performance Report</h1>
-                  <p class="subtitle">Reporting period: ${escapeHtml(displayPeriodLabel)}</p>
-                </div>
+            <div class="header-left">
+              ${
+                resolvedLogo
+                  ? `<img src="${resolvedLogo}" class="header-logo" alt="LAV logo" />`
+                  : '<div class="header-logo" style="display:flex;align-items:center;justify-content:center;font-size:12px;color:#94a3b8;">LAV</div>'
+              }
+              <div>
+                <div class="badge">Learning Assistance Volunteer</div>
+                <h1 class="title">Monthly Performance Report</h1>
+                <p class="subtitle">Reporting period: ${escapeHtml(pdfRange?.label || displayPeriodLabel)}</p>
               </div>
-              <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
             </div>
+            <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
+          </div>
 
-            <h2 class="section-title" style="margin-bottom:8px;">Period Summary</h2>
-            <div class="summary-grid">
-              <div class="summary-card">
-                <p class="summary-label">Total Hours Taught</p>
-                <p class="summary-value">${escapeHtml(`${totalHoursTeach.toFixed(1)} hrs`)}</p>
-              </div>
-              <div class="summary-card">
-                <p class="summary-label">Sessions Completed</p>
-                <p class="summary-value">${escapeHtml(`${totalSessionsCompleted}`)}</p>
-              </div>
-              <div class="summary-card">
-                <p class="summary-label">Sessions Booked</p>
-                <p class="summary-value">${escapeHtml(`${totalSessionsBooked}`)}</p>
-              </div>
-              <div class="summary-card">
-                <p class="summary-label">Total Tutees Served</p>
-                <p class="summary-value">${escapeHtml(`${totalTuteesServed}`)}</p>
-              </div>
-              <div class="summary-card">
-                <p class="summary-label">Overall Average</p>
-                <p class="summary-value">${escapeHtml(averageSatisfactionDisplay)}</p>
-              </div>
-            </div>
+            <h2 class="section-title" style="margin-bottom:8px;">Monthly Summary (${escapeHtml(
+              pdfRange?.label || displayPeriodLabel
+            )})</h2>
+            ${pdfSummaryHtml}
 
             <h2 class="section-title" style="margin-bottom:8px;">LAV Evaluation</h2>
             <div class="summary-grid">
@@ -942,7 +1015,9 @@ const Reports = () => {
               </div>
             </div>
 
-            <h2 class="section-title" style="margin-bottom:8px;">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
+            <h2 class="section-title" style="margin-bottom:8px;">Tutor Performance (${escapeHtml(
+              pdfRange?.label || displayPeriodLabel
+            )})</h2>
             <div class="table-holder">
               <table>
                 <thead>
@@ -957,7 +1032,7 @@ const Reports = () => {
                 ${performanceRowsHtml}
               </tbody>
             </div>
-            <p class="note">This report includes only sessions marked as completed. Compared with ${escapeHtml(comparisonLabel || "previous period")}.</p>
+            <p class="note">This report includes only sessions marked as completed for the selected month.</p>
           </div>
         </body>
       </html>
@@ -983,11 +1058,13 @@ const Reports = () => {
     lavStatsPeriod,
     lavStatsYear,
     selectedYearRange,
-    totalHoursTeach,
-    totalSessionsCompleted,
-    totalSessionsBooked,
-    totalTuteesServed,
     averageSatisfactionDisplay,
+    pdfRange,
+    pdfTutorMonthlyPerformance,
+    pdfTotalHoursTeach,
+    pdfTotalSessionsCompleted,
+    pdfTotalSessionsBooked,
+    pdfTotalTuteesServed,
   ]);
 
   if (loading) {

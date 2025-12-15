@@ -117,7 +117,7 @@ const Login = ({ setAuth }) => {
   return (
     <div className="flex h-screen p-0 md:p-3">
       {/* Left Panel - Blue Background with Logo (Hidden on Mobile) */}
-      <div className="hidden md:flex w-1/3 bg-gradient-to-b from-blue-700 via-blue-600 to-blue-800 flex-col items-center justify-center relative rounded-md overflow-hidden">
+      <div className="hidden md:flex w-1/3 bg-gradient-to-b from-blue-600 to-blue-700 flex-col items-center justify-center relative rounded-md overflow-hidden">
         <Link to="/" className="absolute top-8 left-8 flex items-center ">
           <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
           <span className="ml-2 text-white font-semibold text-lg">LAV</span>
@@ -125,24 +125,16 @@ const Login = ({ setAuth }) => {
 
         {/* Large Centered Logo */}
         <div className="flex flex-col items-center gap-4 px-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 blur-3xl bg-white/20 rounded-3xl" aria-hidden />
-            <div className="relative rounded-2xl border border-white/30 bg-white/10 backdrop-blur shadow-2xl p-3">
-              <img
-                src={heroLogoSrc}
-                alt="LAV"
-                className="w-72 h-56 md:w-80 md:h-64 rounded-xl object-cover shadow-lg border border-white/40"
-              />
-            </div>
+          <div className="rounded-2xl border border-white/25 bg-white/10 backdrop-blur-sm shadow-xl p-3">
+            <img
+              src={heroLogoSrc}
+              alt="LAV"
+              className="w-72 h-56 md:w-80 md:h-64 rounded-xl object-cover shadow-md border border-white/30"
+            />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-white tracking-wide drop-shadow-sm">
-              Learning Assistance in Action
-            </h1>
-            <p className="text-sm text-blue-100 max-w-xs">
-              Personalized guidance from peer tutors to help you thrive every semester.
-            </p>
-          </div>
+          <p className="text-sm text-blue-100 max-w-xs">
+            Peer tutoring support with a simple, welcoming experience.
+          </p>
         </div>
       </div>
 
