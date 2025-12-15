@@ -109,9 +109,9 @@ const Register = ({ setAuth }) => {
         </Link>
 
         <div className="max-w-md w-full mt-8 md:mt-0">
-          <h2 className="text-2xl md:text-3xl font-bold text-blue-600 mb-6 md:mb-8 text-center">
-            Create an Account
-          </h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#4c4ba2] mb-6 md:mb-8 text-center">
+              Create an Account
+            </h2>
 
           {message && (
             <div

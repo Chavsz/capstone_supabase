@@ -1467,23 +1467,23 @@ const Schedules = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
+      <div className="min-h-screen p-6 bg-[#f4ece6]">
+        <h1 className="text-2xl font-bold text-[#323335]">Schedules</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
     );
   }
 
   return (
-    <div className="py-3 px-6">
+    <div className="py-3 px-6 bg-[#f4ece6] min-h-screen">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
-        <h1 className="text-gray-600 font-bold text-2xl">Schedules</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#323335]">Schedules</h1>
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search tutor, subject or topic"
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="lav-input px-3 py-1 text-sm"
         />
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
@@ -1493,8 +1493,8 @@ const Schedules = () => {
             onClick={() => setStatusFilter(tab.status)}
             className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
               statusFilter === tab.status
-                ? "bg-blue-600 text-white border-blue-600"
-                : "text-gray-600 border-gray-300 hover:border-blue-500"
+                ? "bg-[#f9d31a] text-[#181718] border-[#e6c115]"
+                : "text-[#323335] border-[#d7d9df] hover:border-[#4c4ba2]"
             }`}
           >
             {tab.label}
@@ -1509,26 +1509,26 @@ const Schedules = () => {
       </div>
 
       {/* Filter Buttons */}
-      <div className="flex gap-3 mb-6">
-        <button
-          className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
-            selectedFilter === "upcoming"
-              ? "border-b-blue-600 text-blue-600"
+        <div className="flex gap-3 mb-6">
+          <button
+            className={`py-2 font-medium transition-all duration-200 text-[#323335] border-b-2 ${
+              selectedFilter === "upcoming"
+              ? "border-b-[#4c4ba2] text-[#4c4ba2]"
               : "border-b-transparent"
-          }`}
-          onClick={() => handleFilterChange("upcoming")}
-        >
-          Upcoming
-        </button>
-        <button
-          className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
-            selectedFilter === "history"
-              ? "border-b-blue-600 text-blue-600"
+            }`}
+            onClick={() => handleFilterChange("upcoming")}
+          >
+            Upcoming
+          </button>
+          <button
+            className={`py-2 font-medium transition-all duration-200 text-[#323335] border-b-2 ${
+              selectedFilter === "history"
+              ? "border-b-[#4c4ba2] text-[#4c4ba2]"
               : "border-b-transparent"
-          }`}
-          onClick={() => handleFilterChange("history")}
-        >
-          History
+            }`}
+            onClick={() => handleFilterChange("history")}
+          >
+            History
         </button>
       </div>
 
