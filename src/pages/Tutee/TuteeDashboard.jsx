@@ -15,13 +15,13 @@ const isFinishedStatus = (status = "") =>
   FINISHED_STATUSES.has(String(status).toLowerCase());
 
 const STATUS_META = {
-  pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
-  confirmed: { label: "Confirmed", badge: "bg-emerald-100 text-emerald-800" },
-  started: { label: "In Session", badge: "bg-sky-100 text-sky-800" },
-  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-orange-100 text-orange-800" },
-  completed: { label: "Completed", badge: "bg-blue-100 text-blue-800" },
-  declined: { label: "Declined", badge: "bg-red-100 text-red-800" },
-  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-800" },
+  pending: { label: "Pending", badge: "bg-[#e6e7ea] text-[#323335]" },
+  confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
+  started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
+  completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
+  declined: { label: "Declined", badge: "bg-[#181718] text-white" },
+  cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
 };
 
 const formatStatusLabel = (status = "") =>
@@ -172,55 +172,53 @@ const TuteeDashboard = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col px-6 py-3">
+    <div className="flex-1 flex flex-col px-6 py-3 bg-[#f4ece6] min-h-screen">
       <div className="flex justify-between items-center">
         {/* <h2 className="text-xl">Welcome, {name}!</h2> */}
-        <h1 className="text-2xl font-bold text-gray-600">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#323335]">Dashboard</h1>
 
         {/* Show date today */}
-        <p className="text-[13px] font-extralight text-[#696969] gap-2 flex items-center">
+        <p className="text-[13px] font-semibold text-[#4c4ba2] gap-2 flex items-center">
           {dateToday}
         </p>
       </div>
 
       {/* Notices */}
       <div className="flex justify-end items-center">
-        <div className="bg-blue-600 cursor-pointer  md:px-8 md:py-2 border-none rounded-3xl  md:text-md text-white hover:bg-blue-700 transition-colors duration-300">
-          <Link to="/dashboard/appointment">
-            <p>Make an Appointment</p>
-          </Link>
-        </div>
+        <Link to="/dashboard/appointment" className="lav-btn lav-btn-primary md:px-8 md:py-2 text-sm md:text-base">
+          Make an Appointment
+        </Link>
       </div>
 
       <div className="mt-4 grid sm:grid-cols-1 md:grid-cols-2 gap-7 h-full">
         {/* Announcements */}
         <div className="h-full">
-          <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] h-full flex flex-col">
+          <div className="lav-card p-3.5 h-full flex flex-col">
             <div className="flex gap-4 items-center">
-            <div className="text-blue-600 text-2xl"><PiSpeakerHigh  /></div>
-            <p className="text-gray-600 font-semibold"> Announcement</p>
+            <div className="text-[#4c4ba2] text-2xl"><PiSpeakerHigh  /></div>
+            <p className="text-[#323335] font-semibold"> Announcement</p>
             </div>
             <div className="mt-2 flex-1">
               {announcement ? (
                 <div>
                   {announcement.announcement_content ? (
-                    <p className="text-gray-700">
+                    <p className="text-[#323335]">
                       {announcement.announcement_content}
                     </p>
                   ) : (
-                    <p className="text-gray-600">No content available</p>
+                    <p className="text-[#6b6c70]">No content available</p>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-600">No announcement found.</p>
+                <p className="text-[#6b6c70]">No announcement found.</p>
               )}
             </div>
           </div>
         </div>
-        <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF]">
+        <div className="lav-card p-3.5">
           <div className="flex gap-4 item-center">
-          <p className="text-2xl text-blue-600">< AiOutlineSchedule /></p>
-          <p className="text-gray-600 font-semibold mb-4">
+          <p className="text-2xl text-[#4c4ba2]">< AiOutlineSchedule /></p>
+          <p className="text-[#323335] font-semibold mb-4">
             Confirmed Sessions Today
           </p>
           </div>
