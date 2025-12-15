@@ -9,6 +9,7 @@ import { RiCalendarScheduleLine } from "react-icons/ri";
 const RouteSelect = ({ onClose }) => {
   const [selected, setSelected] = useState(window.location.pathname);
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -16,32 +17,35 @@ const RouteSelect = ({ onClose }) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data: tutorProfile } = await supabase
-          .from("profile")
-          .select("profile_id")
-          .eq("user_id", session.user.id)
-          .single();
+        const [{ data: userData, error: userError }, { data: tutorProfile }] =
+          await Promise.all([
+            supabase
+              .from("users")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .single(),
+            supabase
+              .from("profile")
+              .select("profile_id")
+              .eq("user_id", session.user.id)
+              .single(),
+          ]);
 
-        setCanSwitchToTutor(!!tutorProfile);
+        if (userError) throw userError;
+
+        const studentRole = (userData?.role || "").toLowerCase() === "student";
+        setIsStudent(studentRole);
+        setCanSwitchToTutor(!studentRole && !!tutorProfile);
       } catch (err) {
         console.error("Error checking tutor profile:", err);
         setCanSwitchToTutor(false);
       }
     };
 
-    const updateFlag = (event) => {
-      if (event && event.detail) {
-        setCanSwitchToTutor(event.detail.value === true || event.detail.value === "true");
-      } else {
-        checkCanSwitch();
-      }
-    };
-
-    // Check on mount
+    // Check on mount and when capability flags change
     checkCanSwitch();
 
-    // Update when capability flags change
-    const onCanSwitchUpdated = (event) => updateFlag(event);
+    const onCanSwitchUpdated = () => checkCanSwitch();
 
     window.addEventListener("canSwitchUpdated", onCanSwitchUpdated);
 
@@ -82,7 +86,7 @@ const RouteSelect = ({ onClose }) => {
         handleSelect={handleSelect}
         onClose={onClose}
       />
-      {canSwitchToTutor && (
+      {!isStudent && canSwitchToTutor && (
         <Route
           to="/dashboard/switch"
           selected={selected === "/dashboard/switch"}
