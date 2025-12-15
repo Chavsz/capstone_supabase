@@ -172,8 +172,8 @@ const TuteeDashboard = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col px-6 py-3 bg-[#f4ece6] min-h-screen">
-      <div className="flex justify-between items-center bg-[#f4ece6] text-white rounded-xl px-4 py-3 shadow-md">
+    <div className="flex-1 flex flex-col px-6 py-3 bg-[#f8f9f0] min-h-screen">
+      <div className="flex justify-between items-center bg-[#76acf5] text-white rounded-xl px-4 py-3 shadow-md">
         <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
         <p className="text-[13px] font-semibold">{dateToday}</p>
       </div>
@@ -184,8 +184,8 @@ const TuteeDashboard = () => {
           to="/dashboard/appointment"
           className="lav-btn md:px-8 md:py-2 text-sm md:text-base"
           style={{ background: "#4257a9", color: "#fff", border: "1px solid #3b4c95" }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#4766fe")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#4257a9")}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#4257a9")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#4766fe")}
         >
           Make an Appointment
         </Link>
