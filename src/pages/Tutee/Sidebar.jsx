@@ -33,7 +33,7 @@ const Sidebar = ({ setAuth, onClose }) => {
         <h1 className="text-xl font-bold text-[#181718]">LAV</h1>
         <button
           onClick={onClose}
-          className="p-2 text-[#181718] hover:bg-white/30 rounded"
+          className="p-2 text-[#f1eec8] hover:bg-white/30 rounded"
           aria-label="Close menu"
         >
           <fiIcons.FiX className="w-5 h-5" />
@@ -42,7 +42,7 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Desktop Title */}
       <div className="flex-shrink-0 hidden md:block">
-        <h1 className="text-xl md:text-2xl font-bold text-center text-[#181718] mb-9">LAV</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-center text-[#f5edbd] mb-9">LAV</h1>
       </div>
 
       {/* Menu Items - Scrollable */}
