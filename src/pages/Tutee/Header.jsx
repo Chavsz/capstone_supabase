@@ -378,17 +378,17 @@ const Header = () => {
   const totalNotifications = unreadCount + upcomingSessions.length;
 
   return (
-    <div className="pt-3 px-3">
-      <div className="flex gap-2 justify-end items-center text-gray-600 text-xl">
+    <div className="pt-3 px-3 bg-[#4c4ba2] text-white rounded-b-xl shadow-md">
+      <div className="flex gap-2 justify-end items-center text-white text-xl">
         {/* Notification Icon with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleDropdown}
-            className="relative p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="relative p-1 hover:bg-white/15 rounded-full transition-colors"
           >
             <IoIosNotifications />
             {totalNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-[#935226] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {totalNotifications}
               </span>
             )}
@@ -396,17 +396,17 @@ const Header = () => {
 
           {/* Dropdown Menu */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-[#e5e8f2] rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2 duration-200">
               <div className="p-4">
-                <h3 className="text-gray-800 mb-3 flex items-center gap-2 text-lg">
-                  <IoIosNotifications className="text-gray-600" />
+                <h3 className="text-[#323335] mb-3 flex items-center gap-2 text-lg">
+                  <IoIosNotifications className="text-[#4c4ba2]" />
                   Notifications
                 </h3>
 
                 <div className="space-y-3">
                   {upcomingSessions.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                      <p className="text-blue-800 font-medium">
+                    <div className="bg-[#def0e4] border border-[#c9e1d3] rounded-md p-3">
+                      <p className="text-[#323335] font-medium">
                         Upcoming session{upcomingSessions.length > 1 ? "s" : ""}{" "}
                         soon
                       </p>
@@ -415,7 +415,7 @@ const Header = () => {
                           ({ appointment, minutesUntil }) => (
                             <div
                               key={appointment.appointment_id}
-                              className="text-blue-700 text-sm"
+                              className="text-[#4c4ba2] text-sm"
                             >
                               <p className="font-semibold">
                                 In {minutesUntil}{" "}
@@ -466,13 +466,13 @@ const Header = () => {
                   {unreadNotifications.map((notification) => (
                     <div
                       key={notification.notification_id}
-                      className="bg-blue-50 border border-blue-200 rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                      className="bg-[#def0e4] border border-[#c9e1d3] rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
                       onClick={() => markAsRead(notification.notification_id)}
                     >
-                      <p className="text-blue-800 text-sm font-semibold">
+                      <p className="text-[#323335] text-sm font-semibold">
                         {notification.notification_content}
                       </p>
-                      <p className="text-blue-600 text-xs mt-1">
+                      <p className="text-[#4c4ba2] text-xs mt-1">
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -486,10 +486,10 @@ const Header = () => {
                   )}
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="mt-3 pt-3 border-t border-[#e5e8f2]">
                   <Link
                     to="/dashboard/schedules"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center justify-between"
+                    className="text-[#4c4ba2] hover:text-[#323335] text-sm font-medium flex items-center justify-between"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <span>View all appointments</span>
@@ -504,7 +504,7 @@ const Header = () => {
         <span className="font-extralight text-[#696969]">|</span>
 
         {/* Profile Icon */}
-        <Link className="w-6.5 h-6.5 bg-blue-500 rounded-full flex items-center justify-center" to="/dashboard/profile" >
+        <Link className="w-6.5 h-6.5 bg-[#4257a9] rounded-full flex items-center justify-center" to="/dashboard/profile" >
           {profile.profile_image ? (
             <img
               src={profile.profile_image}

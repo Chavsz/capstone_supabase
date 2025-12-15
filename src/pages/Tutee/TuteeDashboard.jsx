@@ -19,7 +19,7 @@ const STATUS_META = {
   confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
   started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
   awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
-  completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
+  completed: { label: "Completed", badge: "bg-[#76acf5] text-[#0f2d58]" },
   declined: { label: "Declined", badge: "bg-[#181718] text-white" },
   cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
 };
@@ -173,19 +173,20 @@ const TuteeDashboard = () => {
 
   return (
     <div className="flex-1 flex flex-col px-6 py-3 bg-[#f4ece6] min-h-screen">
-      <div className="flex justify-between items-center">
-        {/* <h2 className="text-xl">Welcome, {name}!</h2> */}
-        <h1 className="text-2xl md:text-3xl font-bold text-[#323335]">Dashboard</h1>
-
-        {/* Show date today */}
-        <p className="text-[13px] font-semibold text-[#4c4ba2] gap-2 flex items-center">
-          {dateToday}
-        </p>
+      <div className="flex justify-between items-center bg-[#4c4ba2] text-white rounded-xl px-4 py-3 shadow-md">
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+        <p className="text-[13px] font-semibold">{dateToday}</p>
       </div>
 
       {/* Notices */}
       <div className="flex justify-end items-center">
-        <Link to="/dashboard/appointment" className="lav-btn lav-btn-primary md:px-8 md:py-2 text-sm md:text-base">
+        <Link
+          to="/dashboard/appointment"
+          className="lav-btn md:px-8 md:py-2 text-sm md:text-base"
+          style={{ background: "#4257a9", color: "#fff", border: "1px solid #3b4c95" }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "#4766fe")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "#4257a9")}
+        >
           Make an Appointment
         </Link>
       </div>

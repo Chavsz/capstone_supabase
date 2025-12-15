@@ -20,7 +20,7 @@ function TuteePage({ setAuth }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="bg-[#f8fcff] min-h-screen">
+    <div className="bg-[#f4ece6] min-h-screen">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
