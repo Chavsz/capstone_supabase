@@ -27,7 +27,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#def0e4] h-screen w-[240px] shadow-xl">
+    <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#76acf5] h-screen w-[240px] shadow-xl">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
         <h1 className="text-xl font-bold text-[#181718]">LAV</h1>

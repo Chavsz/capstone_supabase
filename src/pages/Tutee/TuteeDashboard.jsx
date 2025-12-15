@@ -173,7 +173,7 @@ const TuteeDashboard = () => {
 
   return (
     <div className="flex-1 flex flex-col px-6 py-3 bg-[#f8f9f0] min-h-screen">
-      <div className="flex justify-between items-center bg-[#76acf5] text-white rounded-xl px-4 py-3 shadow-md">
+      <div className="flex justify-between items-center px-1 py-2">
         <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
         <p className="text-[13px] font-semibold">{dateToday}</p>
       </div>
