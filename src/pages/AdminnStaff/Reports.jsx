@@ -57,6 +57,7 @@ const Reports = () => {
           date,
           start_time,
           end_time,
+          number_of_tutees,
           status,
           tutor:users!appointment_tutor_id_fkey(name),
           student:users!appointment_user_id_fkey(name)
@@ -637,12 +638,6 @@ const Reports = () => {
       helper: "Confirmed sessions",
     },
     {
-      key: "tutees",
-      label: "Tutees Served",
-      value: `${totalTuteesServed}`,
-      helper: "Counting groups",
-    },
-    {
       key: "booked",
       label: "Sessions Booked",
       value: `${totalSessionsBooked}`,
@@ -678,9 +673,9 @@ const Reports = () => {
         return;
       }
 
-      const rows = [["Tutor", "Sessions", "Hours"]];
+      const rows = [["Tutor", "Sessions", "Tutees Served", "Hours"]];
       tutorMonthlyPerformance.forEach((entry) => {
-        rows.push([entry.name, entry.sessions, entry.hours.toFixed(2)]);
+        rows.push([entry.name, entry.sessions, entry.totalTutees, entry.hours.toFixed(2)]);
       });
 
       const csvContent = rows.map((row) => row.join(",")).join("\n");
