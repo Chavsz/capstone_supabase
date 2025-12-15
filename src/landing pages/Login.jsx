@@ -124,12 +124,12 @@ const Login = ({ setAuth }) => {
         </Link>
 
         {/* Large Centered Logo */}
-        <div className="flex flex-col items-center gap-4 px-6 text-center">
-          <div className="rounded-2xl border border-white/25 bg-white/10 backdrop-blur-sm shadow-xl p-3">
+        <div className="flex flex-col items-center gap-4 px-6 text-center w-full">
+          <div className="w-full max-w-xl rounded-2xl border border-white/25 bg-white/10 backdrop-blur-sm shadow-xl p-3">
             <img
               src={heroLogoSrc}
               alt="LAV"
-              className="w-72 h-56 md:w-80 md:h-64 rounded-xl object-cover shadow-md border border-white/30"
+              className="w-full aspect-[4/3] rounded-xl object-cover shadow-md border border-white/30"
             />
           </div>
           <p className="text-sm text-blue-100 max-w-xs">
