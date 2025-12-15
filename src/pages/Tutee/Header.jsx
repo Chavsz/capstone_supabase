@@ -378,7 +378,7 @@ const Header = () => {
   const totalNotifications = unreadCount + upcomingSessions.length;
 
   return (
-    <div className="pt-3 px-3 bg-[#4c4ba2] text-white rounded-b-xl shadow-md">
+    <div className="pt-3 px-3 bg-[#4766fe] text-white rounded-b-xl shadow-md">
       <div className="flex gap-2 justify-end items-center text-white text-xl">
         {/* Notification Icon with Dropdown */}
         <div className="relative" ref={dropdownRef}>

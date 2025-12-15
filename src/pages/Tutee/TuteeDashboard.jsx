@@ -19,7 +19,7 @@ const STATUS_META = {
   confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
   started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
   awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
-  completed: { label: "Completed", badge: "bg-[#76acf5] text-[#0f2d58]" },
+  completed: { label: "Completed", badge: "bg-[#00a65a] text-white" },
   declined: { label: "Declined", badge: "bg-[#181718] text-white" },
   cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
 };
