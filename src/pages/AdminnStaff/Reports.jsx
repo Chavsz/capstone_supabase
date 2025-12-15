@@ -215,6 +215,15 @@ const Reports = () => {
     };
   }, [selectedPeriod]);
 
+  const selectedYearRange = useMemo(() => {
+    if (!periodRange) return null;
+    const year = periodRange.start.getFullYear();
+    return {
+      start: new Date(year, 0, 1),
+      end: new Date(year + 1, 0, 1),
+    };
+  }, [periodRange]);
+
   const comparisonRange = useMemo(() => {
     if (!periodRange) return null;
     if (periodRange.type === "year") {
@@ -251,6 +260,16 @@ const Reports = () => {
     });
   }, [evaluations, appointmentsById, periodRange]);
 
+  const evaluationsInYear = useMemo(() => {
+    if (!selectedYearRange) return [];
+    return evaluations.filter((evaluation) => {
+      const appointment = appointmentsById.get(evaluation.appointment_id);
+      if (!appointment || !appointment.date) return false;
+      const date = new Date(appointment.date);
+      return date >= selectedYearRange.start && date < selectedYearRange.end;
+    });
+  }, [evaluations, appointmentsById, selectedYearRange]);
+
   const formatDate = (value) =>
     new Date(value).toLocaleDateString("en-US", {
       month: "short",
@@ -264,6 +283,42 @@ const Reports = () => {
       minute: "2-digit",
       hour12: true,
     });
+
+  const computeLavStats = (items = []) => {
+    const totals = lavRatingFields.reduce(
+      (acc, field) => ({
+        ...acc,
+        [field.key]: { sum: 0, count: 0 },
+      }),
+      {}
+    );
+
+    items.forEach((evaluation) => {
+      lavRatingFields.forEach((field) => {
+        const value = Number(evaluation[field.key]);
+        if (!Number.isNaN(value)) {
+          totals[field.key].sum += value;
+          totals[field.key].count += 1;
+        }
+      });
+    });
+
+    let overallSum = 0;
+    let overallCount = 0;
+    const averages = {};
+
+    lavRatingFields.forEach((field) => {
+      const { sum, count } = totals[field.key];
+      averages[field.key] = count ? sum / count : null;
+      overallSum += sum;
+      overallCount += count;
+    });
+
+    return {
+      averages,
+      overallAverage: overallCount ? overallSum / overallCount : null,
+    };
+  };
 
   const weekInfo = (date) => {
     const newDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -405,41 +460,11 @@ const Reports = () => {
     return grouped;
   }, [schedules]);
 
-  const lavStats = useMemo(() => {
-    const totals = lavRatingFields.reduce(
-      (acc, field) => ({
-        ...acc,
-        [field.key]: { sum: 0, count: 0 },
-      }),
-      {}
-    );
-
-    evaluationsInPeriod.forEach((evaluation) => {
-      lavRatingFields.forEach((field) => {
-        const value = Number(evaluation[field.key]);
-        if (!Number.isNaN(value)) {
-          totals[field.key].sum += value;
-          totals[field.key].count += 1;
-        }
-      });
-    });
-
-    let overallSum = 0;
-    let overallCount = 0;
-    const averages = {};
-
-    lavRatingFields.forEach((field) => {
-      const { sum, count } = totals[field.key];
-      averages[field.key] = count ? sum / count : null;
-      overallSum += sum;
-      overallCount += count;
-    });
-
-    return {
-      averages,
-      overallAverage: overallCount ? overallSum / overallCount : null,
-    };
-  }, [evaluationsInPeriod]);
+  const lavStatsPeriod = useMemo(
+    () => computeLavStats(evaluationsInPeriod),
+    [evaluationsInPeriod]
+  );
+  const lavStatsYear = useMemo(() => computeLavStats(evaluationsInYear), [evaluationsInYear]);
 
   const appointmentsInPeriod = useMemo(() => {
     if (!periodRange) return [];
@@ -519,7 +544,7 @@ const Reports = () => {
   const overallTutorSatisfaction = tutorAggregate.count
     ? tutorAggregate.sum / tutorAggregate.count
     : null;
-  const tuteeSatisfaction = lavStats.overallAverage;
+  const tuteeSatisfaction = lavStatsPeriod.overallAverage;
   const averageSatisfactionDisplay = overallTutorSatisfaction
     ? `${overallTutorSatisfaction.toFixed(2)} / 5`
     : "- / 5";
@@ -701,6 +726,14 @@ const Reports = () => {
       landingImage && !landingImage.startsWith("http")
         ? new URL(landingImage, window.location.origin).href
         : landingImage;
+    const lavPeriodOverallDisplay =
+      lavStatsPeriod.overallAverage !== null
+        ? `${lavStatsPeriod.overallAverage.toFixed(2)} / 5`
+        : "- / 5";
+    const lavYearOverallDisplay =
+      lavStatsYear.overallAverage !== null
+        ? `${lavStatsYear.overallAverage.toFixed(2)} / 5`
+        : "- / 5";
 
     const metricCardsHtml = summaryMetrics
       .map(
@@ -825,6 +858,32 @@ const Reports = () => {
               color: #94a3b8;
               margin-top: 12px;
             }
+            .summary-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+              gap: 12px;
+              margin: 20px 0 10px;
+            }
+            .summary-card {
+              background: #fff;
+              border: 1px solid #e2e8f0;
+              border-radius: 14px;
+              padding: 12px 14px;
+              box-shadow: 0 6px 12px rgba(15, 23, 42, 0.05);
+            }
+            .summary-label {
+              font-size: 11px;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+              color: #64748b;
+              margin: 0 0 4px;
+            }
+            .summary-value {
+              font-size: 20px;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 0;
+            }
           </style>
         </head>
         <body>
@@ -843,6 +902,44 @@ const Reports = () => {
                 </div>
               </div>
               <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
+            </div>
+
+            <h2 class="section-title" style="margin-bottom:8px;">Period Summary</h2>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <p class="summary-label">Total Hours Taught</p>
+                <p class="summary-value">${escapeHtml(`${totalHoursTeach.toFixed(1)} hrs`)}</p>
+              </div>
+              <div class="summary-card">
+                <p class="summary-label">Sessions Completed</p>
+                <p class="summary-value">${escapeHtml(`${totalSessionsCompleted}`)}</p>
+              </div>
+              <div class="summary-card">
+                <p class="summary-label">Sessions Booked</p>
+                <p class="summary-value">${escapeHtml(`${totalSessionsBooked}`)}</p>
+              </div>
+              <div class="summary-card">
+                <p class="summary-label">Total Tutees Served</p>
+                <p class="summary-value">${escapeHtml(`${totalTuteesServed}`)}</p>
+              </div>
+              <div class="summary-card">
+                <p class="summary-label">Overall Average</p>
+                <p class="summary-value">${escapeHtml(averageSatisfactionDisplay)}</p>
+              </div>
+            </div>
+
+            <h2 class="section-title" style="margin-bottom:8px;">LAV Evaluation</h2>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <p class="summary-label">Monthly LAV Overall</p>
+                <p class="summary-value">${escapeHtml(lavPeriodOverallDisplay)}</p>
+                <p class="summary-label" style="margin-top:6px;">${escapeHtml(displayPeriodLabel)}</p>
+              </div>
+              <div class="summary-card">
+                <p class="summary-label">Yearly LAV Overall</p>
+                <p class="summary-value">${escapeHtml(lavYearOverallDisplay)}</p>
+                <p class="summary-label" style="margin-top:6px;">${escapeHtml(selectedYearRange ? selectedYearRange.start.getFullYear().toString() : "")}</p>
+              </div>
             </div>
 
             <h2 class="section-title" style="margin-bottom:8px;">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
@@ -883,6 +980,14 @@ const Reports = () => {
     displayPeriodLabel,
     preparedDateLabel,
     comparisonLabel,
+    lavStatsPeriod,
+    lavStatsYear,
+    selectedYearRange,
+    totalHoursTeach,
+    totalSessionsCompleted,
+    totalSessionsBooked,
+    totalTuteesServed,
+    averageSatisfactionDisplay,
   ]);
 
   if (loading) {
@@ -1149,8 +1254,8 @@ const Reports = () => {
                     {field.label}
                   </p>
                   <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {lavStats.averages[field.key] !== null
-                      ? lavStats.averages[field.key].toFixed(2)
+                    {lavStatsPeriod.averages[field.key] !== null
+                      ? lavStatsPeriod.averages[field.key].toFixed(2)
                       : "-"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Average rating</p>
@@ -1161,7 +1266,7 @@ const Reports = () => {
                   Overall Average
                 </p>
                 <p className="text-4xl font-bold text-blue-700 mt-2">
-                  {lavStats.overallAverage !== null ? lavStats.overallAverage.toFixed(2) : "-"}
+                  {lavStatsPeriod.overallAverage !== null ? lavStatsPeriod.overallAverage.toFixed(2) : "-"}
                 </p>
                 <p className="text-xs text-blue-700 mt-1">
                   Combined LAV score across all submissions

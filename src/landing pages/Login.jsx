@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase-client";
 import { FcGoogle } from "react-icons/fc";
@@ -10,6 +10,7 @@ const Login = ({ setAuth }) => {
     password: "",
   });
   const [message, setMessage] = useState("");
+  const [loginPhoto, setLoginPhoto] = useState(null);
 
   const onChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
@@ -86,18 +87,45 @@ const Login = ({ setAuth }) => {
     }
   };
 
+  useEffect(() => {
+    const fetchLoginPhoto = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("login_photo")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        if (data?.login_photo) {
+          setLoginPhoto(data.login_photo);
+        }
+      } catch (err) {
+        console.error("Unable to load login photo:", err.message);
+      }
+    };
+
+    fetchLoginPhoto();
+  }, []);
+
+  const logoSrc = loginPhoto || LAVLogo;
+
   return (
     <div className="flex h-screen p-0 md:p-3">
       {/* Left Panel - Blue Background with Logo (Hidden on Mobile) */}
       <div className="hidden md:flex w-1/3 bg-blue-600 flex-col items-center justify-center relative rounded-md">
         <Link to="/" className="absolute top-8 left-8 flex items-center ">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
+          <img src={logoSrc} alt="LAV Logo" className="w-8 h-8 object-contain" />
           <span className="ml-2 text-white font-semibold text-lg">LAV</span>
         </Link>
 
         {/* Large Centered Logo */}
         <div className="flex flex-col items-center">
-          <img src={LAVLogo} alt="LAV Logo" className="w-50 h-50 mb-4" />
+          <img src={logoSrc} alt="LAV Logo" className="w-50 h-50 mb-4 object-contain" />
           <h1
             className="text-6xl font-bold text-white tracking-wider"
           >
@@ -109,7 +137,7 @@ const Login = ({ setAuth }) => {
       <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 md:px-16 py-4 md:py-0 relative">
         {/* Small Logo and LAV Text - Visible on Mobile */}
         <Link to="/" className="absolute top-4 md:top-8 left-4 md:left-8 flex items-center md:hidden">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
+          <img src={logoSrc} alt="LAV Logo" className="w-8 h-8 object-contain" />
           <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
         </Link>
 

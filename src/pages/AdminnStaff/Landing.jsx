@@ -13,6 +13,7 @@ const Landing = () => {
     about_title: "",
     about_description: "",
     about_link: "",
+    login_photo: null,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -41,6 +42,7 @@ const Landing = () => {
             about_title: data.about_title || "",
             about_description: data.about_description || "",
             about_link: data.about_link || "",
+            login_photo: data.login_photo || "",
           });
         } else {
           // Set default empty values if no data exists
@@ -53,6 +55,7 @@ const Landing = () => {
             about_title: "",
             about_description: "",
             about_link: "",
+            login_photo: "",
           });
         }
       } catch (error) {
@@ -67,6 +70,7 @@ const Landing = () => {
           about_title: "",
           about_description: "",
           about_link: "",
+          login_photo: "",
         });
       }
     };
@@ -76,7 +80,7 @@ const Landing = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "home_image" || name === "about_image") {
+    if (name === "home_image" || name === "about_image" || name === "login_photo") {
       setFormData((prevData) => ({
         ...prevData,
         [name]: files[0],
@@ -154,6 +158,7 @@ const Landing = () => {
     try {
       let homeImageUrl = landingData?.home_image || null;
       let aboutImageUrl = landingData?.about_image || null;
+      let loginPhotoUrl = landingData?.login_photo || null;
 
       // Upload new images if they are File objects
       if (formData.home_image instanceof File) {
@@ -178,6 +183,15 @@ const Landing = () => {
         aboutImageUrl = formData.about_image;
       }
 
+      if (formData.login_photo instanceof File) {
+        if (landingData?.login_photo) {
+          await deleteImage(landingData.login_photo);
+        }
+        loginPhotoUrl = await uploadImage(formData.login_photo, 'login');
+      } else if (formData.login_photo && typeof formData.login_photo === 'string') {
+        loginPhotoUrl = formData.login_photo;
+      }
+
       // Prepare data for Supabase
       const landingDataToSave = {
         home_title: formData.home_title,
@@ -188,6 +202,7 @@ const Landing = () => {
         about_description: formData.about_description,
         about_link: formData.about_link,
         about_image: aboutImageUrl,
+        login_photo: loginPhotoUrl,
       };
 
       // Check if landing data already exists
@@ -377,6 +392,35 @@ const Landing = () => {
           {landingData?.about_image && (
             <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
               Current image: <a href={landingData.about_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
+            </p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="login_photo"
+            className="block text-sm font-semibold text-gray-700 mb-1"
+          >
+            Login Photo:
+          </label>
+          <input
+            type="file"
+            name="login_photo"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          />
+          {landingData?.login_photo && (
+            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
+              Current login photo:{" "}
+              <a
+                href={landingData.login_photo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                View
+              </a>
             </p>
           )}
         </div>
