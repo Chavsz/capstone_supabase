@@ -741,7 +741,6 @@ const Reports = () => {
           <meta charset="utf-8" />
           <title>LAV Period Report</title>
           <style>
-            @page { margin: 25mm; }
             body {
               font-family: 'Inter', Arial, sans-serif;
               margin: 0;
@@ -755,7 +754,7 @@ const Reports = () => {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              margin-bottom: 32px;
+              margin-bottom: 24px;
             }
             .header-left {
               display: flex;
@@ -795,59 +794,6 @@ const Reports = () => {
               color: #0f172a;
               margin: 24px 0 12px;
             }
-            .metric-grid {
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-              gap: 16px;
-            }
-            .metric-card {
-              background: #fff;
-              border-radius: 18px;
-              border: 1px solid #e2e8f0;
-              padding: 16px;
-              box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
-            }
-            .metric-icon {
-              width: 38px;
-              height: 38px;
-              border-radius: 12px;
-              background: #eff6ff;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 13px;
-              font-weight: 600;
-              color: #1d4ed8;
-            }
-            .metric-label {
-              margin: 12px 0 0;
-              font-size: 11px;
-              text-transform: uppercase;
-              letter-spacing: 0.08em;
-              color: #94a3b8;
-            }
-            .metric-value {
-              margin: 4px 0 0;
-              font-size: 24px;
-              font-weight: 700;
-              color: #0f172a;
-            }
-            .metric-detail {
-              margin: 0;
-              font-size: 12px;
-              color: #64748b;
-            }
-            .metric-progress {
-              margin-top: 14px;
-              height: 6px;
-              background: #e2e8f0;
-              border-radius: 999px;
-              overflow: hidden;
-            }
-            .metric-progress-bar {
-              height: 6px;
-              background: linear-gradient(90deg, #2563eb, #7c3aed);
-            }
             table {
               width: 100%;
               border-collapse: collapse;
@@ -855,6 +801,7 @@ const Reports = () => {
               background: #fff;
               border-radius: 16px;
               overflow: hidden;
+              box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
             }
             th, td {
               padding: 12px 16px;
@@ -862,8 +809,7 @@ const Reports = () => {
               font-size: 13px;
             }
             th {
-              background: #f1f5f9;
-              text-align: left;
+              background: #eef2ff;
               text-transform: uppercase;
               letter-spacing: 0.08em;
               font-weight: 600;
@@ -875,7 +821,7 @@ const Reports = () => {
             .note {
               font-size: 12px;
               color: #94a3b8;
-              margin-top: 8px;
+              margin-top: 12px;
             }
           </style>
         </head>
@@ -897,20 +843,15 @@ const Reports = () => {
               <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
             </div>
 
-            <h2 class="section-title">Key Metrics</h2>
-            <div class="metric-grid">
-              ${metricCardsHtml}
-            </div>
-
             <h2 class="section-title">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
             <table>
               <thead>
-            <tr>
-              <th>Tutor</th>
-              <th>Sessions</th>
-              <th>Total Tutees Served</th>
-              <th>Total Hours</th>
-            </tr>
+                <tr>
+                  <th>Tutor</th>
+                  <th>Sessions</th>
+                  <th>Total Tutees Served</th>
+                  <th>Total Hours</th>
+                </tr>
               </thead>
               <tbody>
                 ${performanceRowsHtml}
