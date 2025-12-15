@@ -466,10 +466,13 @@ const Reports = () => {
 
   const totalSessionsBooked = appointmentsInPeriod.length;
   const totalSessionsCompleted = completedAppointmentsInPeriod.length;
-  const tuteesServed = completedAppointmentsInPeriod.reduce((set, appointment) => {
-    if (appointment.user_id) set.add(appointment.user_id);
-    return set;
-  }, new Set()).size;
+  const totalTuteesServed = completedAppointmentsInPeriod.reduce((sum, appointment) => {
+    const count =
+      appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+        ? Number(appointment.number_of_tutees)
+        : 1;
+    return sum + count;
+  }, 0);
   const cancelledSessions = appointmentsInPeriod.filter(
     (appointment) => appointment.status === "cancelled"
   ).length;
@@ -541,14 +544,14 @@ const Reports = () => {
       progress: Math.min(100, (totalHoursTeach / 40) * 100),
       color: "bg-emerald-100 text-emerald-700",
     },
-    {
-      label: "Tutees Served",
-      value: `${tuteesServed}`,
-      detail: "Unique students",
-      icon: "TS",
-      progress: Math.min(100, (tuteesServed / 30) * 100),
-      color: "bg-purple-100 text-purple-700",
-    },
+      {
+        label: "Tutees Served",
+        value: `${totalTuteesServed}`,
+        detail: "Counting groups",
+        icon: "TS",
+        progress: Math.min(100, (totalTuteesServed / 30) * 100),
+        color: "bg-purple-100 text-purple-700",
+      },
     {
       label: "Sessions Booked",
       value: `${totalSessionsBooked}`,
@@ -794,19 +797,23 @@ const Reports = () => {
               color: #0f172a;
               margin: 24px 0 12px;
             }
+            .table-holder {
+              border-radius: 18px;
+              overflow: hidden;
+              background: #fff;
+              box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+            }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 12px;
-              background: #fff;
-              border-radius: 16px;
-              overflow: hidden;
-              box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+              margin: 0;
+              background: transparent;
             }
             th, td {
               padding: 12px 16px;
               border-bottom: 1px solid #e2e8f0;
               font-size: 13px;
+              text-align: center;
             }
             th {
               background: #eef2ff;
@@ -843,11 +850,12 @@ const Reports = () => {
               <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
             </div>
 
-            <h2 class="section-title">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Tutor</th>
+            <h2 class="section-title" style="margin-bottom:8px;">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
+            <div class="table-holder">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tutor</th>
                   <th>Sessions</th>
                   <th>Total Tutees Served</th>
                   <th>Total Hours</th>
@@ -856,7 +864,7 @@ const Reports = () => {
               <tbody>
                 ${performanceRowsHtml}
               </tbody>
-            </table>
+            </div>
             <p class="note">This report includes only sessions marked as completed. Compared with ${escapeHtml(comparisonLabel || "previous period")}.</p>
           </div>
         </body>
