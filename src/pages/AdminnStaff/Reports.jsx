@@ -289,6 +289,7 @@ const Reports = () => {
             tutorId,
             name: appointment.tutor?.name || "Unknown Tutor",
             total: 0,
+            totalTutees: 0,
             today: 0,
             thisWeek: 0,
             thisMonth: 0,
@@ -301,6 +302,11 @@ const Reports = () => {
 
         const entry = stats[tutorId];
         entry.total += 1;
+        const tuteesCount =
+          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+            ? Number(appointment.number_of_tutees)
+            : 1;
+        entry.totalTutees = (entry.totalTutees || 0) + tuteesCount;
 
         const sessionDate = new Date(appointment.date);
         const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(
@@ -587,6 +593,7 @@ const Reports = () => {
           name: appointment.tutor?.name || "Unknown Tutor",
           sessions: 0,
           hours: 0,
+          totalTutees: 0,
         };
       }
       if (isFinishedStatus(appointment.status)) {
@@ -594,8 +601,13 @@ const Reports = () => {
           (new Date(`2000-01-01T${appointment.end_time}`) -
             new Date(`2000-01-01T${appointment.start_time}`)) /
           60000;
+        const appointmentTutees =
+          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+            ? Number(appointment.number_of_tutees)
+            : 1;
         aggregate[tutorId].sessions += 1;
         aggregate[tutorId].hours += Math.max(minutes / 60, 0);
+        aggregate[tutorId].totalTutees += appointmentTutees;
       }
     });
     return Object.values(aggregate)
@@ -710,16 +722,17 @@ const Reports = () => {
     const performanceRowsHtml =
       tutorMonthlyPerformance
         .map(
-          (entry) => `
+        (entry) => `
           <tr>
             <td>${escapeHtml(entry.name)}</td>
             <td>${entry.sessions}</td>
+            <td>${entry.totalTutees}</td>
             <td>${entry.hours.toFixed(1)} hrs</td>
           </tr>
         `
         )
         .join("") ||
-      `<tr><td colspan="3">No tutor performance data for ${escapeHtml(displayPeriodLabel)}.</td></tr>`;
+      `<tr><td colspan="4">No tutor performance data for ${escapeHtml(displayPeriodLabel)}.</td></tr>`;
 
     const docHtml = `
       <!DOCTYPE html>
@@ -892,11 +905,12 @@ const Reports = () => {
             <h2 class="section-title">Tutor Performance (${escapeHtml(displayPeriodLabel)})</h2>
             <table>
               <thead>
-                <tr>
-                  <th>Tutor</th>
-                  <th>Sessions</th>
-                  <th>Total Hours</th>
-                </tr>
+            <tr>
+              <th>Tutor</th>
+              <th>Sessions</th>
+              <th>Total Tutees Served</th>
+              <th>Total Hours</th>
+            </tr>
               </thead>
               <tbody>
                 ${performanceRowsHtml}
@@ -1076,16 +1090,17 @@ const Reports = () => {
               <tr>
                 <th className="text-left px-4 py-3">Tutor</th>
                 <th className="text-center px-4 py-3">Today</th>
-                  <th className="text-center px-4 py-3">This Week</th>
-                  <th className="text-center px-4 py-3">This Month</th>
-                  <th className="text-center px-4 py-3">Total</th>
-                  <th className="text-center px-4 py-3">Total Hours</th>
+                <th className="text-center px-4 py-3">This Week</th>
+                <th className="text-center px-4 py-3">This Month</th>
+                <th className="text-center px-4 py-3">Total</th>
+                <th className="text-center px-4 py-3">Tutees Served</th>
+                <th className="text-center px-4 py-3">Total Hours</th>
                 </tr>
               </thead>
               <tbody>
               {tutorEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center text-gray-500 py-5">
+                  <td colSpan={7} className="text-center text-gray-500 py-5">
                     No completed sessions recorded.
                   </td>
                 </tr>
@@ -1093,13 +1108,14 @@ const Reports = () => {
                 tutorEntries.map((entry) => (
                   <tr key={entry.tutorId} className="border-t border-gray-100">
                     <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                    <td className="px-4 py-3 text-center">{entry.today}</td>
-                    <td className="px-4 py-3 text-center">{entry.thisWeek}</td>
-                    <td className="px-4 py-3 text-center">{entry.thisMonth}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.total}</td>
-                    <td className="px-4 py-3 text-center">
-                      {entry.totalHours ? entry.totalHours.toFixed(1) : "-"}
-                    </td>
+                <td className="px-4 py-3 text-center">{entry.today}</td>
+                <td className="px-4 py-3 text-center">{entry.thisWeek}</td>
+                <td className="px-4 py-3 text-center">{entry.thisMonth}</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.total}</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.totalTutees}</td>
+                <td className="px-4 py-3 text-center">
+                  {entry.totalHours ? entry.totalHours.toFixed(1) : "-"}
+                </td>
                   </tr>
                 ))
               )}
@@ -1157,6 +1173,7 @@ const Reports = () => {
                     <div>
                       <p className="text-3xl font-bold text-gray-900">{entry.hours.toFixed(1)} hrs</p>
                       <p className="text-sm text-gray-500">Sessions: {entry.sessions}</p>
+                      <p className="text-sm text-gray-500">Tutees served: {entry.totalTutees}</p>
                     </div>
                     <div className="h-1.5 bg-white rounded-full overflow-hidden">
                       <div

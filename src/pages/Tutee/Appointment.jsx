@@ -22,7 +22,7 @@ const Appointment = () => {
     date: "",
     start_time: "",
     end_time: "",
-    number_of_tutees: "1",
+    number_of_tutees: "",
   });
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
@@ -176,7 +176,7 @@ const Appointment = () => {
         if (Number.isNaN(numeric)) {
           nextValue = "";
         } else {
-          nextValue = Math.max(1, Math.min(10, numeric)).toString();
+          nextValue = Math.min(10, numeric).toString();
         }
       }
     }
@@ -430,22 +430,23 @@ const Appointment = () => {
       return;
     }
 
-    const tuteeCount = Number(formData.number_of_tutees);
+    const tuteeCount =
+      formData.number_of_tutees && !Number.isNaN(Number(formData.number_of_tutees))
+        ? Number(formData.number_of_tutees)
+        : 1;
     if (
       !formData.subject ||
       !formData.topic ||
       !formData.mode_of_session ||
       !formData.date ||
       !formData.start_time ||
-      !formData.end_time ||
-      !formData.number_of_tutees ||
-      Number.isNaN(tuteeCount)
+      !formData.end_time
     ) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    if (tuteeCount < 1 || tuteeCount > 10) {
+    if (tuteeCount > 10) {
       toast.error("Number of tutees must be between 1 and 10.");
       return;
     }
@@ -609,7 +610,7 @@ const Appointment = () => {
         date: "",
         start_time: "",
         end_time: "",
-        number_of_tutees: "1",
+        number_of_tutees: "",
       });
       setSelectedTutor(null);
       setSelectedSubject("");
@@ -780,7 +781,7 @@ const Appointment = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Maximum of 10 tutees per booking. Values outside 1–10 are blocked.
+                Optional: leave blank for a single student, or enter 2–10 learners (values above 10 are capped automatically).
               </p>
             </div>
 
