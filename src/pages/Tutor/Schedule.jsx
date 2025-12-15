@@ -783,6 +783,9 @@ const Schedule = () => {
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
                           </div>
+                          <div className="text-sm text-gray-500">
+                            Number of tutees: {appointment.number_of_tutees || 1}
+                          </div>
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
                               appointment.status
@@ -833,6 +836,9 @@ const Schedule = () => {
                           </div>
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Number of tutees: {appointment.number_of_tutees || 1}
                           </div>
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(

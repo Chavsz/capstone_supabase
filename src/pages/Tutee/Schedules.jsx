@@ -15,6 +15,7 @@ const HISTORY_STATUS_TABS = [
   { status: "declined", label: "Declined" },
   { status: "cancelled", label: "Cancelled" },
 ];
+const ITEMS_PER_PAGE = 6;
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-yellow-100 text-yellow-800" },
@@ -732,6 +733,12 @@ const AppointmentModal = ({
             )}
           </div>
           <div className="flex justify-between items-center">
+            <span className="font-semibold text-gray-600">Number of Tutees:</span>
+            <span className="text-gray-900">
+              {appointment.number_of_tutees || 1}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Status:</span>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
@@ -945,6 +952,8 @@ const Schedules = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [notificationCount, setNotificationCount] = useState(0);
+  const [upcomingPages, setUpcomingPages] = useState({});
+  const [historyPages, setHistoryPages] = useState({});
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1441,6 +1450,21 @@ const Schedules = () => {
     return (historyByStatus[status] || []).length > 0;
   };
 
+  const getCurrentPage = (status, isUpcoming, totalPages) => {
+    const pages = isUpcoming ? upcomingPages : historyPages;
+    const current = pages[status] || 1;
+    return Math.min(Math.max(current, 1), Math.max(totalPages, 1));
+  };
+
+  const handlePageChange = (status, delta, isUpcoming, totalPages) => {
+    const setter = isUpcoming ? setUpcomingPages : setHistoryPages;
+    setter((prev) => {
+      const current = Math.max(1, Math.min(prev[status] || 1, totalPages));
+      const next = Math.min(Math.max(current + delta, 1), totalPages);
+      return { ...prev, [status]: next };
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen p-6">
@@ -1519,13 +1543,19 @@ const Schedules = () => {
             displayUpcomingStatuses.map((status) => {
               const list = upcomingByStatus[status] || [];
               if (list.length === 0) return null;
+              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+              const currentPage = getCurrentPage(status, true, totalPages);
+              const pagedList = list.slice(
+                (currentPage - 1) * ITEMS_PER_PAGE,
+                currentPage * ITEMS_PER_PAGE
+              );
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} appointments
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {list.map((appointment) => (
+                    {pagedList.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
@@ -1541,6 +1571,12 @@ const Schedules = () => {
                           </div>
                           <div className="text-sm text-gray-500">
                             {appointment.mode_of_session}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Number of tutees: {appointment.number_of_tutees || 1}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Number of tutees: {appointment.number_of_tutees || 1}
                           </div>
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
@@ -1580,6 +1616,27 @@ const Schedules = () => {
                       </div>
                     ))}
                   </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                      <button
+                        className={`px-3 py-1 rounded border ${currentPage === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(status, -1, true, totalPages)}
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        className={`px-3 py-1 rounded border ${currentPage === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(status, 1, true, totalPages)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </section>
               );
             })
@@ -1599,13 +1656,19 @@ const Schedules = () => {
               const list = historyByStatus[status] || [];
               if (list.length === 0) return null;
               if (!shouldShowStatus(status)) return null;
+              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+              const currentPage = getCurrentPage(status, false, totalPages);
+              const pagedList = list.slice(
+                (currentPage - 1) * ITEMS_PER_PAGE,
+                currentPage * ITEMS_PER_PAGE
+              );
               return (
                 <section key={status}>
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} history
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {list.map((appointment) => (
+                    {pagedList.map((appointment) => (
                       <div
                         key={appointment.appointment_id}
                         className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
@@ -1639,6 +1702,27 @@ const Schedules = () => {
                       </div>
                     ))}
                   </div>
+                  {totalPages > 1 && (
+                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                      <button
+                        className={`px-3 py-1 rounded border ${currentPage === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(status, -1, false, totalPages)}
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        className={`px-3 py-1 rounded border ${currentPage === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(status, 1, false, totalPages)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </section>
               );
             })
