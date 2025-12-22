@@ -60,7 +60,7 @@ const RouteSelect = ({ onClose }) => {
 
   return (
     <div className="space-y-1">
-      <p className="text-[13px] font-semibold text-[#181718] hidden md:block tracking-wide">MENU</p>
+      <p className="text-[13px] font-semibold text-white/80 hidden md:block tracking-wide">MENU</p>
 
       <Route
         to="/dashboard"
@@ -106,15 +106,15 @@ const Route = ({ to, selected, Icon, title, handleSelect, onClose }) => {
       to={to}
       className={`flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
         selected
-          ? "bg-white/25 text-[#181718] shadow"
-          : "hover:bg-white/30 text-[#181718] shadow-none"
+          ? "bg-white/20 text-white shadow"
+          : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
       }`}
       onClick={() => {
         handleSelect(to);
         if (onClose) onClose(); // Close mobile menu on navigation
       }}  
     >
-      <Icon className={`${selected ? "text-[#4257a9]" : "text-[#181718]"}`} />
+      <Icon className={`${selected ? "text-[#f9d31a]" : "text-white"}`} />
       <p className="text-md font-semibold hidden md:block">{title}</p>
     </Link>
   );

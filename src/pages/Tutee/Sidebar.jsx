@@ -27,13 +27,13 @@ const Sidebar = ({ setAuth, onClose }) => {
   };
 
   return (
-    <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#b7d5fe] h-screen w-[240px] shadow-xl">
+    <div className="flex flex-col p-4 text-white sticky top-0 bg-gradient-to-b from-[#4c4ba2] to-[#2f3283] h-screen w-[240px] shadow-xl">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
-        <h1 className="text-xl font-bold text-[#181718]">LAV</h1>
+        <h1 className="text-xl font-bold">LAV</h1>
         <button
           onClick={onClose}
-          className="p-2 text-[#f1eec8] hover:bg-white/30 rounded"
+          className="p-2 text-white hover:bg-white/20 rounded"
           aria-label="Close menu"
         >
           <fiIcons.FiX className="w-5 h-5" />
@@ -42,7 +42,7 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Desktop Title */}
       <div className="flex-shrink-0 hidden md:block">
-        <h1 className="text-xl md:text-2xl font-bold text-center text-[#f5edbd] mb-9">LAV</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-center text-white mb-9">LAV</h1>
       </div>
 
       {/* Menu Items - Scrollable */}
@@ -53,7 +53,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-4">
         <button
-          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-white/30 text-[#181718] shadow-none"
+          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-white/15 text-white shadow-none transition-colors"
           onClick={(e) => logout(e)}
         >
           <fiIcons.FiLogOut /> <p className="text-md font-semibold hidden md:block">Log out</p>

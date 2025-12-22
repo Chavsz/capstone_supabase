@@ -21,7 +21,7 @@ const STATUS_META = {
   pending: { label: "Pending", badge: "bg-[#e6e7ea] text-[#323335]" },
   confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
   started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
-  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#935226] text-white" },
   completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
   declined: { label: "Declined", badge: "bg-[#181718] text-white" },
   cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
@@ -324,7 +324,7 @@ const EvaluationModal = ({
           </button>
           <button
             onClick={handleSubmit}
-            className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
+            className="bg-[#935226] text-white rounded-md px-4 py-2 text-sm hover:bg-[#f9d31a] hover:text-[#181718] flex-1 disabled:bg-[#e3c7b0] disabled:text-[#6b4528] disabled:cursor-not-allowed transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Submitting..." : "Submit Evaluation"}
@@ -1594,7 +1594,7 @@ const Schedules = () => {
                                 e.stopPropagation();
                                 openEvaluationModal(appointment);
                               }}
-                              className="mt-2 bg-green-600 text-white text-xs px-3 py-1 rounded hover:bg-green-700"
+                              className="mt-2 bg-[#935226] text-white text-xs px-3 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
                             >
                               Evaluate
                             </button>

@@ -182,10 +182,7 @@ const TuteeDashboard = () => {
       <div className="flex justify-end items-center">
         <Link
           to="/dashboard/appointment"
-          className="lav-btn md:px-8 md:py-2 text-sm md:text-base"
-          style={{ background: "#4257a9", color: "#fff", border: "1px solid #3b4c95" }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#4257a9")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#4766fe")}
+          className="lav-btn md:px-8 md:py-2 text-sm md:text-base bg-[#f9d31a] text-[#181718] border border-[#d8b700] hover:bg-[#fce15c] transition-colors"
         >
           Make an Appointment
         </Link>

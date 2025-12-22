@@ -24,6 +24,8 @@ const Appointment = () => {
     end_time: "",
     number_of_tutees: "",
   });
+  const [tuteeProfile, setTuteeProfile] = useState(null);
+  const [loadingTuteeProfile, setLoadingTuteeProfile] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [currentTutorPage, setCurrentTutorPage] = useState(0);
@@ -91,6 +93,36 @@ const Appointment = () => {
       console.error(err.message);
     } finally {
       setLoadingProfiles(false);
+    }
+  };
+
+  const getTuteeProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("student_profile")
+        .select("program, college, year_level, profile_image")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116" && error.status !== 406) {
+        throw error;
+      }
+
+      const profileData = data || {
+        program: "",
+        college: "",
+        year_level: "",
+        profile_image: "",
+      };
+
+      setTuteeProfile(profileData);
+    } catch (err) {
+      console.error("Unable to load student profile:", err.message);
+    } finally {
+      setLoadingTuteeProfile(false);
     }
   };
 
@@ -422,8 +454,20 @@ const Appointment = () => {
     }
   };
 
+  const profileComplete = Boolean(
+    tuteeProfile &&
+      tuteeProfile.program?.trim() &&
+      tuteeProfile.college?.trim() &&
+      tuteeProfile.year_level?.trim()
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!profileComplete) {
+      toast.error("Complete your tutee profile (year level, program, and college) before booking an appointment.");
+      return;
+    }
 
     if (!selectedTutor) {
       toast.error("Please select a tutor first");
@@ -624,6 +668,7 @@ const Appointment = () => {
 
   useEffect(() => {
     getTutors();
+    getTuteeProfile();
   }, []);
 
   const handleSearch = (e) => {
@@ -725,6 +770,11 @@ const Appointment = () => {
       {hasPendingEvaluation && (
         <p className="mb-4 text-sm text-red-600 font-semibold">
           You still have a session awaiting feedback. Please evaluate your last tutor before booking a new appointment.
+        </p>
+      )}
+      {!loadingTuteeProfile && !profileComplete && (
+        <p className="mb-4 text-sm text-red-600 font-semibold">
+          Complete your tutee profile (year level, program, and college) in My Profile before booking an appointment.
         </p>
       )}
       
@@ -957,7 +1007,7 @@ const Appointment = () => {
             {/* Book Appointment Button */}
             <button
               type="submit"
-              disabled={loading || hasPendingEvaluation}
+              disabled={loading || hasPendingEvaluation || !profileComplete}
               className="bg-blue-600 text-white rounded-md p-3 w-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
             >
               {loading ? "Creating..." : "Book Appointment"}
