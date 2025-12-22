@@ -18,7 +18,7 @@ const Sidebar = ({ setAuth, onClose }) => {
     try {
       const { data, error } = await supabase
         .from("landing")
-        .select("home_image, login_photo")
+        .select("sidebar_logo, home_image, login_photo")
         .order("updated_at", { ascending: false })
         .limit(1)
         .single();
@@ -27,7 +27,7 @@ const Sidebar = ({ setAuth, onClose }) => {
         throw error;
       }
 
-      setLogoUrl(data?.login_photo || data?.home_image || null);
+      setLogoUrl(data?.sidebar_logo || data?.login_photo || data?.home_image || null);
     } catch (err) {
       console.error("Error loading logo:", err.message);
       setLogoUrl(null);
