@@ -14,6 +14,7 @@ const Landing = () => {
     about_description: "",
     about_link: "",
     login_photo: null,
+    sidebar_logo: null,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,6 +44,7 @@ const Landing = () => {
             about_description: data.about_description || "",
             about_link: data.about_link || "",
             login_photo: data.login_photo || "",
+            sidebar_logo: data.sidebar_logo || "",
           });
         } else {
           // Set default empty values if no data exists
@@ -56,6 +58,7 @@ const Landing = () => {
             about_description: "",
             about_link: "",
             login_photo: "",
+            sidebar_logo: "",
           });
         }
       } catch (error) {
@@ -71,6 +74,7 @@ const Landing = () => {
           about_description: "",
           about_link: "",
           login_photo: "",
+          sidebar_logo: "",
         });
       }
     };
@@ -80,7 +84,7 @@ const Landing = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "home_image" || name === "about_image" || name === "login_photo") {
+    if (name === "home_image" || name === "about_image" || name === "login_photo" || name === "sidebar_logo") {
       setFormData((prevData) => ({
         ...prevData,
         [name]: files[0],
@@ -159,6 +163,7 @@ const Landing = () => {
       let homeImageUrl = landingData?.home_image || null;
       let aboutImageUrl = landingData?.about_image || null;
       let loginPhotoUrl = landingData?.login_photo || null;
+      let sidebarLogoUrl = landingData?.sidebar_logo || null;
 
       // Upload new images if they are File objects
       if (formData.home_image instanceof File) {
@@ -192,6 +197,15 @@ const Landing = () => {
         loginPhotoUrl = formData.login_photo;
       }
 
+      if (formData.sidebar_logo instanceof File) {
+        if (landingData?.sidebar_logo) {
+          await deleteImage(landingData.sidebar_logo);
+        }
+        sidebarLogoUrl = await uploadImage(formData.sidebar_logo, 'sidebar_logo');
+      } else if (formData.sidebar_logo && typeof formData.sidebar_logo === 'string') {
+        sidebarLogoUrl = formData.sidebar_logo;
+      }
+
       // Prepare data for Supabase
       const landingDataToSave = {
         home_title: formData.home_title,
@@ -203,6 +217,7 @@ const Landing = () => {
         about_link: formData.about_link,
         about_image: aboutImageUrl,
         login_photo: loginPhotoUrl,
+        sidebar_logo: sidebarLogoUrl,
       };
 
       // Check if landing data already exists
@@ -415,6 +430,35 @@ const Landing = () => {
               Current login photo:{" "}
               <a
                 href={landingData.login_photo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                View
+              </a>
+            </p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="sidebar_logo"
+            className="block text-sm font-semibold text-gray-700 mb-1"
+          >
+            Sidebar Logo (tutee sidebar):
+          </label>
+          <input
+            type="file"
+            name="sidebar_logo"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
+          />
+          {landingData?.sidebar_logo && (
+            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
+              Current sidebar logo:{" "}
+              <a
+                href={landingData.sidebar_logo}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 underline"
