@@ -69,7 +69,7 @@ const Sidebar = ({ setAuth, onClose }) => {
             <img
               src={logoUrl}
               alt="LAV logo"
-              className="h-8 w-auto rounded-sm bg-white/10 p-1"
+              className="h-12 w-auto object-contain"
             />
           ) : (
             <span className="text-xl font-bold">LAV</span>
@@ -88,14 +88,14 @@ const Sidebar = ({ setAuth, onClose }) => {
       <div className="flex-shrink-0 hidden md:block">
         <button
           onClick={handleLogoClick}
-          className="w-full flex items-center justify-center mb-9 hover:opacity-90 transition-opacity"
+          className="w-full flex items-center justify-center mb-9"
           aria-label="Go to dashboard"
         >
           {logoUrl ? (
             <img
               src={logoUrl}
               alt="LAV logo"
-              className="h-12 w-auto rounded-md bg-white/10 p-2"
+              className="h-16 w-auto object-contain"
             />
           ) : (
             <span className="text-xl md:text-2xl font-bold text-white">LAV</span>
