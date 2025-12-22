@@ -165,7 +165,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
+    <div className="py-3 px-6 bg-[#f4ece6] min-h-screen">
       {/* Page Header */}
       <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
 
