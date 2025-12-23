@@ -10,6 +10,10 @@ const Profile = () => {
     year_level: "",
     profile_image: "",
   });
+  const [stats, setStats] = useState({
+    completed: 0,
+    cancelled: 0,
+  });
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState(profile);
 
@@ -63,6 +67,7 @@ const Profile = () => {
   useEffect(() => {
     getName();
     getProfile();
+    getStats();
   }, []);
 
   const handleEdit = () => {
@@ -164,60 +169,98 @@ const Profile = () => {
     setForm((prev) => ({ ...prev, profile_image: "" }));
   };
 
+  async function getStats() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { count: completedCount, error: completedError } = await supabase
+        .from("appointment")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("status", "completed");
+
+      if (completedError) throw completedError;
+
+      const { count: cancelledCount, error: cancelledError } = await supabase
+        .from("appointment")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("status", "cancelled");
+
+      if (cancelledError) throw cancelledError;
+
+      setStats({
+        completed: completedCount || 0,
+        cancelled: cancelledCount || 0,
+      });
+    } catch (err) {
+      console.error("Error loading stats:", err.message);
+    }
+  }
+
   return (
-    <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
-      {/* Page Header */}
-      <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
+    <div className="py-6 px-6 bg-[#f4ece6] min-h-screen">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
 
-      {/* Student Information Card */}
-      <div className="lav-card p-6 mb-6 max-w-full">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-[#323335]">
-            Student Information
-          </h2>
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-2 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#e6e7ea] transition"
-          >
-            <span>Edit</span>
-            <FaEdit size={12} />
-          </button>
-        </div>
+        {/* Student Information */}
+        <div className="bg-white rounded-lg shadow-sm border border-[#e6e7ea] p-6">
+          <h2 className="text-xl font-bold text-[#323335] mb-4">Student Information</h2>
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
+            <div className="flex-shrink-0">
+              <div className="w-44 h-44 rounded-full bg-[#f0f0f7] flex items-center justify-center overflow-hidden shadow-sm">
+                {profile.profile_image ? (
+                  <img
+                    src={profile.profile_image}
+                    alt="Profile"
+                    className="w-44 h-44 object-cover"
+                  />
+                ) : (
+                  <span className="text-[#4c4ba2] text-5xl font-bold">
+                    {name ? name.charAt(0).toUpperCase() : "-"}
+                  </span>
+                )}
+              </div>
+            </div>
 
-        <div className="">
-          {/* Profile Image */}
-          <div className="w-32 h-32 bg-blue-500 rounded-full flex items-center justify-center mb-3">
-            {profile.profile_image ? (
-              <img
-                src={profile.profile_image}
-                alt="Profile"
-                className="w-32 h-32 rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-white text-4xl font-bold">
-                {name.charAt(0).toUpperCase()}
-              </span>
-            )}
+            <div className="flex-1 bg-[#fbfbfd] border border-[#e6e7ea] rounded-lg p-4 relative">
+              <button
+                onClick={handleEdit}
+                className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#f2f3f6] transition"
+              >
+                <span>Edit</span>
+                <FaEdit size={12} />
+              </button>
+              <div className="space-y-3 text-[#323335]">
+                <p className="text-lg">
+                  <span className="font-semibold">Name:</span> {name || "-"}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold">Year:</span>{" "}
+                  {profile.year_level || "-"}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold">Program Course:</span>{" "}
+                  {profile.program || "-"}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold">College:</span>{" "}
+                  {profile.college || "-"}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Profile Information */}
-          <div className="flex flex-col">
-            <div className="space-y-2 ">
-              <p>
-                <span className="font-semibold">Name:</span> {name}
-              </p>
-              <p>
-                <span className="font-semibold">Year:</span>{" "}
-                {profile.year_level || "-"}
-              </p>
-              <p>
-                <span className="font-semibold">Program Course:</span>{" "}
-                <span>{profile.program || "-"}</span>
-              </p>
-              <p>
-                <span className="font-semibold">College:</span>{" "}
-                {profile.college || "-"}
-              </p>
+          {/* Stats */}
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl border border-[#d8def7] shadow-sm p-4 text-center">
+              <p className="text-sm font-semibold text-[#4c4ba2]">Total Sessions Attended</p>
+              <p className="text-4xl font-bold text-[#4c4ba2] mt-2">{stats.completed}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#d8def7] shadow-sm p-4 text-center">
+              <p className="text-sm font-semibold text-[#4c4ba2]">Total Cancelled Sessions</p>
+              <p className="text-4xl font-bold text-[#4c4ba2] mt-2">{stats.cancelled}</p>
             </div>
           </div>
         </div>
