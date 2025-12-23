@@ -1467,7 +1467,7 @@ const Schedules = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6 bg-[#f4ece6]">
+      <div className="min-h-screen p-6 bg-[#f8f9f0]">
         <h1 className="text-2xl font-bold text-[#323335]">Schedules</h1>
         <div className="mt-6 text-center">Loading appointments...</div>
       </div>
@@ -1475,7 +1475,7 @@ const Schedules = () => {
   }
 
   return (
-    <div className="py-3 px-6 bg-[#f4ece6] min-h-screen">
+    <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
         <h1 className="text-2xl md:text-3xl font-bold text-[#323335]">Schedules</h1>
         <input

@@ -137,7 +137,7 @@ const Switch = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f4ece6] via-[#f7f1ea] to-[#f4ece6] py-10 px-6 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8f9f0] via-[#f7f1ea] to-[#f8f9f0] py-10 px-6 flex items-center justify-center">
       <div className="w-full max-w-3xl">
         <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">

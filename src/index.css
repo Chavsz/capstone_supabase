@@ -7,14 +7,14 @@
   --lav-sky: #76acf5;
   --lav-amber: #f9d31a;
   --lav-amber-soft: #fff67f;
-  --lav-cream: #f4ece6;
+  --lav-cream: #f8f9f0;
   --lav-mint: #def0e4;
   --lav-navy: #4257a9;
   --lav-accent: #4766fe;
   --lav-dark: #323335;
   --lav-error: #935226;
   --lav-warn: #feda3c;
-  --lav-bg-soft: linear-gradient(135deg, #f4ece6 0%, #f7f1ea 35%, #f4ece6 70%);
+  --lav-bg-soft: linear-gradient(135deg, #f8f9f0 0%, #f7f1ea 35%, #f8f9f0 70%);
 }
 
 /* Smooth scrolling */

@@ -384,7 +384,7 @@ const Header = () => {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={toggleDropdown}
-            className="relative p-1 hover:bg-[#f4ece6] rounded-full transition-colors"
+            className="relative p-1 hover:bg-[#f8f9f0] rounded-full transition-colors"
           >
             <IoIosNotifications />
             {totalNotifications > 0 && (
