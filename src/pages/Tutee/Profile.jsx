@@ -204,17 +204,15 @@ const Profile = () => {
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
 
-        {/* Student Information */}
         <div className="bg-white rounded-lg shadow-sm border border-[#e6e7ea] p-6">
-          <h2 className="text-xl font-bold text-[#323335] mb-4">Student Information</h2>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
             <div className="flex-shrink-0">
-              <div className="w-44 h-44 rounded-full bg-[#f0f0f7] flex items-center justify-center overflow-hidden shadow-sm">
+              <div className="w-40 h-40 md:w-44 md:h-44 rounded-full bg-[#f0f0f7] flex items-center justify-center overflow-hidden shadow-sm">
                 {profile.profile_image ? (
                   <img
                     src={profile.profile_image}
                     alt="Profile"
-                    className="w-44 h-44 object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-[#4c4ba2] text-5xl font-bold">
@@ -224,7 +222,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="flex-1 bg-[#fbfbfd] border border-[#e6e7ea] rounded-lg p-4 relative">
+            <div className="flex-1 w-full bg-[#fbfbfd] border border-[#e6e7ea] rounded-lg p-4 relative">
               <button
                 onClick={handleEdit}
                 className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#f2f3f6] transition"
