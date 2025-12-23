@@ -282,7 +282,7 @@ const TuteeDashboard = () => {
             </div>
 
             {/*Completed Sessions */}
-            <div className="overflow-x-auto lg:overflow-x-visible overflow-y-auto h-[280px]">
+            <div className="overflow-x-auto lg:overflow-x-visible overflow-y-auto max-h-[320px]">
               <table className="w-full text-[#1a1a1a] min-w-[640px] lg:min-w-0">
                 <thead>
                   <tr className=" border-b border-[#EBEDEF]">
