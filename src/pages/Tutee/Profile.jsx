@@ -205,9 +205,9 @@ const Profile = () => {
         <h1 className="text-2xl font-bold text-[#323335] mb-6">My Profile</h1>
 
         <div className="bg-white rounded-lg shadow-sm border border-[#e6e7ea] p-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-10">
-            <div className="flex-shrink-0">
-              <div className="w-40 h-40 md:w-44 md:h-44 rounded-full bg-[#f0f0f7] flex items-center justify-center overflow-hidden shadow-sm">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-8 lg:gap-12">
+            <div className="flex-shrink-0 self-center md:self-start">
+              <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-60 md:h-60 rounded-full bg-[#f0f0f7] flex items-center justify-center overflow-hidden shadow-sm">
                 {profile.profile_image ? (
                   <img
                     src={profile.profile_image}
