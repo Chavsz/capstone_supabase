@@ -269,7 +269,7 @@ const TuteeDashboard = () => {
 
       <div className="mt-6 grid sm:grid-cols-1 md:grid-cols-3 grid-rows-3 gap-7">
         <div className="row-span-3 col-span-2">
-          <div className="bg-white p-3.5 rounded-lg border border-[#EBEDEF] flex flex-col min-h-[220px] max-h-[320px]">
+          <div className="bg-white p-3 rounded-lg border border-[#EBEDEF] flex flex-col min-h-[220px] max-h-[220px]">
             <div className="flex gap-4 text-center items-center">
             <p className="text-blue-600 text-2xl"><MdOutlineWorkHistory /></p>
             <p className="text-gray-600 font-semibold">Session History</p>
@@ -286,12 +286,12 @@ const TuteeDashboard = () => {
               <table className="w-full text-[#1a1a1a] min-w-[380px] lg:min-w-0">
                 <thead>
                   <tr className=" border-b border-[#EBEDEF]">
-                    <th className="text-left font-bold py-3 px-2">Tutor</th>
-                    <th className="text-left font-bold py-3 px-2">Date</th>
-                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Time</th>
-                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Subject</th>
-                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Topic</th>
-                    <th className="text-left font-bold py-3 px-2 text-right">Status</th>
+                    <th className="text-left font-bold py-2 px-2">Tutor</th>
+                    <th className="text-left font-bold py-2 px-2">Date</th>
+                    <th className="text-left font-bold py-2 px-2 hidden md:table-cell">Time</th>
+                    <th className="text-left font-bold py-2 px-2 hidden md:table-cell">Subject</th>
+                    <th className="text-left font-bold py-2 px-2 hidden md:table-cell">Topic</th>
+                    <th className="text-left font-bold py-2 px-2 text-right">Status</th>
                   </tr>
                 </thead>
 
@@ -302,17 +302,17 @@ const TuteeDashboard = () => {
                         key={session.appointment_id}
                         className="border-b border-[#EBEDEF]"
                       >
-                        <td className="py-3 px-2">
+                        <td className="py-2 px-2">
                           {session.tutor_name || "N/A"}
                         </td>
-                        <td className="py-3 px-2">{formatDate(session.date)}</td>
-                        <td className="py-3 px-2 hidden md:table-cell">
+                        <td className="py-2 px-2">{formatDate(session.date)}</td>
+                        <td className="py-2 px-2 hidden md:table-cell">
                           {formatTime(session.start_time)} -{" "}
                           {formatTime(session.end_time)}
                         </td>
-                        <td className="py-3 px-2 hidden md:table-cell">{session.subject || "N/A"}</td>
-                        <td className="py-3 px-2 hidden md:table-cell">{session.topic || "N/A"}</td>
-                        <td className="py-3 px-2 text-right">
+                        <td className="py-2 px-2 hidden md:table-cell">{session.subject || "N/A"}</td>
+                        <td className="py-2 px-2 hidden md:table-cell">{session.topic || "N/A"}</td>
+                        <td className="py-2 px-2 text-right">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
                               session.status
