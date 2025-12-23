@@ -188,7 +188,7 @@ const TuteeDashboard = () => {
         </Link>
       </div>
 
-      <div className="mt-4 grid sm:grid-cols-1 md:grid-cols-2 gap-7 h-full">
+      <div className="mt-4 grid sm:grid-cols-1 md:grid-cols-2 gap-7 h-full items-start">
         {/* Announcements */}
         <div className="h-full">
           <div className="lav-card p-3.5 h-full flex flex-col">
@@ -213,7 +213,7 @@ const TuteeDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="lav-card p-3.5">
+        <div className="lav-card p-3.5 h-full flex flex-col">
           <div className="flex gap-4 item-center">
           <p className="text-2xl text-[#4c4ba2]">< AiOutlineSchedule /></p>
           <p className="text-[#323335] font-semibold mb-4">
