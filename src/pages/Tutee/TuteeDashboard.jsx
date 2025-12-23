@@ -282,16 +282,16 @@ const TuteeDashboard = () => {
             </div>
 
             {/*Completed Sessions */}
-            <div className="overflow-x-auto lg:overflow-x-visible overflow-y-auto flex-1">
-              <table className="w-full text-[#1a1a1a] min-w-[520px] lg:min-w-0">
+            <div className="overflow-x-auto lg:overflow-x-visible overflow-y-hidden hover:overflow-y-auto focus-within:overflow-y-auto flex-1">
+              <table className="w-full text-[#1a1a1a] min-w-[380px] lg:min-w-0">
                 <thead>
                   <tr className=" border-b border-[#EBEDEF]">
                     <th className="text-left font-bold py-3 px-2">Tutor</th>
                     <th className="text-left font-bold py-3 px-2">Date</th>
-                    <th className="text-left font-bold py-3 px-2">Time</th>
-                    <th className="text-left font-bold py-3 px-2">Subject</th>
-                    <th className="text-left font-bold py-3 px-2">Topic</th>
-                    <th className="text-left font-bold py-3 px-2">Status</th>
+                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Time</th>
+                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Subject</th>
+                    <th className="text-left font-bold py-3 px-2 hidden md:table-cell">Topic</th>
+                    <th className="text-left font-bold py-3 px-2 text-right">Status</th>
                   </tr>
                 </thead>
 
@@ -306,13 +306,13 @@ const TuteeDashboard = () => {
                           {session.tutor_name || "N/A"}
                         </td>
                         <td className="py-3 px-2">{formatDate(session.date)}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 hidden md:table-cell">
                           {formatTime(session.start_time)} -{" "}
                           {formatTime(session.end_time)}
                         </td>
-                        <td className="py-3 px-2">{session.subject || "N/A"}</td>
-                        <td className="py-3 px-2">{session.topic || "N/A"}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 hidden md:table-cell">{session.subject || "N/A"}</td>
+                        <td className="py-3 px-2 hidden md:table-cell">{session.topic || "N/A"}</td>
+                        <td className="py-3 px-2 text-right">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
                               session.status
