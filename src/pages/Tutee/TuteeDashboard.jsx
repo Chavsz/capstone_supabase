@@ -268,8 +268,8 @@ const TuteeDashboard = () => {
       </div>
 
       <div className="mt-6 grid sm:grid-cols-1 md:grid-cols-3 grid-rows-3 gap-7">
-        <div className="row-span-3 col-span-2">
-          <div className="bg-white p-2 rounded-lg border border-[#EBEDEF] flex flex-col h-[220px]">
+        <div className="row-span-3 col-span-2 min-w-0">
+          <div className="bg-white p-2 rounded-lg border border-[#EBEDEF] flex flex-col h-[220px] overflow-hidden">
             <div className="flex gap-3 items-center px-1">
               <p className="text-blue-600 text-2xl"><MdOutlineWorkHistory /></p>
               <p className="text-gray-600 font-semibold">Session History</p>
