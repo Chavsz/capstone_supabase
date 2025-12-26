@@ -363,6 +363,41 @@ const Header = () => {
     };
   }, []);
 
+  // Realtime updates for notifications
+  useEffect(() => {
+    let channel;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        channel = supabase
+          .channel(`tutee-notifications-${session.user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "notification",
+              filter: `user_id=eq.${session.user.id}`,
+            },
+            () => {
+              getUnreadNotifications();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error("Error subscribing to notifications:", err.message);
+      }
+    })();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
+
   const toggleDropdown = () => {
     if (!isDropdownOpen) {
       // Refresh data when opening dropdown
