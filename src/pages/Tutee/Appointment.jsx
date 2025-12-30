@@ -30,6 +30,8 @@ const Appointment = () => {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [currentTutorPage, setCurrentTutorPage] = useState(0);
   const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
+  const [detailsTutorId, setDetailsTutorId] = useState(null);
+  const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
 
   const subjects = [
     "Programming",
@@ -439,6 +441,8 @@ const Appointment = () => {
       subject: subject,
     });
     setSelectedTutor(null); // Reset selected tutor when subject changes
+    setDetailsTutorId(null);
+    setShowAllSubjectTutors(false);
     resetTutorPagination();
   };
 
@@ -448,6 +452,9 @@ const Appointment = () => {
       return;
     }
     setSelectedTutor(tutor);
+    if (detailsTutorId === null) {
+      setDetailsTutorId(tutor.user_id);
+    }
     // Profiles are already loaded, only fetch schedules if not already loaded
     if (!tutorSchedules[tutor.user_id]) {
       getTutorSchedules(tutor.user_id);
@@ -670,6 +677,10 @@ const Appointment = () => {
     getTutors();
     getTuteeProfile();
   }, []);
+
+  useEffect(() => {
+    setShowAllSubjectTutors(false);
+  }, [formData.date, formData.start_time, formData.end_time]);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -928,96 +939,7 @@ const Appointment = () => {
                 </div>
               </div>
             </div>
-
-            {/* Choose Tutor */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-lg">Choose Tutor</h3>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleTutorPageChange("prev")}
-                    disabled={currentTutorPage === 0}
-                    className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 transition-colors"
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTutorPageChange("next")}
-                    disabled={
-                      totalTutorPages === 0 ||
-                      currentTutorPage >= totalTutorPages - 1
-                    }
-                    className="text-gray-500 hover:text-gray-700 disabled:text-gray-300 transition-colors"
-                  >
-                    →
-                  </button>
-                </div>
-              </div>
-
-              {totalTutorPages > 1 && (
-                <div className="text-sm text-gray-500 mb-2 text-right">
-                  Page {currentTutorPage + 1} of {totalTutorPages}
-                </div>
-              )}
-
-              {/* Search Tutors */}
-              <input
-                type="text"
-                placeholder="Search tutors..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="border border-gray-300 rounded-md p-3 w-full mb-4"
-              />
-
-              {/* Tutor Grid */}
-              {loadingProfiles ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Loading tutors...</div>
-                </div>
-              ) : paginatedTutors.length === 0 ? (
-                <div className="flex items-center justify-center py-8 text-gray-500">
-                  No tutors found. Try adjusting your filters.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {paginatedTutors.map((tutor) => (
-                    <div
-                      key={tutor.user_id}
-                      onClick={() => handleTutorSelect(tutor)}
-                      className={`p-4 rounded-md border cursor-pointer transition-colors ${
-                        selectedTutor?.user_id === tutor.user_id
-                          ? "bg-blue-50 border-blue-500"
-                          : "bg-white border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      <div className="flex flex-col items-center text-center">
-                        <div className="w-12 h-12 bg-blue-500 rounded-full mb-2 flex items-center justify-center overflow-hidden">
-                          {tutorDetails[tutor.user_id]?.profile_image ? (
-                            <img
-                              src={tutorDetails[tutor.user_id].profile_image}
-                              alt={`${tutor.name} profile`}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-white text-base font-semibold">
-                              {getInitial(tutor.name)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="font-medium text-sm">{tutor.name}</p>
-                        <p className="text-xs text-gray-600">
-                          {tutorDetails[tutor.user_id]?.subject ||
-                            "No subject"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
+  
             {/* Book Appointment Button */}
             <button
               type="submit"
@@ -1076,7 +998,7 @@ const Appointment = () => {
             const visibleTutors = tutors
               .filter((tutor) => matchesSubject(tutor))
               .filter((tutor) => {
-                if (!hasDate) return true;
+                if (!hasDate || showAllSubjectTutors) return true;
                 const schedules = tutorSchedules[tutor.user_id] || [];
                 const daySchedules = schedules.filter((s) => s.day === dayName);
                 if (daySchedules.length === 0) return false;
@@ -1105,7 +1027,18 @@ const Appointment = () => {
             if (visibleTutors.length === 0) {
               return (
                 <div className="flex items-center justify-center h-64">
-                  <p className="text-gray-500 text-lg">No tutors for this subject</p>
+                  <div className="text-center space-y-2">
+                    <p className="text-gray-500 text-lg">
+                      No available tutor in {selectedSubject}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSubjectTutors(true)}
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      Try checking here
+                    </button>
+                  </div>
                 </div>
               );
             }
@@ -1116,6 +1049,7 @@ const Appointment = () => {
                   {visibleTutors.map(({ tutor, availability }) => {
                     const details = tutorDetails[tutor.user_id] || {};
                     const isSelected = selectedTutor?.user_id === tutor.user_id;
+                    const isDetailsOpen = detailsTutorId === tutor.user_id;
                     return (
                       <div
                         key={tutor.user_id}
@@ -1153,11 +1087,16 @@ const Appointment = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              handleTutorSelect(tutor);
+                              setDetailsTutorId((prev) =>
+                                prev === tutor.user_id ? null : tutor.user_id
+                              );
+                              if (!tutorSchedules[tutor.user_id]) {
+                                getTutorSchedules(tutor.user_id);
+                              }
                             }}
                             className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
                           >
-                            See Details
+                            {isDetailsOpen ? "Hide Details" : "See Details"}
                           </button>
                           <button
                             type="button"
@@ -1176,34 +1115,46 @@ const Appointment = () => {
                   })}
                 </div>
 
-                {selectedTutor && (
+                {detailsTutorId && (
                   <div className="border-t border-gray-200 pt-4">
+                    {(() => {
+                      const detailsTutor = tutors.find(
+                        (tutor) => tutor.user_id === detailsTutorId
+                      );
+                      if (!detailsTutor) {
+                        return (
+                          <div className="text-sm text-gray-500">
+                            Tutor details not available.
+                          </div>
+                        );
+                      }
+                      return (
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                        {tutorDetails[selectedTutor.user_id]?.profile_image ? (
+                        {tutorDetails[detailsTutor.user_id]?.profile_image ? (
                           <img
-                            src={tutorDetails[selectedTutor.user_id].profile_image}
-                            alt={`${selectedTutor.name} profile`}
+                            src={tutorDetails[detailsTutor.user_id].profile_image}
+                            alt={`${detailsTutor.name} profile`}
                             className="w-16 h-16 rounded-full object-cover"
                           />
                         ) : (
                           <span className="text-white text-xl font-bold">
-                            {getInitial(selectedTutor.name)}
+                            {getInitial(detailsTutor.name)}
                           </span>
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold text-base">{selectedTutor.name}</p>
+                        <p className="font-semibold text-base">{detailsTutor.name}</p>
                         <p className="text-sm text-gray-600">
-                          {tutorDetails[selectedTutor.user_id]?.college ||
+                          {tutorDetails[detailsTutor.user_id]?.college ||
                             "College not specified"}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {tutorDetails[selectedTutor.user_id]?.subject ||
+                          {tutorDetails[detailsTutor.user_id]?.subject ||
                             "No subject"}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {tutorDetails[selectedTutor.user_id]?.specialization ||
+                          {tutorDetails[detailsTutor.user_id]?.specialization ||
                             "No specialization"}
                         </p>
                       </div>
@@ -1214,7 +1165,7 @@ const Appointment = () => {
                       <div className="space-y-2">
                         {daysOfWeek.map((day) => {
                           const daySchedules = getSchedulesForDay(
-                            selectedTutor.user_id,
+                            detailsTutor.user_id,
                             day
                           );
                           return (
@@ -1240,6 +1191,8 @@ const Appointment = () => {
                         })}
                       </div>
                     </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -1252,3 +1205,4 @@ const Appointment = () => {
 };
 
 export default Appointment;
+
