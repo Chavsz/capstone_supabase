@@ -32,13 +32,41 @@ const Appointment = () => {
   const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
 
   const subjects = [
-    "Programming",
-    "Chemistry",
-    "Physics",
-    "Calculus and Statistics",
-    "Psychology and Language",
-    "Engineering",
-    "Accountancy and Economics",
+    {
+      name: "Programming",
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-50",
+    },
+    {
+      name: "Chemistry",
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-50",
+    },
+    {
+      name: "Physics",
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-50",
+    },
+    {
+      name: "Calculus and Statistics",
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-50",
+    },
+    {
+      name: "Psychology and Language",
+      color: "from-teal-500 to-lime-500",
+      bgColor: "bg-teal-50",
+    },
+    {
+      name: "Engineering",
+      color: "from-indigo-500 to-blue-600",
+      bgColor: "bg-indigo-50",
+    },
+    {
+      name: "Accountancy and Economics",
+      color: "from-yellow-500 to-amber-500",
+      bgColor: "bg-yellow-50",
+    },
   ];
 
   const getTutors = async () => {
@@ -751,8 +779,8 @@ const Appointment = () => {
                 >
                   <option value="">Select a subject</option>
                   {subjects.map((subject) => (
-                    <option key={subject} value={subject}>
-                      {subject}
+                    <option key={subject.name} value={subject.name}>
+                      {subject.name}
                     </option>
                   ))}
                 </select>
@@ -760,16 +788,16 @@ const Appointment = () => {
               <div className="hidden sm:flex gap-3 flex-wrap">
                 {subjects.map((subject) => (
                   <button
-                    key={subject}
+                    key={subject.name}
                     type="button"
-                    onClick={() => handleSubjectSelect(subject)}
+                    onClick={() => handleSubjectSelect(subject.name)}
                     className={`px-4 py-2 rounded-md border transition-colors ${
-                      selectedSubject === subject
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                      selectedSubject === subject.name
+                        ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
+                        : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
                     }`}
                   >
-                    {subject}
+                    {subject.name}
                   </button>
                 ))}
               </div>
@@ -1154,4 +1182,4 @@ const Appointment = () => {
 };
 
 export default Appointment;
-
+w
