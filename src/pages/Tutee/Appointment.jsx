@@ -1094,7 +1094,7 @@ const Appointment = () => {
                                 getTutorSchedules(tutor.user_id);
                               }
                             }}
-                            className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
+                            className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 hover:underline transition-colors"
                           >
                             {isDetailsOpen ? "Hide Details" : "See Details"}
                           </button>
