@@ -8,7 +8,6 @@ import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 
 const Appointment = () => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [tutors, setTutors] = useState([]);
   const [tutorDetails, setTutorDetails] = useState({});
   const [tutorSchedules, setTutorSchedules] = useState({});
@@ -28,7 +27,6 @@ const Appointment = () => {
   const [loadingTuteeProfile, setLoadingTuteeProfile] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
-  const [currentTutorPage, setCurrentTutorPage] = useState(0);
   const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
   const [detailsTutorId, setDetailsTutorId] = useState(null);
   const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
@@ -428,12 +426,6 @@ const Appointment = () => {
     return { valid: true };
   };
 
-  const tutorsPerPage = 4;
-
-  const resetTutorPagination = () => {
-    setCurrentTutorPage(0);
-  };
-
   const handleSubjectSelect = (subject) => {
     setSelectedSubject(subject);
     setFormData({
@@ -443,7 +435,6 @@ const Appointment = () => {
     setSelectedTutor(null); // Reset selected tutor when subject changes
     setDetailsTutorId(null);
     setShowAllSubjectTutors(false);
-    resetTutorPagination();
   };
 
   const handleTutorSelect = (tutor) => {
@@ -681,50 +672,6 @@ const Appointment = () => {
   useEffect(() => {
     setShowAllSubjectTutors(false);
   }, [formData.date, formData.start_time, formData.end_time]);
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    resetTutorPagination();
-  };
-
-  // Filter tutors by selected subject and search term
-  const filteredTutors = tutors.filter((tutor) => {
-    const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
-    const matchesSubject =
-      !selectedSubject ||
-      tutorSubject.toLowerCase().includes(selectedSubject.toLowerCase());
-    const matchesSearch = tutor.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    return matchesSubject && matchesSearch;
-  });
-
-  const totalTutorPages = Math.ceil(filteredTutors.length / tutorsPerPage);
-  const paginatedTutors = filteredTutors.slice(
-    currentTutorPage * tutorsPerPage,
-    currentTutorPage * tutorsPerPage + tutorsPerPage
-  );
-
-  const handleTutorPageChange = (direction) => {
-    setCurrentTutorPage((prevPage) => {
-      if (direction === "prev") {
-        return Math.max(prevPage - 1, 0);
-      }
-      if (direction === "next") {
-        return Math.min(
-          prevPage + 1,
-          Math.max(totalTutorPages - 1, 0)
-        );
-      }
-      return prevPage;
-    });
-  };
-
-  useEffect(() => {
-    if (currentTutorPage > 0 && currentTutorPage >= totalTutorPages) {
-      setCurrentTutorPage(Math.max(totalTutorPages - 1, 0));
-    }
-  }, [currentTutorPage, totalTutorPages]);
 
   // Helper function to format time
   const formatTime = (timeString) => {
