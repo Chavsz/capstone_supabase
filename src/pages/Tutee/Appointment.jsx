@@ -1111,66 +1111,137 @@ const Appointment = () => {
             }
 
             return (
-              <div className="space-y-4 max-h-[520px] overflow-y-auto pr-1">
-                {visibleTutors.map(({ tutor, availability }) => {
-                  const details = tutorDetails[tutor.user_id] || {};
-                  const isSelected = selectedTutor?.user_id === tutor.user_id;
-                  return (
-                    <div
-                      key={tutor.user_id}
-                      className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm"
-                    >
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {details.profile_image ? (
+              <div className="space-y-4">
+                <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                  {visibleTutors.map(({ tutor, availability }) => {
+                    const details = tutorDetails[tutor.user_id] || {};
+                    const isSelected = selectedTutor?.user_id === tutor.user_id;
+                    return (
+                      <div
+                        key={tutor.user_id}
+                        className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm"
+                      >
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {details.profile_image ? (
+                            <img
+                              src={details.profile_image}
+                              alt={`${tutor.name} profile`}
+                              className="w-16 h-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-blue-700 text-xl font-bold">
+                              {getInitial(tutor.name)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-base">{tutor.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {details.specialization || details.subject || "Tutor"}
+                          </p>
+                          {hasSlot && (
+                            <p
+                              className={`text-sm font-semibold ${
+                                availability.available ? "text-green-600" : "text-orange-600"
+                              }`}
+                            >
+                              {availability.label}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleTutorSelect(tutor);
+                            }}
+                            className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
+                          >
+                            See Details
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleTutorSelect(tutor)}
+                            className={`px-4 py-1.5 rounded-md text-sm font-semibold ${
+                              isSelected
+                                ? "bg-green-600 text-white"
+                                : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
+                            }`}
+                          >
+                            {isSelected ? "Selected" : "Select"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedTutor && (
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                        {tutorDetails[selectedTutor.user_id]?.profile_image ? (
                           <img
-                            src={details.profile_image}
-                            alt={`${tutor.name} profile`}
+                            src={tutorDetails[selectedTutor.user_id].profile_image}
+                            alt={`${selectedTutor.name} profile`}
                             className="w-16 h-16 rounded-full object-cover"
                           />
                         ) : (
-                          <span className="text-blue-700 text-xl font-bold">
-                            {getInitial(tutor.name)}
+                          <span className="text-white text-xl font-bold">
+                            {getInitial(selectedTutor.name)}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-base">{tutor.name}</p>
+                      <div>
+                        <p className="font-semibold text-base">{selectedTutor.name}</p>
                         <p className="text-sm text-gray-600">
-                          {details.specialization || details.subject || "Tutor"}
+                          {tutorDetails[selectedTutor.user_id]?.college ||
+                            "College not specified"}
                         </p>
-                        {hasSlot && (
-                          <p
-                            className={`text-sm font-semibold ${
-                              availability.available ? "text-green-600" : "text-orange-600"
-                            }`}
-                          >
-                            {availability.label}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleTutorSelect(tutor)}
-                          className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
-                        >
-                          See Details
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleTutorSelect(tutor)}
-                          className={`px-4 py-1.5 rounded-md text-sm font-semibold ${
-                            isSelected
-                              ? "bg-green-600 text-white"
-                              : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
-                          }`}
-                        >
-                          {isSelected ? "Selected" : "Select"}
-                        </button>
+                        <p className="text-sm text-gray-600">
+                          {tutorDetails[selectedTutor.user_id]?.subject ||
+                            "No subject"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {tutorDetails[selectedTutor.user_id]?.specialization ||
+                            "No specialization"}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="mt-4">
+                      <h4 className="font-semibold text-sm mb-2">Available Schedules</h4>
+                      <div className="space-y-2">
+                        {daysOfWeek.map((day) => {
+                          const daySchedules = getSchedulesForDay(
+                            selectedTutor.user_id,
+                            day
+                          );
+                          return (
+                            <div key={day} className="flex justify-between items-center">
+                              <span className="text-sm font-medium">{day}</span>
+                              {daySchedules.length > 0 ? (
+                                <div className="flex gap-2 flex-wrap justify-end">
+                                  {daySchedules.map((schedule, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-gray-200 px-2 py-1 rounded text-xs"
+                                    >
+                                      {formatTime(schedule.start_time)} -{" "}
+                                      {formatTime(schedule.end_time)}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-500">No schedule</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
