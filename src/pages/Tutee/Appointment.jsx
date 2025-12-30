@@ -785,7 +785,21 @@ const Appointment = () => {
             {/* Choose Subject */}
             <div>
               <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
-              <div className="flex gap-3 flex-wrap">
+              <div className="sm:hidden">
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => handleSubjectSelect(e.target.value)}
+                  className="border border-gray-300 rounded-md p-3 w-full"
+                >
+                  <option value="">Select a subject</option>
+                  {subjects.map((subject) => (
+                    <option key={subject} value={subject}>
+                      {subject}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="hidden sm:flex gap-3 flex-wrap">
                 {subjects.map((subject) => (
                   <button
                     key={subject}
