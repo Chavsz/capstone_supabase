@@ -832,7 +832,7 @@ const Appointment = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Optional: leave blank for a single student, or enter 2–10 learners (values above 10 are capped automatically).
+                Optional: leave blank for a single student, or enter 2-10 learners (values above 10 are capped automatically).
               </p>
             </div>
 
@@ -1183,4 +1183,3 @@ const Appointment = () => {
 };
 
 export default Appointment;
-w
