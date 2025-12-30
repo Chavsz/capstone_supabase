@@ -887,7 +887,7 @@ const Appointment = () => {
               </div>
             </div>
 
-            {\n\n            {/* Book Appointment Button */}}
+            {/* Book Appointment Button */}
             <button
               type="submit"
               disabled={loading || hasPendingEvaluation || !profileComplete}
