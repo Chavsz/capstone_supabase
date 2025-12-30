@@ -108,9 +108,9 @@ const Announcments = () => {
   };
 
   return (
-    <div className="min-h-screen flex-col font-sans p-4 md:p-6">
+    <div className="min-h-screen flex flex-col font-sans p-4 md:p-6">
       {/* Announcement Section */}
-      <aside className="flex-col">
+      <aside className="flex flex-col">
         <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-0">Announcements</h1>
 
         {announcement ? (
@@ -169,19 +169,15 @@ const Announcments = () => {
                 ? "Update Announcement"
                 : "Publish Announcement"}
             </button>
-          
-
-          {isEditingAnnouncement && (
-            
-            <button
-              type="button"
-              onClick={() => setIsEditingAnnouncement(false)}
-              className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 text-sm md:text-base"
-            >
-              Cancel Edit
-            </button>
-            
-          )}
+            {isEditingAnnouncement && (
+              <button
+                type="button"
+                onClick={() => setIsEditingAnnouncement(false)}
+                className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 text-sm md:text-base"
+              >
+                Cancel Edit
+              </button>
+            )}
           </div>
         </form>
       </aside>
