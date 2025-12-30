@@ -455,10 +455,11 @@ const Appointment = () => {
   };
 
   const handleSubjectSelect = (subject) => {
-    setSelectedSubject(subject);
+    const nextSubject = selectedSubject === subject ? "" : subject;
+    setSelectedSubject(nextSubject);
     setFormData({
       ...formData,
-      subject: subject,
+      subject: nextSubject,
     });
     setSelectedTutor(null); // Reset selected tutor when subject changes
     setDetailsTutorId(null);
