@@ -762,11 +762,38 @@ const Appointment = () => {
     };
   }, [currentUserId, checkPendingEvaluations]);
 
-  const renderTutorDetails = () => (
-    <div className="bg-white p-8 rounded-md border border-gray-300">
-      <h3 className="font-semibold text-lg mb-4">Tutor Details</h3>
+  const renderTutorDetails = (options = {}) => {
+    const { compact = false, showHeading = true } = options;
+    const containerClass = compact
+      ? showHeading
+        ? "bg-white p-4 rounded-md border border-gray-300"
+        : "bg-transparent p-0 border-0"
+      : "bg-white p-8 rounded-md border border-gray-300";
+    const titleClass = compact ? "font-semibold text-base mb-3" : "font-semibold text-lg mb-4";
+    const listClass = compact
+      ? "space-y-3 max-h-[320px] overflow-y-auto pr-1"
+      : "space-y-4 max-h-[420px] overflow-y-auto pr-1";
+    const cardClass = compact
+      ? "flex items-center gap-3 p-3 rounded-lg border border-gray-200 shadow-sm"
+      : "flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm";
+    const avatarClass = compact ? "w-12 h-12" : "w-16 h-16";
+    const nameClass = compact ? "font-semibold text-sm" : "font-semibold text-base";
+    const metaClass = compact ? "text-xs text-gray-600" : "text-sm text-gray-600";
+    const statusClass = compact ? "text-xs font-semibold" : "text-sm font-semibold";
+    const buttonClass = compact
+      ? "px-3 py-1 rounded-md text-xs font-semibold"
+      : "px-4 py-1.5 rounded-md text-sm font-semibold";
+    const detailsAvatarClass = compact ? "w-12 h-12" : "w-16 h-16";
+    const detailsTextClass = compact ? "text-xs text-gray-600" : "text-sm text-gray-600";
+    const scheduleBadgeClass = compact
+      ? "bg-gray-200 px-2 py-0.5 rounded text-[11px]"
+      : "bg-gray-200 px-2 py-1 rounded text-xs";
 
-      {(() => {
+    return (
+      <div className={containerClass}>
+        {showHeading && <h3 className={titleClass}>Tutor Details</h3>}
+
+        {(() => {
         const subjectSelected = selectedSubject.trim().length > 0;
         const startMinutes = getMinutesFromStored(formData.start_time);
         const endMinutes = getMinutesFromStored(formData.end_time);
@@ -856,7 +883,7 @@ const Appointment = () => {
 
         return (
           <div className="space-y-4">
-            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+            <div className={listClass}>
               {visibleTutors.map(({ tutor, availability }) => {
                 const details = tutorDetails[tutor.user_id] || {};
                 const isSelected = selectedTutor?.user_id === tutor.user_id;
@@ -864,29 +891,29 @@ const Appointment = () => {
                 return (
                   <div
                     key={tutor.user_id}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm"
+                    className={cardClass}
                   >
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className={`${avatarClass} bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0`}>
                       {details.profile_image ? (
                         <img
                           src={details.profile_image}
                           alt={`${tutor.name} profile`}
-                          className="w-16 h-16 rounded-full object-cover"
+                          className={`${avatarClass} rounded-full object-cover`}
                         />
                       ) : (
-                        <span className="text-blue-700 text-xl font-bold">
+                        <span className={compact ? "text-blue-700 text-base font-bold" : "text-blue-700 text-xl font-bold"}>
                           {getInitial(tutor.name)}
                         </span>
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-base">{tutor.name}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className={nameClass}>{tutor.name}</p>
+                      <p className={metaClass}>
                         {details.specialization || details.subject || "Tutor"}
                       </p>
                       {hasSlot && (
                         <p
-                          className={`text-sm font-semibold ${
+                          className={`${statusClass} ${
                             availability.available ? "text-green-600" : "text-orange-600"
                           }`}
                         >
@@ -906,7 +933,7 @@ const Appointment = () => {
                           }
                           openTutorDrawer();
                         }}
-                        className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 hover:underline transition-colors"
+                        className={`${buttonClass} bg-blue-700 text-white hover:bg-blue-800 hover:underline transition-colors`}
                       >
                         {isDetailsOpen ? "Hide Details" : "See Details"}
                       </button>
@@ -916,7 +943,7 @@ const Appointment = () => {
                           handleTutorSelect(tutor);
                           openTutorDrawer();
                         }}
-                        className={`px-4 py-1.5 rounded-md text-sm font-semibold ${
+                        className={`${buttonClass} ${
                           isSelected
                             ? "bg-green-600 text-white"
                             : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
@@ -938,7 +965,7 @@ const Appointment = () => {
                   );
                   if (!detailsTutor) {
                     return (
-                      <div className="text-sm text-gray-500">
+                      <div className={detailsTextClass}>
                         Tutor details not available.
                       </div>
                     );
@@ -946,30 +973,30 @@ const Appointment = () => {
                   return (
                     <div>
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                        <div className={`${detailsAvatarClass} bg-blue-500 rounded-full flex items-center justify-center overflow-hidden`}>
                           {tutorDetails[detailsTutor.user_id]?.profile_image ? (
                             <img
                               src={tutorDetails[detailsTutor.user_id].profile_image}
                               alt={`${detailsTutor.name} profile`}
-                              className="w-16 h-16 rounded-full object-cover"
+                              className={`${detailsAvatarClass} rounded-full object-cover`}
                             />
                           ) : (
-                            <span className="text-white text-xl font-bold">
+                            <span className={compact ? "text-white text-base font-bold" : "text-white text-xl font-bold"}>
                               {getInitial(detailsTutor.name)}
                             </span>
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-base">{detailsTutor.name}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className={nameClass}>{detailsTutor.name}</p>
+                          <p className={detailsTextClass}>
                             {tutorDetails[detailsTutor.user_id]?.college ||
                               "College not specified"}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className={detailsTextClass}>
                             {tutorDetails[detailsTutor.user_id]?.subject ||
                               "No subject"}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className={detailsTextClass}>
                             {tutorDetails[detailsTutor.user_id]?.specialization ||
                               "No specialization"}
                           </p>
@@ -977,7 +1004,9 @@ const Appointment = () => {
                       </div>
 
                       <div className="mt-4">
-                        <h4 className="font-semibold text-sm mb-2">Available Schedules</h4>
+                        <h4 className={compact ? "font-semibold text-xs mb-2" : "font-semibold text-sm mb-2"}>
+                          Available Schedules
+                        </h4>
                         <div className="space-y-2">
                           {daysOfWeek.map((day) => {
                             const daySchedules = getSchedulesForDay(
@@ -986,13 +1015,15 @@ const Appointment = () => {
                             );
                             return (
                               <div key={day} className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{day}</span>
+                                <span className={compact ? "text-xs font-medium" : "text-sm font-medium"}>
+                                  {day}
+                                </span>
                                 {daySchedules.length > 0 ? (
                                   <div className="flex gap-2 flex-wrap justify-end">
                                     {daySchedules.map((schedule, index) => (
                                       <span
                                         key={index}
-                                        className="bg-gray-200 px-2 py-1 rounded text-xs"
+                                        className={scheduleBadgeClass}
                                       >
                                         {formatTime(schedule.start_time)} -{" "}
                                         {formatTime(schedule.end_time)}
@@ -1000,7 +1031,7 @@ const Appointment = () => {
                                     ))}
                                   </div>
                                 ) : (
-                                  <span className="text-xs text-gray-500">No schedule</span>
+                                  <span className={detailsTextClass}>No schedule</span>
                                 )}
                               </div>
                             );
@@ -1014,9 +1045,10 @@ const Appointment = () => {
             )}
           </div>
         );
-      })()}
-    </div>
-  );
+        })()}
+      </div>
+    );
+  };
 
   return (
     <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
@@ -1225,7 +1257,7 @@ const Appointment = () => {
                     Close
                   </button>
                 </div>
-                {renderTutorDetails()}
+                {renderTutorDetails({ compact: true, showHeading: false })}
               </div>
             </div>
           )}
