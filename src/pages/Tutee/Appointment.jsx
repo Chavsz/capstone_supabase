@@ -1186,8 +1186,6 @@ const Appointment = () => {
             </button>
           </form>
         </div>
-
-                           </div>
         {/* Right Panel - Tutor Details */}
         <div className="hidden lg:block">
           {renderTutorDetails()}
