@@ -30,6 +30,7 @@ const Appointment = () => {
   const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
   const [detailsTutorId, setDetailsTutorId] = useState(null);
   const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
+  const [showTutorDrawer, setShowTutorDrawer] = useState(false);
 
   const subjects = [
     {
@@ -702,6 +703,9 @@ const Appointment = () => {
     setShowAllSubjectTutors(false);
   }, [formData.date, formData.start_time, formData.end_time]);
 
+  const openTutorDrawer = () => setShowTutorDrawer(true);
+  const closeTutorDrawer = () => setShowTutorDrawer(false);
+
   // Helper function to format time
   const formatTime = (timeString) => {
     if (!timeString) return "";
@@ -748,6 +752,262 @@ const Appointment = () => {
       channel.unsubscribe();
     };
   }, [currentUserId, checkPendingEvaluations]);
+
+  const renderTutorDetails = () => (
+    <div className="bg-white p-8 rounded-md border border-gray-300">
+      <h3 className="font-semibold text-lg mb-4">Tutor Details</h3>
+
+      {(() => {
+        const subjectSelected = selectedSubject.trim().length > 0;
+        const startMinutes = getMinutesFromStored(formData.start_time);
+        const endMinutes = getMinutesFromStored(formData.end_time);
+        const hasDate = Boolean(formData.date);
+        const hasTimeRange = startMinutes !== null && endMinutes !== null;
+        const hasSlot = hasDate && hasTimeRange;
+        const dayName = formData.date
+          ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-US", {
+              weekday: "long",
+            })
+          : "";
+
+        const matchesSubject = (tutor) => {
+          const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
+          return (
+            subjectSelected &&
+            tutorSubject.toLowerCase().includes(selectedSubject.toLowerCase())
+          );
+        };
+
+        const availabilityForTutor = (tutorId) => {
+          if (!hasSlot) return { available: false, label: "Select date & time" };
+          const schedules = tutorSchedules[tutorId] || [];
+          const daySchedules = schedules.filter((s) => s.day === dayName);
+          if (daySchedules.length === 0) {
+            return { available: false, label: `Not available on ${dayName}` };
+          }
+          const match = daySchedules.some((s) => {
+            const scheduleStart = getMinutesFromStored(s.start_time);
+            const scheduleEnd = getMinutesFromStored(s.end_time);
+            if (scheduleStart === null || scheduleEnd === null) return false;
+            return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+          });
+          if (match) {
+            return { available: true, label: "Available now" };
+          }
+          return { available: false, label: "Not available at selected time" };
+        };
+
+        const visibleTutors = tutors
+          .filter((tutor) => matchesSubject(tutor))
+          .filter((tutor) => {
+            if (!hasDate || showAllSubjectTutors) return true;
+            const schedules = tutorSchedules[tutor.user_id] || [];
+            const daySchedules = schedules.filter((s) => s.day === dayName);
+            if (daySchedules.length === 0) return false;
+            if (!hasTimeRange) return true;
+            return daySchedules.some((s) => {
+              const scheduleStart = getMinutesFromStored(s.start_time);
+              const scheduleEnd = getMinutesFromStored(s.end_time);
+              if (scheduleStart === null || scheduleEnd === null) return false;
+              return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+            });
+          })
+          .map((tutor) => {
+            const availability = availabilityForTutor(tutor.user_id);
+            return { tutor, availability };
+          })
+          .sort((a, b) => Number(b.availability.available) - Number(a.availability.available));
+
+        if (!subjectSelected) {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-gray-500 text-lg">Select a subject to see tutors</p>
+            </div>
+          );
+        }
+
+        if (visibleTutors.length === 0) {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center space-y-2">
+                <p className="text-gray-500 text-lg">
+                  No available tutor in {selectedSubject}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAllSubjectTutors(true)}
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                >
+                  Try checking here
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-4">
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+              {visibleTutors.map(({ tutor, availability }) => {
+                const details = tutorDetails[tutor.user_id] || {};
+                const isSelected = selectedTutor?.user_id === tutor.user_id;
+                const isDetailsOpen = detailsTutorId === tutor.user_id;
+                return (
+                  <div
+                    key={tutor.user_id}
+                    className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm"
+                  >
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {details.profile_image ? (
+                        <img
+                          src={details.profile_image}
+                          alt={`${tutor.name} profile`}
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-blue-700 text-xl font-bold">
+                          {getInitial(tutor.name)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-base">{tutor.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {details.specialization || details.subject || "Tutor"}
+                      </p>
+                      {hasSlot && (
+                        <p
+                          className={`text-sm font-semibold ${
+                            availability.available ? "text-green-600" : "text-orange-600"
+                          }`}
+                        >
+                          {availability.label}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDetailsTutorId((prev) =>
+                            prev === tutor.user_id ? null : tutor.user_id
+                          );
+                          if (!tutorSchedules[tutor.user_id]) {
+                            getTutorSchedules(tutor.user_id);
+                          }
+                          openTutorDrawer();
+                        }}
+                        className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 hover:underline transition-colors"
+                      >
+                        {isDetailsOpen ? "Hide Details" : "See Details"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleTutorSelect(tutor);
+                          openTutorDrawer();
+                        }}
+                        className={`px-4 py-1.5 rounded-md text-sm font-semibold ${
+                          isSelected
+                            ? "bg-green-600 text-white"
+                            : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
+                        }`}
+                      >
+                        {isSelected ? "Selected" : "Select"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {detailsTutorId && (
+              <div className="border-t border-gray-200 pt-4">
+                {(() => {
+                  const detailsTutor = tutors.find(
+                    (tutor) => tutor.user_id === detailsTutorId
+                  );
+                  if (!detailsTutor) {
+                    return (
+                      <div className="text-sm text-gray-500">
+                        Tutor details not available.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                          {tutorDetails[detailsTutor.user_id]?.profile_image ? (
+                            <img
+                              src={tutorDetails[detailsTutor.user_id].profile_image}
+                              alt={`${detailsTutor.name} profile`}
+                              className="w-16 h-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-white text-xl font-bold">
+                              {getInitial(detailsTutor.name)}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-base">{detailsTutor.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {tutorDetails[detailsTutor.user_id]?.college ||
+                              "College not specified"}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {tutorDetails[detailsTutor.user_id]?.subject ||
+                              "No subject"}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {tutorDetails[detailsTutor.user_id]?.specialization ||
+                              "No specialization"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <h4 className="font-semibold text-sm mb-2">Available Schedules</h4>
+                        <div className="space-y-2">
+                          {daysOfWeek.map((day) => {
+                            const daySchedules = getSchedulesForDay(
+                              detailsTutor.user_id,
+                              day
+                            );
+                            return (
+                              <div key={day} className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{day}</span>
+                                {daySchedules.length > 0 ? (
+                                  <div className="flex gap-2 flex-wrap justify-end">
+                                    {daySchedules.map((schedule, index) => (
+                                      <span
+                                        key={index}
+                                        className="bg-gray-200 px-2 py-1 rounded text-xs"
+                                      >
+                                        {formatTime(schedule.start_time)} -{" "}
+                                        {formatTime(schedule.end_time)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-500">No schedule</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </div>
+  );
 
   return (
     <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
@@ -927,255 +1187,45 @@ const Appointment = () => {
           </form>
         </div>
 
+                           </div>
         {/* Right Panel - Tutor Details */}
-        <div className="bg-white p-8 rounded-md border border-gray-300">
-          <h3 className="font-semibold text-lg mb-4">Tutor Details</h3>
+        <div className="hidden lg:block">
+          {renderTutorDetails()}
+        </div>
 
-          {(() => {
-            const subjectSelected = selectedSubject.trim().length > 0;
-            const startMinutes = getMinutesFromStored(formData.start_time);
-            const endMinutes = getMinutesFromStored(formData.end_time);
-            const hasDate = Boolean(formData.date);
-            const hasTimeRange = startMinutes !== null && endMinutes !== null;
-            const hasSlot = hasDate && hasTimeRange;
-            const dayName = formData.date
-              ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-US", {
-                  weekday: "long",
-                })
-              : "";
+        {/* Mobile Tutor Details Drawer */}
+        <div className="lg:hidden">
+          <button
+            type="button"
+            onClick={openTutorDrawer}
+            className="w-full bg-[#4c4ba2] text-white font-semibold rounded-md py-3"
+          >
+            View Tutors
+          </button>
 
-            const matchesSubject = (tutor) => {
-              const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
-              return (
-                subjectSelected &&
-                tutorSubject.toLowerCase().includes(selectedSubject.toLowerCase())
-              );
-            };
-
-            const availabilityForTutor = (tutorId) => {
-              if (!hasSlot) return { available: false, label: "Select date & time" };
-              const schedules = tutorSchedules[tutorId] || [];
-              const daySchedules = schedules.filter((s) => s.day === dayName);
-              if (daySchedules.length === 0) {
-                return { available: false, label: `Not available on ${dayName}` };
-              }
-              const match = daySchedules.some((s) => {
-                const scheduleStart = getMinutesFromStored(s.start_time);
-                const scheduleEnd = getMinutesFromStored(s.end_time);
-                if (scheduleStart === null || scheduleEnd === null) return false;
-                return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
-              });
-              if (match) {
-                return { available: true, label: "Available now" };
-              }
-              return { available: false, label: "Not available at selected time" };
-            };
-
-            const visibleTutors = tutors
-              .filter((tutor) => matchesSubject(tutor))
-              .filter((tutor) => {
-                if (!hasDate || showAllSubjectTutors) return true;
-                const schedules = tutorSchedules[tutor.user_id] || [];
-                const daySchedules = schedules.filter((s) => s.day === dayName);
-                if (daySchedules.length === 0) return false;
-                if (!hasTimeRange) return true;
-                return daySchedules.some((s) => {
-                  const scheduleStart = getMinutesFromStored(s.start_time);
-                  const scheduleEnd = getMinutesFromStored(s.end_time);
-                  if (scheduleStart === null || scheduleEnd === null) return false;
-                  return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
-                });
-              })
-              .map((tutor) => {
-                const availability = availabilityForTutor(tutor.user_id);
-                return { tutor, availability };
-              })
-              .sort((a, b) => Number(b.availability.available) - Number(a.availability.available));
-
-            if (!subjectSelected) {
-              return (
-                <div className="flex items-center justify-center h-64">
-                  <p className="text-gray-500 text-lg">Select a subject to see tutors</p>
+          {showTutorDrawer && (
+            <div className="fixed inset-0 z-50 flex items-end">
+              <button
+                type="button"
+                aria-label="Close tutors"
+                onClick={closeTutorDrawer}
+                className="absolute inset-0 bg-black/40"
+              />
+              <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Tutor Details</h3>
+                  <button
+                    type="button"
+                    onClick={closeTutorDrawer}
+                    className="text-sm font-semibold text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
                 </div>
-              );
-            }
-
-            if (visibleTutors.length === 0) {
-              return (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center space-y-2">
-                    <p className="text-gray-500 text-lg">
-                      No available tutor in {selectedSubject}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowAllSubjectTutors(true)}
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                      Try checking here
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div className="space-y-4">
-                <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
-                  {visibleTutors.map(({ tutor, availability }) => {
-                    const details = tutorDetails[tutor.user_id] || {};
-                    const isSelected = selectedTutor?.user_id === tutor.user_id;
-                    const isDetailsOpen = detailsTutorId === tutor.user_id;
-                    return (
-                      <div
-                        key={tutor.user_id}
-                        className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 shadow-sm"
-                      >
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {details.profile_image ? (
-                            <img
-                              src={details.profile_image}
-                              alt={`${tutor.name} profile`}
-                              className="w-16 h-16 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-blue-700 text-xl font-bold">
-                              {getInitial(tutor.name)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-base">{tutor.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {details.specialization || details.subject || "Tutor"}
-                          </p>
-                          {hasSlot && (
-                            <p
-                              className={`text-sm font-semibold ${
-                                availability.available ? "text-green-600" : "text-orange-600"
-                              }`}
-                            >
-                              {availability.label}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDetailsTutorId((prev) =>
-                                prev === tutor.user_id ? null : tutor.user_id
-                              );
-                              if (!tutorSchedules[tutor.user_id]) {
-                                getTutorSchedules(tutor.user_id);
-                              }
-                            }}
-                            className="px-4 py-1.5 rounded-md text-sm font-semibold bg-blue-700 text-white hover:bg-blue-800 hover:underline transition-colors"
-                          >
-                            {isDetailsOpen ? "Hide Details" : "See Details"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleTutorSelect(tutor)}
-                            className={`px-4 py-1.5 rounded-md text-sm font-semibold ${
-                              isSelected
-                                ? "bg-green-600 text-white"
-                                : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
-                            }`}
-                          >
-                            {isSelected ? "Selected" : "Select"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {detailsTutorId && (
-                  <div className="border-t border-gray-200 pt-4">
-                    {(() => {
-                      const detailsTutor = tutors.find(
-                        (tutor) => tutor.user_id === detailsTutorId
-                      );
-                      if (!detailsTutor) {
-                        return (
-                          <div className="text-sm text-gray-500">
-                            Tutor details not available.
-                          </div>
-                        );
-                      }
-                      return (
-                        <div>
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                              {tutorDetails[detailsTutor.user_id]?.profile_image ? (
-                                <img
-                                  src={tutorDetails[detailsTutor.user_id].profile_image}
-                                  alt={`${detailsTutor.name} profile`}
-                                  className="w-16 h-16 rounded-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-white text-xl font-bold">
-                                  {getInitial(detailsTutor.name)}
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-base">{detailsTutor.name}</p>
-                              <p className="text-sm text-gray-600">
-                                {tutorDetails[detailsTutor.user_id]?.college ||
-                                  "College not specified"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {tutorDetails[detailsTutor.user_id]?.subject ||
-                                  "No subject"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {tutorDetails[detailsTutor.user_id]?.specialization ||
-                                  "No specialization"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="mt-4">
-                            <h4 className="font-semibold text-sm mb-2">Available Schedules</h4>
-                            <div className="space-y-2">
-                              {daysOfWeek.map((day) => {
-                                const daySchedules = getSchedulesForDay(
-                                  detailsTutor.user_id,
-                                  day
-                                );
-                                return (
-                                  <div key={day} className="flex justify-between items-center">
-                                    <span className="text-sm font-medium">{day}</span>
-                                    {daySchedules.length > 0 ? (
-                                      <div className="flex gap-2 flex-wrap justify-end">
-                                        {daySchedules.map((schedule, index) => (
-                                          <span
-                                            key={index}
-                                            className="bg-gray-200 px-2 py-1 rounded text-xs"
-                                          >
-                                            {formatTime(schedule.start_time)} -{" "}
-                                            {formatTime(schedule.end_time)}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-gray-500">No schedule</span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                {renderTutorDetails()}
               </div>
-            );
-          })()}
+            </div>
+          )}
         </div>
       </div>
     </div>
