@@ -1029,87 +1029,91 @@ const Appointment = () => {
         {/* Left Panel - Appointment Form */}
         <div className="bg-white p-8 rounded-md border border-gray-300">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Choose Subject */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
-              <div className="sm:hidden">
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => handleSubjectSelect(e.target.value)}
-                  className="border border-gray-300 rounded-md p-3 w-full"
-                >
-                  <option value="">Select a subject</option>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Choose Subject */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
+                <div className="sm:hidden">
+                  <select
+                    value={selectedSubject}
+                    onChange={(e) => handleSubjectSelect(e.target.value)}
+                    className="border border-gray-300 rounded-md p-3 w-full"
+                  >
+                    <option value="">Select a subject</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.name} value={subject.name}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="hidden sm:flex gap-3 flex-wrap">
                   {subjects.map((subject) => (
-                    <option key={subject.name} value={subject.name}>
+                    <button
+                      key={subject.name}
+                      type="button"
+                      onClick={() => handleSubjectSelect(subject.name)}
+                      className={`px-4 py-2 rounded-md border transition-colors ${
+                        selectedSubject === subject.name
+                          ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
+                          : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
+                      }`}
+                    >
                       {subject.name}
-                    </option>
+                    </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Topic */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Specialization</h3>
+                <input
+                  type="text"
+                  name="topic"
+                  value={formData.topic}
+                  onChange={handleInputChange}
+                  placeholder="Enter specialization"
+                  className="border border-gray-300 rounded-md p-3 w-full"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Number of Tutees */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Number of Tutees</h3>
+                <input
+                  type="number"
+                  name="number_of_tutees"
+                  value={formData.number_of_tutees}
+                  onChange={handleInputChange}
+                  min={1}
+                  max={10}
+                  className="border border-gray-300 rounded-md p-3 w-full"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional: leave blank for a single student, or enter 2-10 learners (values above 10 are capped automatically).
+                </p>
+              </div>
+
+              {/* Mode of Session */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Mode of Session</h3>
+                <select
+                  name="mode_of_session"
+                  value={formData.mode_of_session}
+                  onChange={handleModeChange}
+                  className="border border-gray-300 rounded-md p-3 w-full"
+                  required
+                >
+                  <option value="">Select mode</option>
+                  <option value="Face-to-Face">Face-to-Face</option>
+                  <option value="Online">Online</option>
                 </select>
               </div>
-              <div className="hidden sm:flex gap-3 flex-wrap">
-                {subjects.map((subject) => (
-                  <button
-                    key={subject.name}
-                    type="button"
-                    onClick={() => handleSubjectSelect(subject.name)}
-                    className={`px-4 py-2 rounded-md border transition-colors ${
-                      selectedSubject === subject.name
-                        ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
-                        : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
-                    }`}
-                  >
-                    {subject.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Topic */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Specialization</h3>
-              <input
-                type="text"
-                name="topic"
-                value={formData.topic}
-                onChange={handleInputChange}
-                placeholder="Enter specicalization"
-                className="border border-gray-300 rounded-md p-3 w-full"
-                required
-              />
-            </div>
-
-            {/* Number of Tutees */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Number of Tutees</h3>
-              <input
-                type="number"
-                name="number_of_tutees"
-                value={formData.number_of_tutees}
-                onChange={handleInputChange}
-                min={1}
-                max={10}
-                className="border border-gray-300 rounded-md p-3 w-full"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Optional: leave blank for a single student, or enter 2-10 learners (values above 10 are capped automatically).
-              </p>
-            </div>
-
-            {/* Mode of Session */}
-            <div>
-              <h3 className="font-semibold text-lg mb-3">Mode of Session</h3>
-              <select
-                name="mode_of_session"
-                value={formData.mode_of_session}
-                onChange={handleModeChange}
-                className="border border-gray-300 rounded-md p-3 w-[280px]"
-                required
-              >
-                <option value="">Select mode</option>
-                <option value="Face-to-Face">Face-to-Face</option>
-                <option value="Online">Online</option>
-              </select>
             </div>
 
             {/* Choose Date and Time */}
