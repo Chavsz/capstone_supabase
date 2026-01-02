@@ -705,12 +705,13 @@ const Appointment = () => {
 
   useEffect(() => {
     const hasDetails = Boolean(
+      selectedSubject ||
       formData.date ||
       formData.start_time ||
       formData.end_time
     );
     setShowTutorDrawer(hasDetails);
-  }, [formData.date, formData.start_time, formData.end_time]);
+  }, [selectedSubject, formData.date, formData.start_time, formData.end_time]);
 
   const openTutorDrawer = () => setShowTutorDrawer(true);
   const closeTutorDrawer = () => setShowTutorDrawer(false);
@@ -1173,7 +1174,7 @@ const Appointment = () => {
                   required
                 />
                 {/* time picker */}
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   {/* start time */}
                   <LocalizationProvider dateAdapter={AdapterDayjs}>
                     <DemoContainer components={["TimePicker"]}>
@@ -1192,6 +1193,27 @@ const Appointment = () => {
                         label="Start Time"
                         minTime={minClassTime}
                         maxTime={maxClassTime}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            sx: {
+                              "& .MuiInputBase-root": {
+                                height: 40,
+                                fontSize: 14,
+                              },
+                              "& .MuiInputBase-input": {
+                                paddingY: "8px",
+                              },
+                              "& .MuiIconButton-root": {
+                                padding: "6px",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                fontSize: 18,
+                              },
+                            },
+                          },
+                        }}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
@@ -1214,6 +1236,27 @@ const Appointment = () => {
                         label="End Time"
                         minTime={minClassTime}
                         maxTime={maxClassTime}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                            sx: {
+                              "& .MuiInputBase-root": {
+                                height: 40,
+                                fontSize: 14,
+                              },
+                              "& .MuiInputBase-input": {
+                                paddingY: "8px",
+                              },
+                              "& .MuiIconButton-root": {
+                                padding: "6px",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                fontSize: 18,
+                              },
+                            },
+                          },
+                        }}
                       />
                     </DemoContainer>
                   </LocalizationProvider>
