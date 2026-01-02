@@ -31,6 +31,9 @@ const Appointment = () => {
   const [detailsTutorId, setDetailsTutorId] = useState(null);
   const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
   const [showTutorDrawer, setShowTutorDrawer] = useState(false);
+  const [appointmentsForDate, setAppointmentsForDate] = useState([]);
+
+  const blockingStatuses = ["confirmed", "started", "awaiting_feedback", "completed"];
 
   const subjects = [
     {
@@ -175,6 +178,26 @@ const Appointment = () => {
     },
     [currentUserId]
   );
+
+  const fetchAppointmentsForDate = useCallback(async (targetDate) => {
+    if (!targetDate) {
+      setAppointmentsForDate([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("appointment")
+        .select("tutor_id, start_time, end_time, status")
+        .eq("date", targetDate)
+        .in("status", blockingStatuses);
+
+      if (error) throw error;
+      setAppointmentsForDate(data || []);
+    } catch (err) {
+      console.error("Unable to load tutor bookings:", err.message);
+    }
+  }, [blockingStatuses]);
 
   const getTutorDetails = async (tutorId) => {
     try {
@@ -344,6 +367,27 @@ const Appointment = () => {
     const [hours, minutes] = timeString.split(":").map(Number);
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
     return hours * 60 + minutes;
+  };
+
+  const getConflictTutorIds = (appointments, startMinutes, endMinutes) => {
+    if (startMinutes === null || endMinutes === null) return new Set();
+    const conflicts = new Set();
+
+    (appointments || []).forEach((appointment) => {
+      const appointmentStart = getMinutesFromStored(appointment.start_time);
+      const appointmentEnd = getMinutesFromStored(appointment.end_time);
+
+      if (
+        appointmentStart !== null &&
+        appointmentEnd !== null &&
+        startMinutes < appointmentEnd &&
+        endMinutes > appointmentStart
+      ) {
+        conflicts.add(appointment.tutor_id);
+      }
+    });
+
+    return conflicts;
   };
 
   const getBlockIndex = (minutes) => {
@@ -577,8 +621,6 @@ const Appointment = () => {
         return;
       }
 
-      const blockingStatuses = ["pending", "confirmed", "started"];
-
       const { data: tutorAppointments, error: tutorError } = await supabase
         .from("appointment")
         .select("start_time, end_time, status")
@@ -704,6 +746,33 @@ const Appointment = () => {
   }, [formData.date, formData.start_time, formData.end_time]);
 
   useEffect(() => {
+    if (!formData.date) {
+      setAppointmentsForDate([]);
+      return;
+    }
+
+    fetchAppointmentsForDate(formData.date);
+
+    const channel = supabase
+      .channel(`appointment-date-${formData.date}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "appointment",
+          filter: `date=eq.${formData.date}`,
+        },
+        () => fetchAppointmentsForDate(formData.date)
+      );
+
+    channel.subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [formData.date, fetchAppointmentsForDate]);
+
+  useEffect(() => {
     if (!selectedSubject) return;
     const subjectLower = selectedSubject.toLowerCase();
     const subjectTutors = tutors.filter((tutor) => {
@@ -716,7 +785,15 @@ const Appointment = () => {
         getTutorSchedules(tutor.user_id);
       }
     });
-  }, [selectedSubject, tutors, tutorDetails, tutorSchedules]);
+  }, [
+    selectedSubject,
+    formData.date,
+    formData.start_time,
+    formData.end_time,
+    tutors,
+    tutorDetails,
+    tutorSchedules,
+  ]);
 
   useEffect(() => {
     const hasDetails = Boolean(
@@ -830,8 +907,17 @@ const Appointment = () => {
           );
         };
 
+        const conflictTutorIds = getConflictTutorIds(
+          appointmentsForDate,
+          startMinutes,
+          endMinutes
+        );
+
         const availabilityForTutor = (tutorId) => {
           if (!hasSlot) return { available: false, label: "Select date & time" };
+          if (conflictTutorIds.has(tutorId)) {
+            return { available: false, label: "Booked" };
+          }
           const schedules = tutorSchedules[tutorId] || [];
           const daySchedules = schedules.filter((s) => s.day === dayName);
           if (daySchedules.length === 0) {
@@ -904,6 +990,7 @@ const Appointment = () => {
                 const details = tutorDetails[tutor.user_id] || {};
                 const isSelected = selectedTutor?.user_id === tutor.user_id;
                 const isDetailsOpen = detailsTutorId === tutor.user_id;
+                const isBooked = hasTimeRange && conflictTutorIds.has(tutor.user_id);
                 return (
                   <div
                     key={tutor.user_id}
@@ -956,16 +1043,21 @@ const Appointment = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          handleTutorSelect(tutor);
-                          openTutorDrawer();
+                          if (!isBooked) {
+                            handleTutorSelect(tutor);
+                            openTutorDrawer();
+                          }
                         }}
+                        disabled={isBooked}
                         className={`${buttonClass} ${
-                          isSelected
-                            ? "bg-green-600 text-white"
-                            : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
+                          isBooked
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : isSelected
+                              ? "bg-green-600 text-white"
+                              : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
                         }`}
                       >
-                        {isSelected ? "Selected" : "Select"}
+                        {isBooked ? "Booked" : isSelected ? "Selected" : "Select"}
                       </button>
                     </div>
                   </div>
