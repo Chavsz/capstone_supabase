@@ -33,7 +33,7 @@ const Appointment = () => {
   const [showTutorDrawer, setShowTutorDrawer] = useState(false);
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
 
-  const blockingStatuses = ["confirmed", "started", "awaiting_feedback", "completed"];
+  const blockingStatuses = ["confirmed", "started", "awaiting_feedback"];
 
   const subjects = [
     {
