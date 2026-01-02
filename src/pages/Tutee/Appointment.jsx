@@ -704,6 +704,21 @@ const Appointment = () => {
   }, [formData.date, formData.start_time, formData.end_time]);
 
   useEffect(() => {
+    if (!selectedSubject) return;
+    const subjectLower = selectedSubject.toLowerCase();
+    const subjectTutors = tutors.filter((tutor) => {
+      const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
+      return tutorSubject.toLowerCase().includes(subjectLower);
+    });
+
+    subjectTutors.forEach((tutor) => {
+      if (!tutorSchedules[tutor.user_id]) {
+        getTutorSchedules(tutor.user_id);
+      }
+    });
+  }, [selectedSubject, tutors, tutorDetails, tutorSchedules]);
+
+  useEffect(() => {
     const hasDetails = Boolean(
       selectedSubject ||
       formData.date ||
@@ -1071,7 +1086,7 @@ const Appointment = () => {
         {/* Left Panel - Appointment Form */}
         <div className="bg-white p-8 rounded-md border border-gray-300">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {/* Choose Subject */}
               <div>
                 <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
@@ -1122,7 +1137,7 @@ const Appointment = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {/* Number of Tutees */}
               <div>
                 <h3 className="font-semibold text-lg mb-3">Number of Tutees</h3>
