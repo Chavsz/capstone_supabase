@@ -36,6 +36,7 @@ const Route = ({ to, Icon, title, onClose }) => {
   return (
     <NavLink
       to={to}
+      reloadDocument
       className={({ isActive }) =>
         `flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
           isActive
