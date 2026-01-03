@@ -36,7 +36,7 @@ const RouteSelect = ({ onClose }) => {
         to="/dashboard/switch"
         selected={selected === "/dashboard/switch"}
         Icon={piIcons.PiUserSwitchBold}
-        title="Switch"
+        
         handleSelect={handleSelect}
         onClose={onClose}
       />
