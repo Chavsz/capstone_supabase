@@ -21,7 +21,7 @@ const STATUS_META = {
   awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#935226] text-white" },
   completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
   declined: { label: "Declined", badge: "bg-[#181718] text-white" },
-  cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
+  cancelled: { label: "Cancelled", badge: "bg-[#ef4444] text-white" },
 };
 
 const formatStatusLabel = (status = "") =>
