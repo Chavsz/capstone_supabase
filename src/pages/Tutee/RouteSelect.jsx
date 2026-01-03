@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
@@ -10,7 +10,6 @@ const RouteSelect = ({ onClose }) => {
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -64,7 +63,6 @@ const RouteSelect = ({ onClose }) => {
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
         isActive={location.pathname === "/dashboard"}
-        onNavigate={navigate}
         onClose={onClose}
       />
       <Route
@@ -72,7 +70,6 @@ const RouteSelect = ({ onClose }) => {
         Icon={mdIcons.MdCalendarMonth}
         title="Appointment"
         isActive={location.pathname === "/dashboard/appointment"}
-        onNavigate={navigate}
         onClose={onClose}
       />
       <Route
@@ -80,7 +77,6 @@ const RouteSelect = ({ onClose }) => {
         Icon={RiCalendarScheduleLine}
         title="Schedules"
         isActive={location.pathname === "/dashboard/schedules"}
-        onNavigate={navigate}
         onClose={onClose}
       />
       {!isStudent && canSwitchToTutor && (
@@ -89,7 +85,6 @@ const RouteSelect = ({ onClose }) => {
           Icon={piIcons.PiUserSwitchBold}
           title="Switch"
           isActive={location.pathname === "/dashboard/switch"}
-          onNavigate={navigate}
           onClose={onClose}
         />
       )}
@@ -97,7 +92,7 @@ const RouteSelect = ({ onClose }) => {
   );
 };
 
-const Route = ({ to, Icon, title, isActive, onNavigate, onClose }) => {
+const Route = ({ to, Icon, title, isActive, onClose }) => {
   return (
     <button
       type="button"
@@ -107,8 +102,8 @@ const Route = ({ to, Icon, title, isActive, onNavigate, onClose }) => {
           : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
       }`}
       onClick={() => {
-        onNavigate(to);
         if (onClose) onClose();
+        window.location.assign(to);
       }}
     >
       <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
