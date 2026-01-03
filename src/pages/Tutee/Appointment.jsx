@@ -1408,12 +1408,12 @@ const Appointment = () => {
           </form>
         </div>
         {/* Right Panel - Tutor Details */}
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           {renderTutorDetails()}
         </div>
 
         {/* Mobile Tutor Details Drawer */}
-        <div className="lg:hidden">
+        <div className="md:hidden">
           {showTutorDrawer && (
             <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
