@@ -25,10 +25,10 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
-        to="/dashboard/schedules"
-        selected={selected === "/dashboard/schedules"}
+        to="/dashboard/schedule"
+        selected={selected === "/dashboard/schedule"}
         Icon={mdIcons.MdCalendarMonth}
-        title="Schedules"
+        title="Schedule"
         handleSelect={handleSelect}
         onClose={onClose}
       />

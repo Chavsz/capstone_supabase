@@ -1437,12 +1437,21 @@ const Schedules = () => {
             statusFilter === "all"
               ? allAppointments
               : allByStatus[statusFilter] || [];
+          const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+            const aTime = new Date(
+              `${a.date}T${a.start_time || "00:00"}`
+            ).getTime();
+            const bTime = new Date(
+              `${b.date}T${b.start_time || "00:00"}`
+            ).getTime();
+            return bTime - aTime;
+          });
           const totalPages = Math.max(
             1,
-            Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+            Math.ceil(sortedAppointments.length / ITEMS_PER_PAGE)
           );
           const currentPage = getCurrentPage(statusFilter, totalPages);
-          const pagedList = filteredAppointments.slice(
+          const pagedList = sortedAppointments.slice(
             (currentPage - 1) * ITEMS_PER_PAGE,
             currentPage * ITEMS_PER_PAGE
           );
@@ -1483,7 +1492,7 @@ const Schedules = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredAppointments.length === 0 ? (
+                      {sortedAppointments.length === 0 ? (
                         <tr>
                           <td
                             colSpan={5}

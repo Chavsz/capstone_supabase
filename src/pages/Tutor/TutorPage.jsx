@@ -52,14 +52,10 @@ function TutorPage({ setAuth }) {
           {!isProfilePage && <Header />}
           <div className="flex-1">
             <Routes>
-              <Route
-                exact
-                path="/"
-                element={<TutorDashboard setAuth={setAuth} />}
-              />
-              <Route exact path="/profile" element={<Profile />} />
-              <Route exact path="/schedules" element={<Schedules />} />
-              <Route exact path="/switch" element={<Switch />} />
+              <Route path="/" element={<TutorDashboard setAuth={setAuth} />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="schedule" element={<Schedules />} />
+              <Route path="switch" element={<Switch />} />
             </Routes>
           </div>
         </div>

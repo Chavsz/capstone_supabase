@@ -229,7 +229,7 @@ const Header = () => {
                 
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <Link
-                    to="/dashboard/schedules"
+                    to="/dashboard/schedule"
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center justify-between"
                     onClick={() => setIsDropdownOpen(false)}
                   >
