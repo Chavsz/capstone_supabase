@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 
 // components
@@ -18,6 +18,10 @@ function TuteePage({ setAuth }) {
   const location = useLocation();
   const isProfilePage = location.pathname.includes("/profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="bg-[#f8f9f0] min-h-screen">
@@ -53,7 +57,7 @@ function TuteePage({ setAuth }) {
           {!isProfilePage && <Header />}
           <div className="flex-1">
             <Routes>
-              <Route path="/" element={<TuteeDashboard setAuth={setAuth} />} />
+              <Route index element={<TuteeDashboard setAuth={setAuth} />} />
               <Route path="profile" element={<Profile />} />
               <Route path="appointment" element={<Appointment />} />
               <Route path="schedules" element={<Schedules />} />
