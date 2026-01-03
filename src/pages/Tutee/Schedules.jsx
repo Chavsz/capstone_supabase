@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
-const FINISHED_STATUSES = ["completed"];
   const STATUS_TABS = [
     { status: "all", label: "All" },
     { status: "pending", label: "Pending" },
@@ -940,7 +939,6 @@ const AppointmentModal = ({
 const Schedules = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState("upcoming");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvaluationAppointment, setSelectedEvaluationAppointment] = useState(null);
@@ -950,8 +948,7 @@ const Schedules = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [notificationCount, setNotificationCount] = useState(0);
-  const [upcomingPages, setUpcomingPages] = useState({});
-  const [historyPages, setHistoryPages] = useState({});
+  const [pages, setPages] = useState({});
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1376,10 +1373,6 @@ const Schedules = () => {
     }
   };
 
-  const handleFilterChange = (filter) => {
-    setSelectedFilter(filter);
-  };
-
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const matchesSearch = (appointment) => {
     if (!normalizedSearch) return true;
@@ -1404,15 +1397,13 @@ const Schedules = () => {
     return baseAppointments.filter((apt) => apt.status === status).length;
   };
 
-  const getCurrentPage = (status, isUpcoming, totalPages) => {
-    const pages = isUpcoming ? upcomingPages : historyPages;
+  const getCurrentPage = (status, totalPages) => {
     const current = pages[status] || 1;
     return Math.min(Math.max(current, 1), Math.max(totalPages, 1));
   };
 
-  const handlePageChange = (status, delta, isUpcoming, totalPages) => {
-    const setter = isUpcoming ? setUpcomingPages : setHistoryPages;
-    setter((prev) => {
+  const handlePageChange = (status, delta, totalPages) => {
+    setPages((prev) => {
       const current = Math.max(1, Math.min(prev[status] || 1, totalPages));
       const next = Math.min(Math.max(current + delta, 1), totalPages);
       return { ...prev, [status]: next };
@@ -1450,23 +1441,11 @@ const Schedules = () => {
             1,
             Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
           );
-          const currentPage = getCurrentPage(
-            statusFilter,
-            true,
-            totalPages
-          );
+          const currentPage = getCurrentPage(statusFilter, totalPages);
           const pagedList = filteredAppointments.slice(
             (currentPage - 1) * ITEMS_PER_PAGE,
             currentPage * ITEMS_PER_PAGE
           );
-
-          if (filteredAppointments.length === 0) {
-            return (
-              <div className="text-center text-gray-500 py-8">
-                <p>No appointments match this search.</p>
-              </div>
-            );
-          }
 
           return (
             <section>
@@ -1504,44 +1483,57 @@ const Schedules = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {pagedList.map((appointment) => (
-                        <tr
-                          key={appointment.appointment_id}
-                          className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
-                          onClick={() => openModal(appointment)}
-                        >
-                          <td className="px-4 py-2 font-semibold text-[#323335]">
-                            {appointment.tutor_name}
-                          </td>
-                          <td className="px-4 py-2">{appointment.subject}</td>
-                          <td className="px-4 py-2">{appointment.topic}</td>
-                          <td className="px-4 py-2">
-                            {formatDate(appointment.date)}{" "}
-                            {formatTime(appointment.start_time)} -{" "}
-                            {formatTime(appointment.end_time)}
-                          </td>
-                          <td className="px-4 py-2">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                                appointment.status
-                              )}`}
-                            >
-                              {formatStatusLabel(appointment.status)}
-                            </span>
-                            {appointment.status === "awaiting_feedback" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEvaluationModal(appointment);
-                                }}
-                                className="ml-2 bg-[#935226] text-white text-xs px-2 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
-                              >
-                                Evaluate
-                              </button>
-                            )}
+                      {filteredAppointments.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-10 text-center text-sm text-gray-500"
+                          >
+                            {statusFilter === "all"
+                              ? "No appointments available."
+                              : `No ${formatStatusLabel(statusFilter).toLowerCase()} appointments.`}
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        pagedList.map((appointment) => (
+                          <tr
+                            key={appointment.appointment_id}
+                            className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                            onClick={() => openModal(appointment)}
+                          >
+                            <td className="px-4 py-2 font-semibold text-[#323335]">
+                              {appointment.tutor_name}
+                            </td>
+                            <td className="px-4 py-2">{appointment.subject}</td>
+                            <td className="px-4 py-2">{appointment.topic}</td>
+                            <td className="px-4 py-2">
+                              {formatDate(appointment.date)}{" "}
+                              {formatTime(appointment.start_time)} -{" "}
+                              {formatTime(appointment.end_time)}
+                            </td>
+                            <td className="px-4 py-2">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                                  appointment.status
+                                )}`}
+                              >
+                                {formatStatusLabel(appointment.status)}
+                              </span>
+                              {appointment.status === "awaiting_feedback" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEvaluationModal(appointment);
+                                  }}
+                                  className="ml-2 bg-[#935226] text-white text-xs px-2 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
+                                >
+                                  Evaluate
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1555,14 +1547,7 @@ const Schedules = () => {
                         : "text-gray-600 border-gray-300 hover:border-blue-500"
                     }`}
                     disabled={currentPage === 1}
-                    onClick={() =>
-                      handlePageChange(
-                        statusFilter,
-                        -1,
-                        true,
-                        totalPages
-                      )
-                    }
+                    onClick={() => handlePageChange(statusFilter, -1, totalPages)}
                   >
                     Previous
                   </button>
@@ -1576,14 +1561,7 @@ const Schedules = () => {
                         : "text-gray-600 border-gray-300 hover:border-blue-500"
                     }`}
                     disabled={currentPage === totalPages}
-                    onClick={() =>
-                      handlePageChange(
-                        statusFilter,
-                        1,
-                        true,
-                        totalPages
-                      )
-                    }
+                    onClick={() => handlePageChange(statusFilter, 1, totalPages)}
                   >
                     Next
                   </button>
