@@ -57,11 +57,11 @@ function TuteePage({ setAuth }) {
           {!isProfilePage && <Header />}
           <div className="flex-1">
             <Routes key={location.pathname}>
-              <Route index element={<TuteeDashboard setAuth={setAuth} />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="appointment" element={<Appointment />} />
-              <Route path="schedules" element={<Schedules />} />
-              <Route path="switch" element={<Switch />} />
+              <Route path="/dashboard" element={<TuteeDashboard setAuth={setAuth} />} />
+              <Route path="/dashboard/profile" element={<Profile />} />
+              <Route path="/dashboard/appointment" element={<Appointment />} />
+              <Route path="/dashboard/schedules" element={<Schedules />} />
+              <Route path="/dashboard/switch" element={<Switch />} />
             </Routes>
           </div>
         </div>
