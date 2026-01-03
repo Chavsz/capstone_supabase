@@ -1398,7 +1398,7 @@ const Appointment = () => {
         {/* Mobile Tutor Details Drawer */}
         <div className="lg:hidden">
           {showTutorDrawer && (
-            <div className="fixed inset-0 z-50 flex items-end">
+            <div className="fixed inset-0 z-40 flex items-end">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
               <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6">
                 <div className="flex items-center justify-between mb-4">
