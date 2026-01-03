@@ -211,7 +211,12 @@ const Appointment = () => {
         .eq("user_id", tutorId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) {
+        if (error.code === "PGRST116" || error.status === 406) {
+          return;
+        }
+        throw error;
+      }
 
       if (data) {
         setTutorDetails((prev) => ({
@@ -227,11 +232,18 @@ const Appointment = () => {
   const getTutorSchedules = async (tutorId) => {
     try {
       // Get profile_id first
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profile")
         .select("profile_id")
         .eq("user_id", tutorId)
         .single();
+
+      if (profileError) {
+        if (profileError.code === "PGRST116" || profileError.status === 406) {
+          return;
+        }
+        throw profileError;
+      }
 
       if (!profileData) return;
 
