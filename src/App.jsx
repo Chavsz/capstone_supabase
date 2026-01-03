@@ -57,15 +57,45 @@ function App() {
   // Track if we're currently fetching to prevent duplicates
   const isFetching = useRef(false);
   const hasRole = useRef(false); // Track if we already have a role
+  const ROLE_OVERRIDE_KEY = "lav.roleOverride";
 
   const setAuth = (boolean) => {
     setIsAuthenticated(boolean);
+  };
+
+  const getStoredRoleOverride = () => {
+    try {
+      const stored = localStorage.getItem(ROLE_OVERRIDE_KEY);
+      return stored || null;
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const setStoredRoleOverride = (role) => {
+    try {
+      if (role) {
+        localStorage.setItem(ROLE_OVERRIDE_KEY, role);
+      } else {
+        localStorage.removeItem(ROLE_OVERRIDE_KEY);
+      }
+    } catch (err) {
+      // Ignore storage errors (e.g. privacy mode)
+    }
   };
 
   // Single function to fetch role
   const fetchUserRole = async (userId) => {
     // Don't fetch if already fetching
     if (isFetching.current) {
+      return;
+    }
+
+    const storedRole = getStoredRoleOverride();
+    if (storedRole) {
+      setCurrentRole(storedRole);
+      setLoading(false);
+      hasRole.current = true;
       return;
     }
 
@@ -133,7 +163,14 @@ function App() {
         if (session) {
           setSession(session);
           setIsAuthenticated(true);
-          await fetchUserRole(session.user.id);
+          const storedRole = getStoredRoleOverride();
+          if (storedRole) {
+            setCurrentRole(storedRole);
+            hasRole.current = true;
+            setLoading(false);
+          } else {
+            await fetchUserRole(session.user.id);
+          }
         } else {
           setIsAuthenticated(false);
           setLoading(false);
@@ -194,6 +231,7 @@ function App() {
         setLoading(false);
         isFetching.current = false;
         hasRole.current = false; // Reset role flag on logout
+        setStoredRoleOverride(null);
         return;
       }
 
@@ -229,6 +267,7 @@ function App() {
         setCurrentRole(newRole);
         hasRole.current = true; // Mark that we have a role
         setLoading(false);
+        setStoredRoleOverride(newRole);
       }
     };
 
