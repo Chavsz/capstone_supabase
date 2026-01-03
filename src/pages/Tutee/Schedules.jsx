@@ -1487,22 +1487,22 @@ const Schedules = () => {
         />
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.status}
-            onClick={() => setStatusFilter(tab.status)}
-            className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
-              statusFilter === tab.status
-                ? "bg-[#f9d31a] text-[#181718] border-[#e6c115]"
-                : "text-[#323335] border-[#d7d9df] hover:border-[#4c4ba2]"
-            }`}
+        <div className="relative w-full sm:w-auto">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-auto appearance-none bg-[#dbe8ff] text-[#2b4ea2] font-semibold px-4 py-1.5 pr-8 rounded-full border border-[#b5c8f5] focus:outline-none"
           >
-            {tab.label}
-            <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
-              {getStatusCount(tab.status)}
-            </span>
-          </button>
-        ))}
+            {statusTabs.map((tab) => (
+              <option key={tab.status} value={tab.status}>
+                {tab.label} ({getStatusCount(tab.status)})
+              </option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#2b4ea2] text-xs">
+            ▼
+          </span>
+        </div>
         <span className="ml-auto text-xs font-semibold text-blue-600">
           Unread notifications: {notificationCount}
         </span>
@@ -1554,64 +1554,60 @@ const Schedules = () => {
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} appointments
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {pagedList.map((appointment) => (
-                      <div
-                        key={appointment.appointment_id}
-                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
-                        onClick={() => openModal(appointment)}
-                      >
-                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
-                          <div className="font-medium text-gray-900">
-                            {appointment.tutor_name}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {formatTime(appointment.start_time)} -{" "}
-                            {formatTime(appointment.end_time)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {appointment.mode_of_session}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Number of tutees: {appointment.number_of_tutees || 1}
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                              appointment.status
-                            )}`}
-                          >
-                            {formatStatusLabel(appointment.status)}
-                          </span>
-                          {appointment.status === "declined" &&
-                            appointment.tutor_decline_reason && (
-                              <div className="mt-2 text-xs text-red-600 font-medium">
-                                Tutor note: {appointment.tutor_decline_reason}
-                              </div>
-                            )}
-                          {appointment.status === "awaiting_feedback" && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEvaluationModal(appointment);
-                              }}
-                              className="mt-2 bg-[#935226] text-white text-xs px-3 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
+                  <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-[#4c4ba2] text-white">
+                          <tr>
+                            <th className="text-left font-semibold px-4 py-2">Tutor</th>
+                            <th className="text-left font-semibold px-4 py-2">Course</th>
+                            <th className="text-left font-semibold px-4 py-2">Topic</th>
+                            <th className="text-left font-semibold px-4 py-2">Time</th>
+                            <th className="text-left font-semibold px-4 py-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedList.map((appointment) => (
+                            <tr
+                              key={appointment.appointment_id}
+                              className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                              onClick={() => openModal(appointment)}
                             >
-                              Evaluate
-                            </button>
-                          )}
-                          {appointment.status === "completed" && (
-                            <div className="mt-2 text-xs text-emerald-600 font-medium">
-                              Evaluated
-                            </div>
-                          )}
-                          {appointment.tutor_note && (
-                            <div className="mt-2 text-xs text-gray-600 font-medium">
-                              Tutor note: {appointment.tutor_note}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                              <td className="px-4 py-2 font-semibold text-[#323335]">
+                                {appointment.tutor_name}
+                              </td>
+                              <td className="px-4 py-2">{appointment.subject}</td>
+                              <td className="px-4 py-2">{appointment.topic}</td>
+                              <td className="px-4 py-2">
+                                {formatDate(appointment.date)}{" "}
+                                {formatTime(appointment.start_time)} -{" "}
+                                {formatTime(appointment.end_time)}
+                              </td>
+                              <td className="px-4 py-2">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                                    appointment.status
+                                  )}`}
+                                >
+                                  {formatStatusLabel(appointment.status)}
+                                </span>
+                                {appointment.status === "awaiting_feedback" && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openEvaluationModal(appointment);
+                                    }}
+                                    className="ml-2 bg-[#935226] text-white text-xs px-2 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
+                                  >
+                                    Evaluate
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                   {totalPages > 1 && (
                     <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
@@ -1664,40 +1660,49 @@ const Schedules = () => {
                   <h3 className="text-lg font-semibold text-gray-700">
                     {formatStatusLabel(status)} history
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {pagedList.map((appointment) => (
-                      <div
-                        key={appointment.appointment_id}
-                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
-                        onClick={() => openModal(appointment)}
-                      >
-                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
-                          <div className="font-medium text-gray-900">
-                            {appointment.tutor_name}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {formatTime(appointment.start_time)} -{" "}
-                            {formatTime(appointment.end_time)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {appointment.mode_of_session}
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                              appointment.status
-                            )}`}
-                          >
-                            {formatStatusLabel(appointment.status)}
-                          </span>
-                          {appointment.status === "declined" &&
-                            appointment.tutor_decline_reason && (
-                              <div className="mt-2 text-xs text-red-600 font-medium">
-                                Tutor note: {appointment.tutor_decline_reason}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-[#4c4ba2] text-white">
+                          <tr>
+                            <th className="text-left font-semibold px-4 py-2">Tutor</th>
+                            <th className="text-left font-semibold px-4 py-2">Course</th>
+                            <th className="text-left font-semibold px-4 py-2">Topic</th>
+                            <th className="text-left font-semibold px-4 py-2">Time</th>
+                            <th className="text-left font-semibold px-4 py-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedList.map((appointment) => (
+                            <tr
+                              key={appointment.appointment_id}
+                              className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                              onClick={() => openModal(appointment)}
+                            >
+                              <td className="px-4 py-2 font-semibold text-[#323335]">
+                                {appointment.tutor_name}
+                              </td>
+                              <td className="px-4 py-2">{appointment.subject}</td>
+                              <td className="px-4 py-2">{appointment.topic}</td>
+                              <td className="px-4 py-2">
+                                {formatDate(appointment.date)}{" "}
+                                {formatTime(appointment.start_time)} -{" "}
+                                {formatTime(appointment.end_time)}
+                              </td>
+                              <td className="px-4 py-2">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                                    appointment.status
+                                  )}`}
+                                >
+                                  {formatStatusLabel(appointment.status)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                   {totalPages > 1 && (
                     <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
