@@ -45,7 +45,7 @@ function TuteePage({ setAuth }) {
       <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300">
         {/* Sidebar */}
         <div
-          className={`fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ${
+          className={`fixed md:static inset-y-0 left-0 z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
           }`}
         >
@@ -53,7 +53,7 @@ function TuteePage({ setAuth }) {
         </div>
 
         {/* Main Content */}
-        <div className="w-full flex flex-col">
+        <div className="w-full flex flex-col relative z-0">
           {!isProfilePage && <Header />}
           <div className="flex-1">
             <Routes key={location.pathname}>

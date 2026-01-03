@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
@@ -7,7 +7,9 @@ import * as piIcons from "react-icons/pi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 
 const RouteSelect = ({ onClose }) => {
-  const [selected, setSelected] = useState(window.location.pathname);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState(location.pathname);
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
 
@@ -54,8 +56,14 @@ const RouteSelect = ({ onClose }) => {
     };
   }, []);
 
+  useEffect(() => {
+    setSelected(location.pathname);
+  }, [location.pathname]);
+
   const handleSelect = (to) => {
     setSelected(to);
+    navigate(to);
+    if (onClose) onClose();
   };
 
   return (
@@ -100,23 +108,20 @@ const RouteSelect = ({ onClose }) => {
   );
 };
 
-const Route = ({ to, selected, Icon, title, handleSelect, onClose }) => {
+const Route = ({ to, selected, Icon, title, handleSelect }) => {
   return (
-    <Link
-      to={to}
+    <button
+      type="button"
       className={`flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
         selected
           ? "bg-white/20 text-white shadow"
           : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
       }`}
-      onClick={() => {
-        handleSelect(to);
-        if (onClose) onClose(); // Close mobile menu on navigation
-      }}  
+      onClick={() => handleSelect(to)}
     >
       <Icon className={`${selected ? "text-[#f9d31a]" : "text-white"}`} />
       <p className="text-md font-semibold hidden md:block">{title}</p>
-    </Link>
+    </button>
   );
 };
 
