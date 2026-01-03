@@ -60,6 +60,10 @@ const RouteSelect = ({ onClose }) => {
     setSelected(location.pathname);
   }, [location.pathname]);
 
+  useEffect(() => {
+    console.info("[Tutee RouteSelect] route", location.pathname);
+  }, [location.pathname]);
+
   const handleSelect = (to) => {
     console.info("[Tutee RouteSelect] navigate", {
       from: location.pathname,
