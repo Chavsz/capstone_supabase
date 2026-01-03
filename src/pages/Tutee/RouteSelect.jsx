@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
@@ -9,6 +9,8 @@ import { RiCalendarScheduleLine } from "react-icons/ri";
 const RouteSelect = ({ onClose }) => {
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -61,18 +63,24 @@ const RouteSelect = ({ onClose }) => {
         to="/dashboard"
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
+        isActive={location.pathname === "/dashboard"}
+        onNavigate={navigate}
         onClose={onClose}
       />
       <Route
         to="/dashboard/appointment"
         Icon={mdIcons.MdCalendarMonth}
         title="Appointment"
+        isActive={location.pathname === "/dashboard/appointment"}
+        onNavigate={navigate}
         onClose={onClose}
       />
       <Route
         to="/dashboard/schedules"
         Icon={RiCalendarScheduleLine}
         title="Schedules"
+        isActive={location.pathname === "/dashboard/schedules"}
+        onNavigate={navigate}
         onClose={onClose}
       />
       {!isStudent && canSwitchToTutor && (
@@ -80,6 +88,8 @@ const RouteSelect = ({ onClose }) => {
           to="/dashboard/switch"
           Icon={piIcons.PiUserSwitchBold}
           title="Switch"
+          isActive={location.pathname === "/dashboard/switch"}
+          onNavigate={navigate}
           onClose={onClose}
         />
       )}
@@ -87,28 +97,23 @@ const RouteSelect = ({ onClose }) => {
   );
 };
 
-const Route = ({ to, Icon, title, onClose }) => {
+const Route = ({ to, Icon, title, isActive, onNavigate, onClose }) => {
   return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
-          isActive
-            ? "bg-white/20 text-white shadow"
-            : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
-        }`
-      }
+    <button
+      type="button"
+      className={`flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
+        isActive
+          ? "bg-white/20 text-white shadow"
+          : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
+      }`}
       onClick={() => {
+        onNavigate(to);
         if (onClose) onClose();
       }}
     >
-      {({ isActive }) => (
-        <>
-          <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
-          <p className="text-md font-semibold hidden md:block">{title}</p>
-        </>
-      )}
-    </NavLink>
+      <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
+      <p className="text-md font-semibold hidden md:block">{title}</p>
+    </button>
   );
 };
 
