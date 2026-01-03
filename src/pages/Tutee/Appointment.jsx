@@ -802,8 +802,17 @@ const Appointment = () => {
       formData.start_time ||
       formData.end_time
     );
-    setShowTutorDrawer(hasDetails);
-  }, [selectedSubject, formData.date, formData.start_time, formData.end_time]);
+    if (!hasDetails) {
+      setShowTutorDrawer(false);
+      return;
+    }
+    setShowTutorDrawer(true);
+  }, [
+    selectedSubject,
+    formData.date,
+    formData.start_time,
+    formData.end_time,
+  ]);
 
   const openTutorDrawer = () => setShowTutorDrawer(true);
   const closeTutorDrawer = () => setShowTutorDrawer(false);
@@ -1390,12 +1399,7 @@ const Appointment = () => {
         <div className="lg:hidden">
           {showTutorDrawer && (
             <div className="fixed inset-0 z-50 flex items-end">
-              <button
-                type="button"
-                aria-label="Close tutors"
-                onClick={closeTutorDrawer}
-                className="absolute inset-0 bg-black/40"
-              />
+              <div className="absolute inset-0 bg-black/40 pointer-events-none" />
               <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-lg">Tutor Details</h3>
