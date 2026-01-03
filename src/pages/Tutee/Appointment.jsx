@@ -35,6 +35,7 @@ const Appointment = () => {
   const [showTutorDrawer, setShowTutorDrawer] = useState(false);
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const blockingStatuses = ["confirmed", "started", "awaiting_feedback"];
 
@@ -745,6 +746,17 @@ const Appointment = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const handleChange = () => setIsDesktop(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
     setShowAllSubjectTutors(false);
   }, [formData.date, formData.start_time, formData.end_time]);
 
@@ -806,7 +818,7 @@ const Appointment = () => {
       formData.end_time
     );
     const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
-    if (!hasDetails) {
+    if (!hasDetails || isDesktop) {
       setShowTutorDrawer(false);
       setDrawerDismissedKey("");
       return;
@@ -820,6 +832,7 @@ const Appointment = () => {
     formData.start_time,
     formData.end_time,
     drawerDismissedKey,
+    isDesktop,
   ]);
 
   const openTutorDrawer = () => setShowTutorDrawer(true);
@@ -1414,7 +1427,7 @@ const Appointment = () => {
 
         {/* Mobile Tutor Details Drawer */}
         <div className="md:hidden">
-          {showTutorDrawer && (
+          {showTutorDrawer && !isDesktop && (
             <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
               <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6 pointer-events-auto">
