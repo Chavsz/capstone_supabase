@@ -8,6 +8,7 @@ const Switch = () => {
   const [isLoading, setIsLoading] = useState(false);
    const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
+  const ROLE_OVERRIDE_KEY = "lav.roleOverride";
 
   useEffect(() => {
     const fetchLoginPhoto = async () => {
@@ -121,6 +122,12 @@ const Switch = () => {
       
       // Dispatch custom event to notify App component of role change
       window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: 'student' } }));
+
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "student");
+      } catch (err) {
+        // Ignore storage errors
+      }
       
       // Navigate to dashboard to trigger role-based routing
       navigate("/dashboard");

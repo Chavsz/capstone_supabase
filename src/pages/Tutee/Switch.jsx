@@ -7,6 +7,7 @@ const Switch = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const ROLE_OVERRIDE_KEY = "lav.roleOverride";
 
   const handleSwitchClick = () => {
     setIsModalOpen(true);
@@ -34,6 +35,12 @@ const Switch = () => {
       
       // Dispatch custom event to notify App component of role change
       window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: 'tutor' } }));
+
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
+      } catch (err) {
+        // Ignore storage errors
+      }
       
       // Navigate to dashboard to trigger role-based routing
       navigate("/dashboard");

@@ -61,6 +61,10 @@ const RouteSelect = ({ onClose }) => {
   }, [location.pathname]);
 
   const handleSelect = (to) => {
+    console.info("[Tutee RouteSelect] navigate", {
+      from: location.pathname,
+      to,
+    });
     setSelected(to);
     navigate(to);
     if (onClose) onClose();
