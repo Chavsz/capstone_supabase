@@ -72,6 +72,12 @@ const RouteSelect = ({ onClose }) => {
     setSelected(to);
     navigate(to);
     if (onClose) onClose();
+    setTimeout(() => {
+      console.info("[Tutee RouteSelect] after navigate", {
+        windowPath: window.location.pathname,
+        routerPath: location.pathname,
+      });
+    }, 0);
   };
 
   return (
