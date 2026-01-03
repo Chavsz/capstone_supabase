@@ -56,7 +56,7 @@ function TuteePage({ setAuth }) {
         <div className="w-full flex flex-col">
           {!isProfilePage && <Header />}
           <div className="flex-1">
-            <Routes>
+            <Routes key={location.pathname}>
               <Route index element={<TuteeDashboard setAuth={setAuth} />} />
               <Route path="profile" element={<Profile />} />
               <Route path="appointment" element={<Appointment />} />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -8,6 +9,7 @@ import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 
 const Appointment = () => {
+  const location = useLocation();
   const [tutors, setTutors] = useState([]);
   const [tutorDetails, setTutorDetails] = useState({});
   const [tutorSchedules, setTutorSchedules] = useState({});
@@ -31,6 +33,7 @@ const Appointment = () => {
   const [detailsTutorId, setDetailsTutorId] = useState(null);
   const [showAllSubjectTutors, setShowAllSubjectTutors] = useState(false);
   const [showTutorDrawer, setShowTutorDrawer] = useState(false);
+  const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
 
   const blockingStatuses = ["confirmed", "started", "awaiting_feedback"];
@@ -802,20 +805,29 @@ const Appointment = () => {
       formData.start_time ||
       formData.end_time
     );
+    const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
     if (!hasDetails) {
       setShowTutorDrawer(false);
+      setDrawerDismissedKey("");
       return;
     }
-    setShowTutorDrawer(true);
+    if (drawerDismissedKey !== nextKey) {
+      setShowTutorDrawer(true);
+    }
   }, [
     selectedSubject,
     formData.date,
     formData.start_time,
     formData.end_time,
+    drawerDismissedKey,
   ]);
 
   const openTutorDrawer = () => setShowTutorDrawer(true);
-  const closeTutorDrawer = () => setShowTutorDrawer(false);
+  const closeTutorDrawer = () => {
+    const currentKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
+    setDrawerDismissedKey(currentKey);
+    setShowTutorDrawer(false);
+  };
 
   // Helper function to format time
   const formatTime = (timeString) => {
@@ -863,6 +875,11 @@ const Appointment = () => {
       channel.unsubscribe();
     };
   }, [currentUserId, checkPendingEvaluations]);
+
+  useEffect(() => {
+    setShowTutorDrawer(false);
+    setDrawerDismissedKey("");
+  }, [location.pathname]);
 
   const renderTutorDetails = (options = {}) => {
     const { compact = false, showHeading = true } = options;
@@ -1398,9 +1415,9 @@ const Appointment = () => {
         {/* Mobile Tutor Details Drawer */}
         <div className="lg:hidden">
           {showTutorDrawer && (
-            <div className="fixed inset-0 z-40 flex items-end">
+            <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-              <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6">
+              <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6 pointer-events-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-lg">Tutor Details</h3>
                   <button
