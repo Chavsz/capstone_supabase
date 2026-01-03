@@ -1535,200 +1535,271 @@ const Schedules = () => {
       {/* Upcoming Appointments View */}
       {selectedFilter === "upcoming" && (
         <div className="space-y-6">
-          {Object.values(upcomingByStatus).every((list) => list.length === 0) ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No upcoming appointments match this search.</p>
-            </div>
-          ) : (
-            displayUpcomingStatuses.map((status) => {
-              const list = upcomingByStatus[status] || [];
-              if (list.length === 0) return null;
-              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
-              const currentPage = getCurrentPage(status, true, totalPages);
-              const pagedList = list.slice(
-                (currentPage - 1) * ITEMS_PER_PAGE,
-                currentPage * ITEMS_PER_PAGE
-              );
+          {(() => {
+            const filteredAppointments =
+              statusFilter === "all"
+                ? upcomingAppointments
+                : upcomingByStatus[statusFilter] || [];
+            const totalPages = Math.max(
+              1,
+              Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+            );
+            const currentPage = getCurrentPage(
+              statusFilter,
+              true,
+              totalPages
+            );
+            const pagedList = filteredAppointments.slice(
+              (currentPage - 1) * ITEMS_PER_PAGE,
+              currentPage * ITEMS_PER_PAGE
+            );
+
+            if (filteredAppointments.length === 0) {
               return (
-                <section key={status}>
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {formatStatusLabel(status)} appointments
-                  </h3>
-                  <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-[#4c4ba2] text-white">
-                          <tr>
-                            <th className="text-left font-semibold px-4 py-2">Tutor</th>
-                            <th className="text-left font-semibold px-4 py-2">Course</th>
-                            <th className="text-left font-semibold px-4 py-2">Topic</th>
-                            <th className="text-left font-semibold px-4 py-2">Time</th>
-                            <th className="text-left font-semibold px-4 py-2">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pagedList.map((appointment) => (
-                            <tr
-                              key={appointment.appointment_id}
-                              className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
-                              onClick={() => openModal(appointment)}
-                            >
-                              <td className="px-4 py-2 font-semibold text-[#323335]">
-                                {appointment.tutor_name}
-                              </td>
-                              <td className="px-4 py-2">{appointment.subject}</td>
-                              <td className="px-4 py-2">{appointment.topic}</td>
-                              <td className="px-4 py-2">
-                                {formatDate(appointment.date)}{" "}
-                                {formatTime(appointment.start_time)} -{" "}
-                                {formatTime(appointment.end_time)}
-                              </td>
-                              <td className="px-4 py-2">
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                                    appointment.status
-                                  )}`}
-                                >
-                                  {formatStatusLabel(appointment.status)}
-                                </span>
-                                {appointment.status === "awaiting_feedback" && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openEvaluationModal(appointment);
-                                    }}
-                                    className="ml-2 bg-[#935226] text-white text-xs px-2 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
-                                  >
-                                    Evaluate
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
-                      <button
-                        className={`px-3 py-1 rounded border ${currentPage === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(status, -1, true, totalPages)}
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <button
-                        className={`px-3 py-1 rounded border ${currentPage === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(status, 1, true, totalPages)}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </section>
+                <div className="text-center text-gray-500 py-8">
+                  <p>No upcoming appointments match this search.</p>
+                </div>
               );
-            })
-          )}
+            }
+
+            return (
+              <section>
+                <h3 className="text-lg font-semibold text-gray-700">
+                  {statusFilter === "all"
+                    ? "All upcoming appointments"
+                    : `${formatStatusLabel(statusFilter)} appointments`}
+                </h3>
+                <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#4c4ba2] text-white">
+                        <tr>
+                          <th className="text-left font-semibold px-4 py-2">Tutor</th>
+                          <th className="text-left font-semibold px-4 py-2">Course</th>
+                          <th className="text-left font-semibold px-4 py-2">Topic</th>
+                          <th className="text-left font-semibold px-4 py-2">Time</th>
+                          <th className="text-left font-semibold px-4 py-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagedList.map((appointment) => (
+                          <tr
+                            key={appointment.appointment_id}
+                            className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                            onClick={() => openModal(appointment)}
+                          >
+                            <td className="px-4 py-2 font-semibold text-[#323335]">
+                              {appointment.tutor_name}
+                            </td>
+                            <td className="px-4 py-2">{appointment.subject}</td>
+                            <td className="px-4 py-2">{appointment.topic}</td>
+                            <td className="px-4 py-2">
+                              {formatDate(appointment.date)}{" "}
+                              {formatTime(appointment.start_time)} -{" "}
+                              {formatTime(appointment.end_time)}
+                            </td>
+                            <td className="px-4 py-2">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                                  appointment.status
+                                )}`}
+                              >
+                                {formatStatusLabel(appointment.status)}
+                              </span>
+                              {appointment.status === "awaiting_feedback" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEvaluationModal(appointment);
+                                  }}
+                                  className="ml-2 bg-[#935226] text-white text-xs px-2 py-1 rounded hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
+                                >
+                                  Evaluate
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                    <button
+                      className={`px-3 py-1 rounded border ${
+                        currentPage === 1
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-gray-600 border-gray-300 hover:border-blue-500"
+                      }`}
+                      disabled={currentPage === 1}
+                      onClick={() =>
+                        handlePageChange(
+                          statusFilter,
+                          -1,
+                          true,
+                          totalPages
+                        )
+                      }
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      className={`px-3 py-1 rounded border ${
+                        currentPage === totalPages
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-gray-600 border-gray-300 hover:border-blue-500"
+                      }`}
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        handlePageChange(
+                          statusFilter,
+                          1,
+                          true,
+                          totalPages
+                        )
+                      }
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </div>
       )}
 
       {/* History View */}
       {selectedFilter === "history" && (
         <div className="space-y-6">
-          {Object.values(historyByStatus).every((list) => list.length === 0) ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No historical appointments match this search.</p>
-            </div>
-          ) : (
-            displayHistoryStatuses.map((status) => {
-              const list = historyByStatus[status] || [];
-              if (list.length === 0) return null;
-              if (!shouldShowStatus(status)) return null;
-              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
-              const currentPage = getCurrentPage(status, false, totalPages);
-              const pagedList = list.slice(
-                (currentPage - 1) * ITEMS_PER_PAGE,
-                currentPage * ITEMS_PER_PAGE
-              );
+          {(() => {
+            const filteredAppointments =
+              statusFilter === "all"
+                ? historyAppointments
+                : historyByStatus[statusFilter] || [];
+            if (filteredAppointments.length === 0) {
               return (
-                <section key={status}>
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {formatStatusLabel(status)} history
-                  </h3>
-                  <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-[#4c4ba2] text-white">
-                          <tr>
-                            <th className="text-left font-semibold px-4 py-2">Tutor</th>
-                            <th className="text-left font-semibold px-4 py-2">Course</th>
-                            <th className="text-left font-semibold px-4 py-2">Topic</th>
-                            <th className="text-left font-semibold px-4 py-2">Time</th>
-                            <th className="text-left font-semibold px-4 py-2">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pagedList.map((appointment) => (
-                            <tr
-                              key={appointment.appointment_id}
-                              className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
-                              onClick={() => openModal(appointment)}
-                            >
-                              <td className="px-4 py-2 font-semibold text-[#323335]">
-                                {appointment.tutor_name}
-                              </td>
-                              <td className="px-4 py-2">{appointment.subject}</td>
-                              <td className="px-4 py-2">{appointment.topic}</td>
-                              <td className="px-4 py-2">
-                                {formatDate(appointment.date)}{" "}
-                                {formatTime(appointment.start_time)} -{" "}
-                                {formatTime(appointment.end_time)}
-                              </td>
-                              <td className="px-4 py-2">
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                                    appointment.status
-                                  )}`}
-                                >
-                                  {formatStatusLabel(appointment.status)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
-                      <button
-                        className={`px-3 py-1 rounded border ${currentPage === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(status, -1, false, totalPages)}
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <button
-                        className={`px-3 py-1 rounded border ${currentPage === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-gray-600 border-gray-300 hover:border-blue-500"}`}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(status, 1, false, totalPages)}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </section>
+                <div className="text-center text-gray-500 py-8">
+                  <p>No historical appointments match this search.</p>
+                </div>
               );
-            })
-          )}
+            }
+
+            const totalPages = Math.max(
+              1,
+              Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+            );
+            const currentPage = getCurrentPage(
+              statusFilter,
+              false,
+              totalPages
+            );
+            const pagedList = filteredAppointments.slice(
+              (currentPage - 1) * ITEMS_PER_PAGE,
+              currentPage * ITEMS_PER_PAGE
+            );
+
+            return (
+              <section>
+                <h3 className="text-lg font-semibold text-gray-700">
+                  {statusFilter === "all"
+                    ? "All history"
+                    : `${formatStatusLabel(statusFilter)} history`}
+                </h3>
+                <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#4c4ba2] text-white">
+                        <tr>
+                          <th className="text-left font-semibold px-4 py-2">Tutor</th>
+                          <th className="text-left font-semibold px-4 py-2">Course</th>
+                          <th className="text-left font-semibold px-4 py-2">Topic</th>
+                          <th className="text-left font-semibold px-4 py-2">Time</th>
+                          <th className="text-left font-semibold px-4 py-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagedList.map((appointment) => (
+                          <tr
+                            key={appointment.appointment_id}
+                            className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                            onClick={() => openModal(appointment)}
+                          >
+                            <td className="px-4 py-2 font-semibold text-[#323335]">
+                              {appointment.tutor_name}
+                            </td>
+                            <td className="px-4 py-2">{appointment.subject}</td>
+                            <td className="px-4 py-2">{appointment.topic}</td>
+                            <td className="px-4 py-2">
+                              {formatDate(appointment.date)}{" "}
+                              {formatTime(appointment.start_time)} -{" "}
+                              {formatTime(appointment.end_time)}
+                            </td>
+                            <td className="px-4 py-2">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                                  appointment.status
+                                )}`}
+                              >
+                                {formatStatusLabel(appointment.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+                    <button
+                      className={`px-3 py-1 rounded border ${
+                        currentPage === 1
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-gray-600 border-gray-300 hover:border-blue-500"
+                      }`}
+                      disabled={currentPage === 1}
+                      onClick={() =>
+                        handlePageChange(
+                          statusFilter,
+                          -1,
+                          false,
+                          totalPages
+                        )
+                      }
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      className={`px-3 py-1 rounded border ${
+                        currentPage === totalPages
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-gray-600 border-gray-300 hover:border-blue-500"
+                      }`}
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        handlePageChange(
+                          statusFilter,
+                          1,
+                          false,
+                          totalPages
+                        )
+                      }
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </div>
       )}
 
