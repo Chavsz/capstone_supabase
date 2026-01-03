@@ -49,7 +49,6 @@ function RoleBasedDashboard({ setAuth, currentRole, loading }) {
 }
 
 function App() {
-  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
   const [session, setSession] = useState(null);
@@ -63,10 +62,6 @@ function App() {
   const setAuth = (boolean) => {
     setIsAuthenticated(boolean);
   };
-
-  useEffect(() => {
-    console.info("[App] route", location.pathname);
-  }, [location.pathname]);
 
   const getStoredRoleOverride = () => {
     try {

@@ -758,13 +758,6 @@ const Appointment = () => {
   }, []);
 
   useEffect(() => {
-    console.info("[Appointment] mounted");
-    return () => {
-      console.info("[Appointment] unmounted");
-    };
-  }, []);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(min-width: 768px)");
     const handleChange = () => setIsDesktop(mediaQuery.matches);
@@ -911,10 +904,6 @@ const Appointment = () => {
   useEffect(() => {
     setShowTutorDrawer(false);
     setDrawerDismissedKey("");
-  }, [location.pathname]);
-
-  useEffect(() => {
-    console.info("[Appointment] route", location.pathname);
   }, [location.pathname]);
 
   const renderTutorDetails = (options = {}) => {

@@ -23,10 +23,6 @@ function TuteePage({ setAuth }) {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    console.info("[TuteePage] route", location.pathname);
-  }, [location.pathname]);
-
   return (
     <div className="bg-[#f8f9f0] min-h-screen">
       {/* Mobile Menu Button */}
