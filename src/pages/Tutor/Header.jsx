@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 //icons
@@ -7,6 +7,7 @@ import { IoIosNotifications } from "react-icons/io";
 import { IoPersonCircleOutline } from "react-icons/io5";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
@@ -121,6 +122,12 @@ const Header = () => {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    await markAsRead(notification.notification_id);
+    setIsDropdownOpen(false);
+    navigate("/dashboard/schedule", { state: { notification } });
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -208,7 +215,7 @@ const Header = () => {
                     <div 
                       key={notification.notification_id}
                       className="bg-yellow-50 border border-yellow-200 rounded-md p-3 cursor-pointer hover:bg-yellow-100 transition-colors"
-                      onClick={() => markAsRead(notification.notification_id)}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <p className="text-yellow-800 text-sm">
                         {notification.notification_content}

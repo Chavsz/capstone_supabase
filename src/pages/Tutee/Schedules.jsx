@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 
@@ -29,6 +30,37 @@ const formatStatusLabel = (status = "") =>
 
 const statusBadge = (status = "") =>
   STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
+
+const parseNotificationDetails = (content = "") => {
+  if (!content) return null;
+  const subjectMatch = content.match(/for (.+?)(?: on | has|$)/i);
+  const dateMatch = content.match(/on ([A-Za-z]+ \d{1,2}, \d{4})/);
+  const timeMatch = content.match(/at (\d{1,2}:\d{2} [AP]M)/);
+
+  const subjectPart = subjectMatch ? subjectMatch[1].trim() : "";
+  const [subject, topic] = subjectPart.split(" - ").map((part) => part.trim());
+  const dateText = dateMatch ? dateMatch[1] : "";
+  const timeText = timeMatch ? timeMatch[1] : "";
+
+  return {
+    subject: subject || "",
+    topic: topic || "",
+    dateText,
+    timeText,
+  };
+};
+
+const to24Hour = (timeText = "") => {
+  const match = timeText.match(/^(\d{1,2}):(\d{2}) ([AP]M)$/);
+  if (!match) return "";
+  let hours = Number(match[1]);
+  const minutes = match[2];
+  const period = match[3];
+  if (Number.isNaN(hours)) return "";
+  if (period === "PM" && hours < 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  return `${String(hours).padStart(2, "0")}:${minutes}`;
+};
 
 // Evaluation Modal component
 const EvaluationModal = ({
@@ -937,6 +969,8 @@ const AppointmentModal = ({
 };
 
 const Schedules = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -949,6 +983,7 @@ const Schedules = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [notificationCount, setNotificationCount] = useState(0);
   const [pages, setPages] = useState({});
+  const [handledNotificationId, setHandledNotificationId] = useState(null);
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1305,6 +1340,44 @@ const Schedules = () => {
     setIsModalOpen(false);
     setSelectedAppointment(null);
   };
+
+  useEffect(() => {
+    const notification = location.state?.notification;
+    if (!notification || !appointments.length) return;
+    if (handledNotificationId === notification.notification_id) return;
+
+    const details = parseNotificationDetails(
+      notification.notification_content || ""
+    );
+    if (!details) return;
+    if (!details.dateText || !details.timeText) {
+      setHandledNotificationId(notification.notification_id);
+      navigate("/dashboard/schedules", { replace: true, state: {} });
+      return;
+    }
+
+    const targetDate = details.dateText ? new Date(details.dateText) : null;
+    const targetDateStr =
+      targetDate && !Number.isNaN(targetDate.getTime())
+        ? targetDate.toISOString().split("T")[0]
+        : "";
+    const targetTime = to24Hour(details.timeText);
+
+    const match = appointments.find((appointment) => {
+      if (details.subject && appointment.subject !== details.subject) return false;
+      if (details.topic && appointment.topic !== details.topic) return false;
+      if (targetDateStr && appointment.date !== targetDateStr) return false;
+      if (targetTime && appointment.start_time?.slice(0, 5) !== targetTime) return false;
+      return true;
+    });
+
+    if (match) {
+      openModal(match);
+    }
+
+    setHandledNotificationId(notification.notification_id);
+    navigate("/dashboard/schedules", { replace: true, state: {} });
+  }, [appointments, handledNotificationId, location.state, navigate]);
 
   const openEvaluationModal = (appointment) => {
     setSelectedEvaluationAppointment(appointment);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 //icons
@@ -7,6 +7,7 @@ import { IoIosNotifications } from "react-icons/io";
 import { IoPersonCircleOutline } from "react-icons/io5";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -195,6 +196,12 @@ const Header = () => {
     } catch (err) {
       console.error("Error marking notification as read:", err.message);
     }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    await markAsRead(notification.notification_id);
+    setIsDropdownOpen(false);
+    navigate("/dashboard/schedules", { state: { notification } });
   };
 
   // Auto-decline appointments that are pending for more than 14 hours
@@ -502,7 +509,7 @@ const Header = () => {
                     <div
                       key={notification.notification_id}
                       className="bg-[#def0e4] border border-[#c9e1d3] rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
-                      onClick={() => markAsRead(notification.notification_id)}
+                      onClick={() => handleNotificationClick(notification)}
                     >
                       <p className="text-[#323335] text-sm font-semibold">
                         {notification.notification_content}
