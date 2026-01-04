@@ -136,6 +136,9 @@ const Header = () => {
     navigate("/dashboard/schedule", { state: { notification } });
   };
 
+  const formatNotificationContent = (content = "") =>
+    content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -226,7 +229,7 @@ const Header = () => {
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <p className="text-yellow-800 text-sm">
-                        {notification.notification_content}
+                        {formatNotificationContent(notification.notification_content)}
                       </p>
                       <p className="text-yellow-600 text-xs mt-1">
                         {new Date(notification.created_at).toLocaleString()}

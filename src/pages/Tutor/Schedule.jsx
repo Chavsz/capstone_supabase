@@ -19,6 +19,7 @@ const ITEMS_PER_PAGE = 6;
 
 const parseNotificationDetails = (content = "") => {
   if (!content) return null;
+  const idMatch = content.match(/\[appointment_id:([^\]]+)\]/i);
   const subjectMatch = content.match(/for (.+?)(?: on | has|$)/i);
   const dateMatch = content.match(/on ([A-Za-z]+ \d{1,2}, \d{4})/);
   const timeMatch = content.match(/at (\d{1,2}:\d{2} [AP]M)/);
@@ -27,8 +28,10 @@ const parseNotificationDetails = (content = "") => {
   const [subject, topic] = subjectPart.split(" - ").map((part) => part.trim());
   const dateText = dateMatch ? dateMatch[1] : "";
   const timeText = timeMatch ? timeMatch[1] : "";
+  const appointmentId = idMatch ? idMatch[1].trim() : "";
 
   return {
+    appointmentId,
     subject: subject || "",
     topic: topic || "",
     dateText,
@@ -553,14 +556,14 @@ const Schedule = () => {
             minute: "2-digit",
             hour12: true,
           });
-          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed.`;
+          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed. [appointment_id:${appointmentData.appointment_id}]`;
         } else if (status === "declined") {
-          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined.`;
+          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined. [appointment_id:${appointmentData.appointment_id}]`;
           if (metadata.reason) {
             notificationMessage += ` Reason: ${metadata.reason}`;
           }
         } else if (status === "cancelled") {
-          notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled.`;
+          notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled. [appointment_id:${appointmentData.appointment_id}]`;
         }
 
         // Create notification for the tutee
@@ -702,7 +705,11 @@ const Schedule = () => {
     };
 
     let match = null;
-    if (details.dateText && details.timeText) {
+    if (details.appointmentId) {
+      match = appointments.find(
+        (appointment) => appointment.appointment_id === details.appointmentId
+      );
+    } else if (details.dateText && details.timeText) {
       const targetDate = new Date(details.dateText);
       const targetDateStr =
         !Number.isNaN(targetDate.getTime())

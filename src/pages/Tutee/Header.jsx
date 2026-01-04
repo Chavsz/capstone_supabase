@@ -212,6 +212,9 @@ const Header = () => {
     navigate("/dashboard/schedules", { state: { notification } });
   };
 
+  const formatNotificationContent = (content = "") =>
+    content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
+
   // Auto-decline appointments that are pending for more than 14 hours
   const checkAndAutoDeclineAppointments = async () => {
     // Prevent concurrent execution
@@ -282,7 +285,7 @@ const Header = () => {
           }
 
           // Check if notification already exists for this auto-decline
-          const notificationMessage = `Your appointment request for ${appointment.subject}${appointment.topic ? ` - ${appointment.topic}` : ""} has been automatically declined as it was not confirmed within 14 hours.`;
+          const notificationMessage = `Your appointment request for ${appointment.subject}${appointment.topic ? ` - ${appointment.topic}` : ""} has been automatically declined as it was not confirmed within 14 hours. [appointment_id:${appointment.appointment_id}]`;
           
           const { data: existingNotifications } = await supabase
             .from("notification")
@@ -520,7 +523,7 @@ const Header = () => {
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <p className="text-[#323335] text-sm font-semibold">
-                        {notification.notification_content}
+                        {formatNotificationContent(notification.notification_content)}
                       </p>
                       <p className="text-[#4c4ba2] text-xs mt-1">
                         {new Date(notification.created_at).toLocaleString()}
