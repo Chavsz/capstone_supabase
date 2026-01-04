@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
@@ -11,6 +11,11 @@ const RouteSelect = ({ onClose }) => {
   const [isStudent, setIsStudent] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const pathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    pathRef.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -116,10 +121,10 @@ const Route = ({ to, Icon, title, isActive, onClose, onNavigate, currentPath }) 
         if (currentPath === to) return;
         onNavigate(to);
         setTimeout(() => {
-          if (window.location.pathname === to && currentPath !== to) {
+          if (pathRef.current !== to) {
             window.location.assign(to);
           }
-        }, 0);
+        }, 150);
       }}
     >
       <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
