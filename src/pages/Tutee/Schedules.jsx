@@ -1034,6 +1034,7 @@ const Schedules = () => {
         return {
           ...appointment,
           tutor_name: appointment.tutor?.name || null,
+          status: (appointment.status || "").toLowerCase(),
           hasEvaluation: evaluatedAppointmentIds.has(appointment.appointment_id),
           online_link: appointment.online_link || profileLinks.online_link || null,
           file_link: appointment.file_link || profileLinks.file_link || null,
@@ -1479,64 +1480,9 @@ const Schedules = () => {
                   </span>
                 </div>
               </div>
-              <div className="mt-3 sm:hidden space-y-3">
-                {sortedAppointments.length === 0 ? (
-                  <div className="rounded-xl border border-[#d7d9df] bg-white px-4 py-10 text-center text-sm text-gray-500">
-                    {statusFilter === "all"
-                      ? "No appointments available."
-                      : `No ${formatStatusLabel(statusFilter).toLowerCase()} appointments.`}
-                  </div>
-                ) : (
-                  pagedList.map((appointment) => (
-                    <div
-                      key={appointment.appointment_id}
-                      className="rounded-xl border border-[#e2e5ee] bg-white p-4 shadow-sm"
-                      onClick={() => openModal(appointment)}
-                      role="button"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-[#323335]">
-                            {appointment.tutor_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {appointment.subject}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {appointment.topic}
-                          </p>
-                        </div>
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(
-                            appointment.status
-                          )}`}
-                        >
-                          {formatStatusLabel(appointment.status)}
-                        </span>
-                      </div>
-                      <div className="mt-3 text-xs text-gray-600">
-                        {formatDate(appointment.date)} -{" "}
-                        {formatTime(appointment.start_time)} -{" "}
-                        {formatTime(appointment.end_time)}
-                      </div>
-                      {appointment.status === "awaiting_feedback" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEvaluationModal(appointment);
-                          }}
-                          className="mt-3 bg-[#935226] text-white text-xs px-3 py-1.5 rounded-full hover:bg-[#f9d31a] hover:text-[#181718] transition-colors"
-                        >
-                          Evaluate
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden hidden sm:block">
+              <div className="mt-3 bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[720px]">
                     <thead className="bg-[#4c4ba2] text-white">
                       <tr>
                         <th className="text-left font-semibold px-4 py-2">Tutor</th>
