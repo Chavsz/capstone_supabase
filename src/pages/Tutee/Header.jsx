@@ -201,6 +201,14 @@ const Header = () => {
   const handleNotificationClick = async (notification) => {
     await markAsRead(notification.notification_id);
     setIsDropdownOpen(false);
+    try {
+      sessionStorage.setItem(
+        "lav.pendingNotification.tutee",
+        JSON.stringify(notification)
+      );
+    } catch (err) {
+      // Ignore storage errors (private mode, full storage).
+    }
     navigate("/dashboard/schedules", { state: { notification } });
   };
 
