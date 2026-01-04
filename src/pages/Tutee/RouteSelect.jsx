@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
@@ -10,6 +10,7 @@ const RouteSelect = ({ onClose }) => {
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -63,6 +64,8 @@ const RouteSelect = ({ onClose }) => {
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
         isActive={location.pathname === "/dashboard"}
+        onNavigate={navigate}
+        currentPath={location.pathname}
         onClose={onClose}
       />
       <Route
@@ -70,6 +73,8 @@ const RouteSelect = ({ onClose }) => {
         Icon={mdIcons.MdCalendarMonth}
         title="Appointment"
         isActive={location.pathname === "/dashboard/appointment"}
+        onNavigate={navigate}
+        currentPath={location.pathname}
         onClose={onClose}
       />
       <Route
@@ -77,6 +82,8 @@ const RouteSelect = ({ onClose }) => {
         Icon={RiCalendarScheduleLine}
         title="Schedules"
         isActive={location.pathname === "/dashboard/schedules"}
+        onNavigate={navigate}
+        currentPath={location.pathname}
         onClose={onClose}
       />
       {!isStudent && canSwitchToTutor && (
@@ -85,6 +92,8 @@ const RouteSelect = ({ onClose }) => {
           Icon={piIcons.PiUserSwitchBold}
           title="Switch"
           isActive={location.pathname === "/dashboard/switch"}
+          onNavigate={navigate}
+          currentPath={location.pathname}
           onClose={onClose}
         />
       )}
@@ -92,7 +101,7 @@ const RouteSelect = ({ onClose }) => {
   );
 };
 
-const Route = ({ to, Icon, title, isActive, onClose }) => {
+const Route = ({ to, Icon, title, isActive, onClose, onNavigate, currentPath }) => {
   return (
     <NavLink
       to={to}
@@ -101,8 +110,16 @@ const Route = ({ to, Icon, title, isActive, onClose }) => {
           ? "bg-white/20 text-white shadow"
           : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
       }`}
-      onClick={() => {
+      onClick={(event) => {
+        event.preventDefault();
         if (onClose) onClose();
+        if (currentPath === to) return;
+        onNavigate(to);
+        setTimeout(() => {
+          if (window.location.pathname === to && currentPath !== to) {
+            window.location.assign(to);
+          }
+        }, 0);
       }}
     >
       <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
