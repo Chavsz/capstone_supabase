@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabase-client";
 
 // Landing Pages
@@ -94,41 +94,6 @@ function RoleProfile({ currentRole, loading }) {
 }
 
 function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const syncWithWindow = () => {
-      const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      const routerPath = `${location.pathname}${location.search}${location.hash}`;
-      if (nextPath !== routerPath) {
-        navigate(nextPath, { replace: true });
-      }
-    };
-
-    const rawPushState = window.history.pushState;
-    const rawReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (...args) {
-      rawPushState.apply(this, args);
-      window.dispatchEvent(new Event("lav:locationchange"));
-    };
-    window.history.replaceState = function (...args) {
-      rawReplaceState.apply(this, args);
-      window.dispatchEvent(new Event("lav:locationchange"));
-    };
-
-    window.addEventListener("popstate", syncWithWindow);
-    window.addEventListener("lav:locationchange", syncWithWindow);
-
-    return () => {
-      window.history.pushState = rawPushState;
-      window.history.replaceState = rawReplaceState;
-      window.removeEventListener("popstate", syncWithWindow);
-      window.removeEventListener("lav:locationchange", syncWithWindow);
-    };
-  }, [location.pathname, location.search, location.hash, navigate]);
-
   return (
     <Routes>
       <Route exact path="/" element={<LandingPage />} />
