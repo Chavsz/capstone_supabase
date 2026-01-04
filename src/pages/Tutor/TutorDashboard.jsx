@@ -239,13 +239,13 @@ const TutorDashboard = () => {
 
       <div className="mt-6 grid lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 gap-7">
         <div className="lg:row-span-2">
-          {/* Area Chart for Appointments */}
+          {/* Sessions Chart */}
           <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
             <div className="flex justify-between items-center mb-2">
               <div className="flex gap-4 items-center">
               <p className="text-blue-600 text-2xl"><LuChartLine /></p>
               <p className="text-gray-600 font-semibold">
-                Appointments Overview
+                Sessions
               </p>
               </div>
               <select
@@ -255,11 +255,11 @@ const TutorDashboard = () => {
               >
                 <option value="7d">Last 7 Days</option>
                 <option value="30d">Last 30 Days</option>
-                <option value="3m">Last 3 Months</option>
+                <option value="3m">This Sem</option>
               </select>
             </div>
             <ResponsiveContainer width="100%" height={400}>
-              <AreaChart
+              <LineChart
                 data={areaChartData}
                 margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
               >
@@ -267,29 +267,36 @@ const TutorDashboard = () => {
                 <XAxis dataKey="date" tickFormatter={formatShortDate} />
                 <YAxis allowDecimals={false} />
                 <Tooltip labelFormatter={formatShortDate} />
-                <Legend />
-                <Area
+                <Legend
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                />
+                <Line
                   type="monotone"
                   dataKey="booked"
-                  stroke="#27aeef"
-                  fill="#27aeef33"
+                  stroke="#4766fe"
+                  strokeWidth={3}
+                  dot={false}
                   name="Booked"
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="completed"
-                  stroke="#bdcf32"
-                  fill="#bdcf3233"
+                  stroke="#00a65a"
+                  strokeWidth={3}
+                  dot={false}
                   name="Completed"
                 />
-                <Area
+                <Line
                   type="monotone"
                   dataKey="cancelled"
-                  stroke="#ea5545"
-                  fill="#ea554533"
+                  stroke="#ff4b4b"
+                  strokeWidth={3}
+                  dot={false}
                   name="Cancelled"
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
