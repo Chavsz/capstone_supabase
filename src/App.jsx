@@ -275,6 +275,13 @@ function App() {
   const [currentRole, setCurrentRole] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [roleOverride, setRoleOverride] = useState(() => {
+    try {
+      return localStorage.getItem("lav.roleOverride") || null;
+    } catch (err) {
+      return null;
+    }
+  });
   
   // Track if we're currently fetching to prevent duplicates
   const isFetching = useRef(false);
@@ -301,10 +308,13 @@ function App() {
       } else {
         localStorage.removeItem(ROLE_OVERRIDE_KEY);
       }
+      setRoleOverride(role || null);
     } catch (err) {
       // Ignore storage errors (e.g. privacy mode)
     }
   };
+
+  const effectiveRole = roleOverride || currentRole;
 
   // Single function to fetch role
   const fetchUserRole = async (userId) => {
@@ -454,6 +464,7 @@ function App() {
         isFetching.current = false;
         hasRole.current = false; // Reset role flag on logout
         setStoredRoleOverride(null);
+        setRoleOverride(null);
         return;
       }
 
@@ -490,6 +501,7 @@ function App() {
         hasRole.current = true; // Mark that we have a role
         setLoading(false);
         setStoredRoleOverride(newRole);
+        setRoleOverride(newRole);
       }
     };
 
@@ -500,12 +512,25 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === ROLE_OVERRIDE_KEY) {
+        setRoleOverride(event.newValue || null);
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
   return (
     <div>
       <AppRoutes
         isAuthenticated={isAuthenticated}
         setAuth={setAuth}
-        currentRole={getStoredRoleOverride() || currentRole}
+        currentRole={effectiveRole}
         loading={loading}
       />
     </div>
