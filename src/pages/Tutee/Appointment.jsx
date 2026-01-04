@@ -1268,7 +1268,7 @@ const Appointment = () => {
 
               {/* Topic */}
               <div>
-                <h3 className="font-semibold text-lg mb-3">Specialsfseization</h3>
+                <h3 className="font-semibold text-lg mb-3">Specialization</h3>
                 <input
                   type="text"
                   name="topic"
@@ -1434,9 +1434,11 @@ const Appointment = () => {
           </form>
         </div>
         {/* Right Panel - Tutor Details */}
-        <div className="hidden md:block">
-          {renderTutorDetails()}
-        </div>
+        {isDesktop && (
+          <div>
+            {renderTutorDetails()}
+          </div>
+        )}
 
         {/* Mobile Tutor Details Drawer */}
         <div className="md:hidden">
