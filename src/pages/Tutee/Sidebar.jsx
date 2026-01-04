@@ -59,17 +59,17 @@ const Sidebar = ({ setAuth, onClose }) => {
   return (
     <div className="flex flex-col p-4 text-white sticky top-0 bg-gradient-to-b from-[#4c4ba2] to-[#2f3283] h-screen w-[240px] shadow-xl">
       {/* Mobile Close Button */}
-      <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
+      <div className="flex justify-center items-center mb-4 md:hidden flex-shrink-0 relative">
         <button
           onClick={handleLogoClick}
-          className="flex items-center gap-2 text-left"
+          className="flex items-center justify-center"
           aria-label="Go to dashboard"
         >
           {logoUrl ? (
             <img
               src={logoUrl}
               alt="LAV logo"
-              className="h-12 w-auto object-contain"
+              className="h-16 w-auto object-contain"
             />
           ) : (
             <span className="text-xl font-bold">LAV</span>
@@ -77,7 +77,7 @@ const Sidebar = ({ setAuth, onClose }) => {
         </button>
         <button
           onClick={onClose}
-          className="p-2 text-white hover:bg-white/20 rounded"
+          className="absolute right-0 p-2 text-white hover:bg-white/20 rounded"
           aria-label="Close menu"
         >
           <fiIcons.FiX className="w-5 h-5" />

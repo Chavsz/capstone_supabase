@@ -57,7 +57,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   }, []);
 
   return (
-    <div className="flex flex-col p-4 text-white sticky top-0 bg-white h-screen w-[240px]">
+    <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#feda3c] h-screen w-[240px] shadow-xl">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
         <button
@@ -72,12 +72,12 @@ const Sidebar = ({ setAuth, onClose }) => {
               className="h-12 w-auto object-contain"
             />
           ) : (
-            <span className="text-xl font-bold text-blue-600">LAV</span>
+            <span className="text-xl font-bold text-[#181718]">LAV</span>
           )}
         </button>
         <button
           onClick={onClose}
-          className="p-2 text-gray-600 hover:bg-gray-200 rounded"
+          className="p-2 text-[#181718] hover:bg-black/10 rounded"
           aria-label="Close menu"
         >
           <fiIcons.FiX className="w-5 h-5" />
@@ -98,7 +98,7 @@ const Sidebar = ({ setAuth, onClose }) => {
               className="h-16 w-auto object-contain"
             />
           ) : (
-            <span className="text-xl md:text-2xl font-bold text-blue-600">LAV</span>
+            <span className="text-xl md:text-2xl font-bold text-[#181718]">LAV</span>
           )}
         </button>
       </div>
@@ -111,7 +111,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-4">
         <button
-          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-gray-200 text-[#696969] shadow-none"
+          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-black/10 text-[#181718] shadow-none"
           onClick={(e) => logout(e)}
         >
           <fiIcons.FiLogOut /> <p className="text-md font-semibold hidden md:block">Log out</p>

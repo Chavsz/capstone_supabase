@@ -8,7 +8,7 @@ import * as piIcons from "react-icons/pi";
 const RouteSelect = ({ onClose }) => {
   return (
     <div className="space-y-1">
-      <p className="text-[13px] font-extralight text-[#696969] hidden md:block">MENU</p>
+      <p className="text-[13px] font-semibold text-[#181718]/70 hidden md:block">MENU</p>
 
       <Route
         to="/dashboard"
@@ -39,8 +39,8 @@ const Route = ({ to, Icon, title, onClose }) => {
       className={({ isActive }) =>
         `flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
           isActive
-            ? "bg-gray-200 text-gray-600 shadow"
-            : "hover:bg-gray-200 text-[#696969] shadow-none"
+            ? "bg-black/10 text-[#181718] shadow"
+            : "hover:bg-black/10 text-[#181718]/80 shadow-none"
         }`
       }
       onClick={() => {
@@ -49,7 +49,7 @@ const Route = ({ to, Icon, title, onClose }) => {
     >
       {({ isActive }) => (
         <>
-          <Icon className={isActive ? "text-blue-600" : ""} />
+          <Icon className={isActive ? "text-[#181718]" : "text-[#181718]/70"} />
           <p className="text-md font-semibold hidden md:block">{title}</p>
         </>
       )}
