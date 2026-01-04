@@ -1233,7 +1233,7 @@ const Appointment = () => {
               {/* Choose Subject */}
               <div>
                 <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
-                <div className="sm:hidden">
+                <div className="md:hidden">
                   <select
                     value={selectedSubject}
                     onChange={(e) => handleSubjectSelect(e.target.value)}
@@ -1247,7 +1247,7 @@ const Appointment = () => {
                     ))}
                   </select>
                 </div>
-                <div className="hidden sm:flex gap-3 flex-wrap">
+                <div className="hidden md:flex gap-3 flex-wrap">
                   {subjects.map((subject) => (
                     <button
                       key={subject.name}
