@@ -505,7 +505,7 @@ function App() {
       <AppRoutes
         isAuthenticated={isAuthenticated}
         setAuth={setAuth}
-        currentRole={currentRole}
+        currentRole={getStoredRoleOverride() || currentRole}
         loading={loading}
       />
     </div>
