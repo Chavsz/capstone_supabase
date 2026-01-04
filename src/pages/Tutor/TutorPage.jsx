@@ -1,15 +1,11 @@
 import React, { useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 // components
 import Sidebar from "./Sidebar";
 
 // Tutor Pages
-import TutorDashboard from "./TutorDashboard";
-import Profile from "./Profile";
-import Schedules from "./Schedule";
 import Header from "./Header";
-import Switch from "./Switch";
 
 import * as fiIcons from "react-icons/fi";
 
@@ -51,12 +47,7 @@ function TutorPage({ setAuth }) {
         <div className="w-full flex flex-col">
           {!isProfilePage && <Header />}
           <div className="flex-1">
-            <Routes>
-              <Route path="/" element={<TutorDashboard setAuth={setAuth} />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="schedule" element={<Schedules />} />
-              <Route path="switch" element={<Switch />} />
-            </Routes>
+            <Outlet />
           </div>
         </div>
       </div>

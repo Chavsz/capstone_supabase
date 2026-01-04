@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { supabase } from "./supabase-client";
 
 // Landing Pages
@@ -14,12 +8,34 @@ import Login from "./landing pages/Login";
 import Register from "./landing pages/Register";
 
 // Dashboards
-import TuteePage from "./pages/Tutee/TuteePage"; //role = student
-import TutorPage from "./pages/Tutor/TutorPage"; //role = tutor
-import AdminPage from "./pages/AdminnStaff/AdminPage"; //role = admin
+import TuteePage from "./pages/Tutee/TuteePage"; // role = student
+import TutorPage from "./pages/Tutor/TutorPage"; // role = tutor
+import AdminPage from "./pages/AdminnStaff/AdminPage"; // role = admin
+
+// Tutee Pages
+import TuteeDashboard from "./pages/Tutee/TuteeDashboard";
+import TuteeProfile from "./pages/Tutee/Profile";
+import TuteeSchedules from "./pages/Tutee/Schedules";
+import TuteeAppointment from "./pages/Tutee/Appointment";
+import TuteeSwitch from "./pages/Tutee/Switch";
+
+// Tutor Pages
+import TutorDashboard from "./pages/Tutor/TutorDashboard";
+import TutorProfile from "./pages/Tutor/Profile";
+import TutorSchedule from "./pages/Tutor/Schedule";
+import TutorSwitch from "./pages/Tutor/Switch";
+
+// Admin Pages
+import AdminDashboard from "./pages/AdminnStaff/Dashboard";
+import AdminLanding from "./pages/AdminnStaff/Landing";
+import AdminLavroom from "./pages/AdminnStaff/Lavroom";
+import AdminReports from "./pages/AdminnStaff/Reports";
+import AdminEvent from "./pages/AdminnStaff/Event";
+import AdminAnnouncments from "./pages/AdminnStaff/Announcments";
+import AdminUsers from "./pages/AdminnStaff/Users";
 
 // Role-based dashboard component
-function RoleBasedDashboard({ setAuth, currentRole, loading }) {
+function RoleBasedLayout({ setAuth, currentRole, loading }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -46,6 +62,214 @@ function RoleBasedDashboard({ setAuth, currentRole, loading }) {
         </div>
       );
   }
+}
+
+function RoleRoute({ allowedRoles, currentRole, loading, element }) {
+  if (loading) return null;
+  if (!allowedRoles.includes(currentRole)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return element;
+}
+
+function RoleIndex({ currentRole, loading, setAuth }) {
+  if (loading) return null;
+  switch (currentRole) {
+    case "student":
+      return <TuteeDashboard setAuth={setAuth} />;
+    case "tutor":
+      return <TutorDashboard setAuth={setAuth} />;
+    case "admin":
+      return <AdminDashboard setAuth={setAuth} />;
+    default:
+      return null;
+  }
+}
+
+function RoleProfile({ currentRole, loading }) {
+  if (loading) return null;
+  if (currentRole === "tutor") return <TutorProfile />;
+  if (currentRole === "student") return <TuteeProfile />;
+  return <Navigate to="/dashboard" replace />;
+}
+
+function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
+  const location = useLocation();
+
+  return (
+    <Routes location={location} key={location.pathname}>
+      <Route exact path="/" element={<LandingPage />} />
+      <Route
+        exact
+        path="/login"
+        element={
+          !isAuthenticated ? (
+            <Login setAuth={setAuth} />
+          ) : (
+            <Navigate to="/dashboard" />
+          )
+        }
+      />
+      <Route
+        exact
+        path="/register"
+        element={
+          !isAuthenticated ? (
+            <Register setAuth={setAuth} />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          isAuthenticated ? (
+            <RoleBasedLayout
+              setAuth={setAuth}
+              currentRole={currentRole}
+              loading={loading}
+            />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      >
+        {/* Tutee routes */}
+        <Route
+          index
+          element={
+            <RoleIndex
+              currentRole={currentRole}
+              loading={loading}
+              setAuth={setAuth}
+            />
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <RoleProfile currentRole={currentRole} loading={loading} />
+          }
+        />
+        <Route
+          path="appointment"
+          element={
+            <RoleRoute
+              allowedRoles={["student"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TuteeAppointment />}
+            />
+          }
+        />
+        <Route
+          path="schedules"
+          element={
+            <RoleRoute
+              allowedRoles={["student"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TuteeSchedules />}
+            />
+          }
+        />
+        <Route
+          path="switch"
+          element={
+            <RoleRoute
+              allowedRoles={["student", "tutor"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={
+                currentRole === "tutor" ? <TutorSwitch /> : <TuteeSwitch />
+              }
+            />
+          }
+        />
+
+        {/* Tutor routes */}
+        <Route
+          path="schedule"
+          element={
+            <RoleRoute
+              allowedRoles={["tutor"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TutorSchedule />}
+            />
+          }
+        />
+        {/* Admin routes */}
+        <Route
+          path="landingadmin"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminLanding />}
+            />
+          }
+        />
+        <Route
+          path="lavroom"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminLavroom />}
+            />
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminReports />}
+            />
+          }
+        />
+        <Route
+          path="event"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminEvent />}
+            />
+          }
+        />
+        <Route
+          path="announcments"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminAnnouncments />}
+            />
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminUsers />}
+            />
+          }
+        />
+      </Route>
+    </Routes>
+  );
 }
 
 function App() {
@@ -280,42 +504,12 @@ function App() {
 
   return (
     <div>
-      <Routes>
-        <Route exact path="/" element={<LandingPage />} />
-        <Route
-          exact
-          path="/login"
-          element={
-            !isAuthenticated ? (
-              <Login setAuth={setAuth} />
-            ) : (
-              <Navigate to="/dashboard" />
-            )
-          }
-        />
-        <Route
-          exact
-          path="/register"
-          element={
-            !isAuthenticated ? (
-              <Register setAuth={setAuth} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-        <Route
-          exact
-          path="/dashboard/*"
-          element={
-            isAuthenticated ? (
-              <RoleBasedDashboard setAuth={setAuth} currentRole={currentRole} loading={loading} />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
+      <AppRoutes
+        isAuthenticated={isAuthenticated}
+        setAuth={setAuth}
+        currentRole={currentRole}
+        loading={loading}
+      />
     </div>
   );
 }

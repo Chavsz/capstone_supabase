@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 // components
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
 // Tutee Pages
-import TuteeDashboard from "./TuteeDashboard";
-import Profile from "./Profile";
-import Schedules from "./Schedules";
-import Appointment from "./Appointment";
-import Switch from "./Switch";
-
 import * as fiIcons from "react-icons/fi";
 
 function TuteePage({ setAuth }) {
@@ -56,14 +50,7 @@ function TuteePage({ setAuth }) {
         <div className="w-full flex flex-col relative z-0">
           {!isProfilePage && <Header />}
           <div className="flex-1">
-            <Routes location={location} key={location.pathname}>
-              <Route index element={<TuteeDashboard setAuth={setAuth} />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="appointment" element={<Appointment />} />
-              <Route path="schedules" element={<Schedules />} />
-              <Route path="switch" element={<Switch />} />
-              <Route path="*" element={<TuteeDashboard setAuth={setAuth} />} />
-            </Routes>
+            <Outlet />
           </div>
         </div>
       </div>
