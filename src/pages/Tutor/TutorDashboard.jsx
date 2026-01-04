@@ -283,9 +283,9 @@ const TutorDashboard = () => {
                 <YAxis allowDecimals={false} tickLine={false} />
                 <Tooltip labelFormatter={formatShortDate} />
                 <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ paddingTop: "16px" }}
                 />
                 <Line
                   type="monotone"
