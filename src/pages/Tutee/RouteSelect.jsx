@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
@@ -11,11 +11,7 @@ const RouteSelect = ({ onClose }) => {
   const [isStudent, setIsStudent] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const pathRef = useRef(location.pathname);
-
-  useEffect(() => {
-    pathRef.current = location.pathname;
-  }, [location.pathname]);
+  const getRouterPath = () => location.pathname;
 
   useEffect(() => {
     const checkCanSwitch = async () => {
@@ -71,6 +67,7 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard"}
         onNavigate={navigate}
         currentPath={location.pathname}
+        getRouterPath={getRouterPath}
         onClose={onClose}
       />
       <Route
@@ -80,6 +77,7 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/appointment"}
         onNavigate={navigate}
         currentPath={location.pathname}
+        getRouterPath={getRouterPath}
         onClose={onClose}
       />
       <Route
@@ -89,6 +87,7 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onNavigate={navigate}
         currentPath={location.pathname}
+        getRouterPath={getRouterPath}
         onClose={onClose}
       />
       {!isStudent && canSwitchToTutor && (
@@ -99,6 +98,7 @@ const RouteSelect = ({ onClose }) => {
           isActive={location.pathname === "/dashboard/switch"}
           onNavigate={navigate}
           currentPath={location.pathname}
+          getRouterPath={getRouterPath}
           onClose={onClose}
         />
       )}
@@ -106,7 +106,16 @@ const RouteSelect = ({ onClose }) => {
   );
 };
 
-const Route = ({ to, Icon, title, isActive, onClose, onNavigate, currentPath }) => {
+const Route = ({
+  to,
+  Icon,
+  title,
+  isActive,
+  onClose,
+  onNavigate,
+  currentPath,
+  getRouterPath,
+}) => {
   return (
     <NavLink
       to={to}
@@ -121,7 +130,7 @@ const Route = ({ to, Icon, title, isActive, onClose, onNavigate, currentPath }) 
         if (currentPath === to) return;
         onNavigate(to);
         setTimeout(() => {
-          if (pathRef.current !== to) {
+          if (getRouterPath && getRouterPath() !== to) {
             window.location.assign(to);
           }
         }, 150);
