@@ -1233,7 +1233,24 @@ const Appointment = () => {
               {/* Choose Subject */}
               <div>
                 <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
-                <div className="md:hidden">
+                {isDesktop ? (
+                  <div className="flex gap-3 flex-wrap">
+                    {subjects.map((subject) => (
+                      <button
+                        key={subject.name}
+                        type="button"
+                        onClick={() => handleSubjectSelect(subject.name)}
+                        className={`px-4 py-2 rounded-md border transition-colors ${
+                          selectedSubject === subject.name
+                            ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
+                            : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
+                        }`}
+                      >
+                        {subject.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
                   <select
                     value={selectedSubject}
                     onChange={(e) => handleSubjectSelect(e.target.value)}
@@ -1246,28 +1263,12 @@ const Appointment = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div className="hidden md:flex gap-3 flex-wrap">
-                  {subjects.map((subject) => (
-                    <button
-                      key={subject.name}
-                      type="button"
-                      onClick={() => handleSubjectSelect(subject.name)}
-                      className={`px-4 py-2 rounded-md border transition-colors ${
-                        selectedSubject === subject.name
-                          ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
-                          : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
-                      }`}
-                    >
-                      {subject.name}
-                    </button>
-                  ))}
-                </div>
+                )}
               </div>
 
               {/* Topic */}
               <div>
-                <h3 className="font-semibold text-lg mb-3">Specialization</h3>
+                <h3 className="font-semibold text-lg mb-3">Specialsfseization</h3>
                 <input
                   type="text"
                   name="topic"
