@@ -352,15 +352,12 @@ const Schedule = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("confirmed");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [evaluations, setEvaluations] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [appointmentPages, setAppointmentPages] = useState({});
-  const [historyPages, setHistoryPages] = useState({});
-  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
-  const [historyStatusFilter, setHistoryStatusFilter] = useState("all");
 
   const getAppointments = useCallback(async () => {
     try {
@@ -638,102 +635,50 @@ const Schedule = () => {
     );
   }
 
-  const handleFilterChange = (filter) => {
-    setSelectedFilter(filter);
-  };
-
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const matchesSearch = (appointment) => {
     if (!normalizedSearch) return true;
-    const haystack = `${appointment.student_name || ""} ${appointment.subject || ""} ${appointment.mode_of_session || ""}`.toLowerCase();
+    const haystack = `${appointment.student_name || ""} ${appointment.subject || ""} ${appointment.topic || ""}`.toLowerCase();
     return haystack.includes(normalizedSearch);
   };
 
-  const confirmedAppointments = appointments.filter(
-    (appointment) =>
-      ["pending", "confirmed", "started"].includes(appointment.status) &&
-      matchesSearch(appointment)
-  );
-
-  const historyAppointments = appointments.filter(
-    (appointment) =>
-      (FINISHED_STATUSES.includes(appointment.status) ||
-        appointment.status === "declined" ||
-        appointment.status === "cancelled") &&
-      matchesSearch(appointment)
-  );
-
-  const confirmedStatusOrder = ["pending", "confirmed", "started"];
-  const appointmentStatusTabs = [{ status: "all", label: "All" }].concat(
-    confirmedStatusOrder.map((status) => ({ status, label: formatStatusLabel(status) }))
-  );
-  const confirmedByStatus = confirmedStatusOrder.reduce((acc, status) => {
-    acc[status] = confirmedAppointments.filter(
-      (appointment) => appointment.status === status
-    );
-    return acc;
-  }, {});
-
-  const historyStatusOrder = [
+  const statusOrder = [
+    "pending",
+    "confirmed",
+    "started",
     "awaiting_feedback",
     "completed",
     "declined",
     "cancelled",
   ];
-  const historyStatusTabs = [{ status: "all", label: "All" }].concat(
-    historyStatusOrder.map((status) => ({ status, label: formatStatusLabel(status) }))
+
+  const statusTabs = [{ status: "all", label: "All" }].concat(
+    statusOrder.map((status) => ({ status, label: formatStatusLabel(status) }))
   );
-  const historyByStatus = historyStatusOrder.reduce((acc, status) => {
-    acc[status] = historyAppointments.filter(
-      (appointment) => appointment.status === status
-    );
-    return acc;
-  }, {});
 
-  const commentEntries = Object.entries(evaluations || {})
-    .filter(([, evalData]) => evalData?.tutor_comment)
-    .map(([appointmentId, evalData]) => {
-      const appointmentInfo = appointments.find(
-        (apt) => String(apt.appointment_id) === String(appointmentId)
-      );
-      const dateValue = appointmentInfo?.date
-        ? new Date(appointmentInfo.date).getTime()
-        : evalData?.created_at
-        ? new Date(evalData.created_at).getTime()
-        : 0;
+  const filteredAppointments = appointments
+    .filter(matchesSearch)
+    .filter((appointment) =>
+      statusFilter === "all" ? true : appointment.status === statusFilter
+    )
+    .sort((a, b) => {
+      const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
+      const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
+      return bTime - aTime;
+    });
 
-      return {
-        appointment: appointmentInfo,
-        evaluation: evalData,
-        appointmentId,
-        dateValue,
-      };
-    })
-    .sort((a, b) => b.dateValue - a.dateValue);
+  const getStatusCount = (status) => {
+    if (status === "all") return appointments.filter(matchesSearch).length;
+    return appointments.filter(matchesSearch).filter((apt) => apt.status === status).length;
+  };
 
-  const shuffledComments = commentEntries.slice().sort(() => Math.random() - 0.5);
-
-  const displayConfirmedStatuses =
-    appointmentStatusFilter === "all" ? confirmedStatusOrder : [appointmentStatusFilter];
-  const displayHistoryStatuses =
-    historyStatusFilter === "all" ? historyStatusOrder : [historyStatusFilter];
-
-  const getAppointmentCount = (status) =>
-    status === "all"
-      ? confirmedAppointments.length
-      : (confirmedByStatus[status] || []).length;
-  const getHistoryCount = (status) =>
-    status === "all" ? historyAppointments.length : (historyByStatus[status] || []).length;
-
-  const getCurrentPage = (status, isAppointments, totalPages) => {
-    const pages = isAppointments ? appointmentPages : historyPages;
-    const current = pages[status] || 1;
+  const getCurrentPage = (status, totalPages) => {
+    const current = appointmentPages[status] || 1;
     return Math.min(Math.max(current, 1), Math.max(totalPages, 1));
   };
 
-  const handlePageChange = (status, delta, isAppointments, totalPages) => {
-    const setter = isAppointments ? setAppointmentPages : setHistoryPages;
-    setter((prev) => {
+  const handlePageChange = (status, delta, totalPages) => {
+    setAppointmentPages((prev) => {
       const current = Math.max(1, Math.min(prev[status] || 1, totalPages));
       const next = Math.min(Math.max(current + delta, 1), totalPages);
       return { ...prev, [status]: next };
@@ -742,297 +687,149 @@ const Schedule = () => {
 
   return (
     <div className="py-3 px-6">
-      <h1 className="text-gray-600 font-bold text-2xl mb-6">Schedules</h1>
+      <h1 className="text-[#181718] font-bold text-2xl mb-6">Schedules</h1>
 
-      {/* Filter Buttons */}
       <div className="flex flex-col gap-3 mb-6 md:flex-row md:items-center md:justify-between">
-        <div className="flex gap-3">
-          <button
-            className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
-              selectedFilter === "confirmed"
-                ? "border-b-blue-600 text-blue-600"
-                : "border-b-transparent"
-            }`}
-            onClick={() => handleFilterChange("confirmed")}
-          >
-            Appointments
-          </button>
-          <button
-            className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
-              selectedFilter === "history"
-                ? "border-b-blue-600 text-blue-600"
-                : "border-b-transparent"
-            }`}
-            onClick={() => handleFilterChange("history")}
-          >
-            History
-          </button>
-          <button
-            className={`py-2 font-medium transition-all duration-200 text-gray-600 border-b-2 ${
-              selectedFilter === "comments"
-                ? "border-b-blue-600 text-blue-600"
-                : "border-b-transparent"
-            }`}
-            onClick={() => handleFilterChange("comments")}
-          >
-            Comments
-          </button>
+        <div>
+          <h2 className="text-lg font-semibold text-[#181718]">Booked Sessions</h2>
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search student or subject"
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search student or subject"
+            className="border border-[#d9c98a] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#feda3c] focus:border-[#feda3c] bg-white"
+          />
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="appearance-none bg-[#dbe8ff] text-[#2b4ea2] font-semibold px-5 py-2.5 pr-9 rounded-full border border-[#b5c8f5] focus:outline-none text-sm"
+            >
+              {statusTabs.map((tab) => (
+                <option key={tab.status} value={tab.status}>
+                  {tab.label} ({getStatusCount(tab.status)})
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#2b4ea2] text-xs">
+              v
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Appointments View */}
-      {selectedFilter === "confirmed" && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {appointmentStatusTabs.map((tab) => (
-              <button
-                key={tab.status}
-                onClick={() => setAppointmentStatusFilter(tab.status)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
-                  appointmentStatusFilter === tab.status
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "text-gray-600 border-gray-300 hover:border-blue-500"
-                }`}
-              >
-                {tab.label}
-                <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
-                  {getAppointmentCount(tab.status)}
-                </span>
-              </button>
-            ))}
-          </div>
-          {Object.values(confirmedByStatus).every((list) => list.length === 0) ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No appointments found. Students will appear here when they book sessions with you.</p>
-            </div>
-          ) : (
-            displayConfirmedStatuses.map((status) => {
-              const list = confirmedByStatus[status] || [];
-              if (list.length === 0) return null;
-              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
-              const currentPage = getCurrentPage(status, true, totalPages);
-              const pagedList = list.slice(
-                (currentPage - 1) * ITEMS_PER_PAGE,
-                currentPage * ITEMS_PER_PAGE
-              );
-              return (
-                <section key={status}>
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {formatStatusLabel(status)} sessions
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {pagedList.map((appointment) => (
-                      <div
-                        key={appointment.appointment_id}
-                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
-                        onClick={() => openModal(appointment)}
-                      >
-                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
-                          <div className="font-medium text-gray-900">
-                            {appointment.student_name}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {formatTime(appointment.start_time)} - {" "}
-                            {formatTime(appointment.end_time)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {appointment.mode_of_session}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Number of tutees: {appointment.number_of_tutees || 1}
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                              appointment.status
-                            )}`}>
-                            {formatStatusLabel(appointment.status)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
-                      <button
-                        className={`px-3 py-1 rounded border ${
-                          currentPage === 1
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-gray-600 border-gray-300 hover:border-blue-500"
-                        }`}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(status, -1, true, totalPages)}
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <button
-                        className={`px-3 py-1 rounded border ${
-                          currentPage === totalPages
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-gray-600 border-gray-300 hover:border-blue-500"
-                        }`}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(status, 1, true, totalPages)}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </section>
-              );
-            })
-          )}
-        </div>
-      )}
+      <div className="bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
+            <thead className="bg-[#4c4ba2] text-white">
+              <tr>
+                <th className="text-left font-semibold px-4 py-2">Tutee</th>
+                <th className="text-left font-semibold px-4 py-2">Course</th>
+                <th className="text-left font-semibold px-4 py-2">Topic</th>
+                <th className="text-left font-semibold px-4 py-2">Time</th>
+                <th className="text-left font-semibold px-4 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAppointments.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-sm text-gray-500"
+                  >
+                    {statusFilter === "all"
+                      ? "No appointments available."
+                      : `No ${formatStatusLabel(statusFilter).toLowerCase()} appointments.`}
+                  </td>
+                </tr>
+              ) : (
+                (() => {
+                  const totalPages = Math.max(
+                    1,
+                    Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+                  );
+                  const currentPage = getCurrentPage(statusFilter, totalPages);
+                  const pagedList = filteredAppointments.slice(
+                    (currentPage - 1) * ITEMS_PER_PAGE,
+                    currentPage * ITEMS_PER_PAGE
+                  );
 
-      {/* History View */}
-      {selectedFilter === "history" && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {historyStatusTabs.map((tab) => (
-              <button
-                key={tab.status}
-                onClick={() => setHistoryStatusFilter(tab.status)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full border transition ${
-                  historyStatusFilter === tab.status
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "text-gray-600 border-gray-300 hover:border-blue-500"
-                }`}
-              >
-                {tab.label}
-                <span className="text-xs text-gray-500 rounded-full bg-white px-2 py-0.5">
-                  {getHistoryCount(tab.status)}
-                </span>
-              </button>
-            ))}
-          </div>
-          {Object.values(historyByStatus).every((list) => list.length === 0) ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No historical appointments match this search.</p>
-            </div>
-          ) : (
-            displayHistoryStatuses.map((status) => {
-              const list = historyByStatus[status] || [];
-              if (list.length === 0) return null;
-              const totalPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
-              const currentPage = getCurrentPage(status, false, totalPages);
-              const pagedList = list.slice(
-                (currentPage - 1) * ITEMS_PER_PAGE,
-                currentPage * ITEMS_PER_PAGE
-              );
-              return (
-                <section key={status}>
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {formatStatusLabel(status)} history
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    {pagedList.map((appointment) => (
-                      <div
-                        key={appointment.appointment_id}
-                        className="bg-white border border-blue-300 rounded-lg p-4 cursor-pointer hover:shadow-md hover:shadow-blue-100 transition-shadow"
-                        onClick={() => openModal(appointment)}
-                      >
-                        <div className="pl-3 border-l-3 border-blue-300 space-y-2">
-                          <div className="font-medium text-gray-900">
-                            {appointment.student_name}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {formatTime(appointment.start_time)} - {" "}
-                            {formatTime(appointment.end_time)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {appointment.mode_of_session}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Number of tutees: {appointment.number_of_tutees || 1}
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
-                              appointment.status
-                            )}`}>
-                            {formatStatusLabel(appointment.status)}
-                          </span>
-                          {appointment.status === "declined" &&
-                            appointment.tutee_decline_reason && (
-                              <div className="mt-2 text-xs text-red-600 font-medium">
-                                Tutee reason: {appointment.tutee_decline_reason}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
-                      <button
-                        className={`px-3 py-1 rounded border ${
-                          currentPage === 1
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-gray-600 border-gray-300 hover:border-blue-500"
-                        }`}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(status, -1, false, totalPages)}
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <button
-                        className={`px-3 py-1 rounded border ${
-                          currentPage === totalPages
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-gray-600 border-gray-300 hover:border-blue-500"
-                        }`}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(status, 1, false, totalPages)}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </section>
-              );
-            })
-          )}
+                  return pagedList.map((appointment) => (
+                    <tr
+                      key={appointment.appointment_id}
+                      className="border-b border-[#eceff4] hover:bg-[#f8f9f0] cursor-pointer"
+                      onClick={() => openModal(appointment)}
+                    >
+                      <td className="px-4 py-2 font-semibold text-[#323335]">
+                        {appointment.student_name}
+                      </td>
+                      <td className="px-4 py-2">{appointment.subject}</td>
+                      <td className="px-4 py-2">{appointment.topic}</td>
+                      <td className="px-4 py-2">
+                        {formatDate(appointment.date)}{" "}
+                        {formatTime(appointment.start_time)} -{" "}
+                        {formatTime(appointment.end_time)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
+                            appointment.status
+                          )}`}
+                        >
+                          {formatStatusLabel(appointment.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ));
+                })()
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      {/* Comments View */}
-      {selectedFilter === "comments" && (
-        <div className="space-y-4">
-          {shuffledComments.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <p>No anonymous comments yet.</p>
-            </div>
-          ) : (
-            shuffledComments.map(({ appointment, evaluation, appointmentId }) => (
-              <div
-                key={appointmentId}
-                className="bg-white border border-blue-300 rounded-lg p-4 space-y-3"
-              >
-                <h3 className="font-semibold text-gray-800">
-                  Anonymous Comment
-                </h3>
-                <p className="text-sm text-gray-700 whitespace-pre-line bg-blue-50 border border-blue-100 rounded-md p-3">
-                  {evaluation.tutor_comment}
-                </p>
-                <p className="text-xs text-gray-500">
-                  These notes are submitted anonymously. Tutee information stays
-                  hidden for privacy.
-                </p>
-              </div>
-            ))
-          )}
+      {filteredAppointments.length > 0 && (
+        <div className="flex justify-end items-center gap-2 mt-3 text-sm text-gray-600">
+          {(() => {
+            const totalPages = Math.max(
+              1,
+              Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+            );
+            const currentPage = getCurrentPage(statusFilter, totalPages);
+            if (totalPages <= 1) return null;
+
+            return (
+              <>
+                <button
+                  className={`px-3 py-1 rounded border ${
+                    currentPage === 1
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                  }`}
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(statusFilter, -1, totalPages)}
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-gray-500">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  className={`px-3 py-1 rounded border ${
+                    currentPage === totalPages
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                  }`}
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(statusFilter, 1, totalPages)}
+                >
+                  Next
+                </button>
+              </>
+            );
+          })()}
         </div>
       )}
 
