@@ -39,7 +39,9 @@ function AdminPage({ setAuth }) {
 
         {/* Main Content */}
         <div className="w-full">
-          <Outlet />
+          <div key={window.location.pathname}>
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

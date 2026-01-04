@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabase-client";
 
 // Landing Pages
@@ -94,10 +94,8 @@ function RoleProfile({ currentRole, loading }) {
 }
 
 function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
-  const location = useLocation();
-
   return (
-    <Routes location={location} key={location.pathname}>
+    <Routes>
       <Route exact path="/" element={<LandingPage />} />
       <Route
         exact

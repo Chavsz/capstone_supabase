@@ -50,7 +50,9 @@ function TuteePage({ setAuth }) {
         <div className="w-full flex flex-col relative z-0">
           {!isProfilePage && <Header />}
           <div className="flex-1">
-            <Outlet />
+            <div key={location.pathname}>
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>

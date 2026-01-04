@@ -47,7 +47,9 @@ function TutorPage({ setAuth }) {
         <div className="w-full flex flex-col">
           {!isProfilePage && <Header />}
           <div className="flex-1">
-            <Outlet />
+            <div key={location.pathname}>
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
