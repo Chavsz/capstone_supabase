@@ -8,6 +8,8 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 
+const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
+
 const Appointment = () => {
   const location = useLocation();
   const [tutors, setTutors] = useState([]);
@@ -36,8 +38,6 @@ const Appointment = () => {
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
   const [isDesktop, setIsDesktop] = useState(false);
-
-  const blockingStatuses = ["confirmed", "started", "awaiting_feedback"];
 
   const subjects = [
     {
@@ -194,14 +194,14 @@ const Appointment = () => {
         .from("appointment")
         .select("tutor_id, start_time, end_time, status")
         .eq("date", targetDate)
-        .in("status", blockingStatuses);
+        .in("status", BOOKED_STATUSES);
 
       if (error) throw error;
       setAppointmentsForDate(data || []);
     } catch (err) {
       console.error("Unable to load tutor bookings:", err.message);
     }
-  }, [blockingStatuses]);
+  }, []);
 
   const getTutorDetails = async (tutorId) => {
     try {
@@ -642,7 +642,7 @@ const Appointment = () => {
         .select("start_time, end_time, status")
         .eq("tutor_id", selectedTutor.user_id)
         .eq("date", formData.date)
-        .in("status", blockingStatuses);
+        .in("status", BOOKED_STATUSES);
 
       if (tutorError) throw tutorError;
 
@@ -669,7 +669,7 @@ const Appointment = () => {
         .select("start_time, end_time, status")
         .eq("user_id", session.user.id)
         .eq("date", formData.date)
-        .in("status", blockingStatuses);
+        .in("status", BOOKED_STATUSES);
 
       if (userError) throw userError;
 
