@@ -4,13 +4,13 @@ import { toast } from "react-hot-toast";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
 const STATUS_META = {
-  pending: { label: "Pending", badge: "bg-[#e6e7ea] text-[#323335]" },
-  confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
-  started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
-  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
-  completed: { label: "Completed", badge: "bg-[#f9d31a] text-[#181718]" },
-  declined: { label: "Declined", badge: "bg-[#181718] text-white" },
-  cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
+  pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
+  confirmed: { label: "Confirmed", badge: "bg-[#4766fe] text-white" },
+  started: { label: "In Session", badge: "bg-[#76acf5] text-[#0f2d58]" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#935226] text-white" },
+  completed: { label: "Completed", badge: "bg-[#00a65a] text-white" },
+  declined: { label: "Declined", badge: "bg-[#323335] text-white" },
+  cancelled: { label: "Cancelled", badge: "bg-[#ff4b4b] text-white" },
 };
 const statusBadge = (status = "") => STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
 const formatStatusLabel = (status = "") => STATUS_META[status]?.label || status.replace(/_/g, " ");
@@ -723,7 +723,7 @@ const Schedule = () => {
       <div className="bg-white border border-[#d7d9df] rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[720px]">
-            <thead className="bg-[#4c4ba2] text-white">
+            <thead className="bg-[#feda3c] text-[#181718]">
               <tr>
                 <th className="text-left font-semibold px-4 py-2">Tutee</th>
                 <th className="text-left font-semibold px-4 py-2">Course</th>

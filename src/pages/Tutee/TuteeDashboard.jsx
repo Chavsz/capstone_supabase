@@ -15,13 +15,13 @@ const isFinishedStatus = (status = "") =>
   FINISHED_STATUSES.has(String(status).toLowerCase());
 
 const STATUS_META = {
-  pending: { label: "Pending", badge: "bg-[#e6e7ea] text-[#323335]" },
-  confirmed: { label: "Confirmed", badge: "bg-[#76acf5] text-[#0f2d58]" },
-  started: { label: "In Session", badge: "bg-[#feda3c] text-[#181718]" },
-  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#323335] text-white" },
+  pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
+  confirmed: { label: "Confirmed", badge: "bg-[#4766fe] text-white" },
+  started: { label: "In Session", badge: "bg-[#76acf5] text-[#0f2d58]" },
+  awaiting_feedback: { label: "Awaiting Feedback", badge: "bg-[#935226] text-white" },
   completed: { label: "Completed", badge: "bg-[#00a65a] text-white" },
-  declined: { label: "Declined", badge: "bg-[#181718] text-white" },
-  cancelled: { label: "Cancelled", badge: "bg-[#181718] text-white" },
+  declined: { label: "Declined", badge: "bg-[#323335] text-white" },
+  cancelled: { label: "Cancelled", badge: "bg-[#ff4b4b] text-white" },
 };
 
 const formatStatusLabel = (status = "") =>
