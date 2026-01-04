@@ -155,22 +155,37 @@ const TutorDashboard = () => {
     (a) => a.status === "cancelled" || a.status === "declined"
   );
 
-  // Prepare area chart data
+  // Prepare line chart data
   const filteredAppointments = filterByRange(appointments, areaRange);
+  const statusKeys = [
+    "pending",
+    "confirmed",
+    "started",
+    "awaiting_feedback",
+    "completed",
+    "declined",
+    "cancelled",
+  ];
   // Get all unique dates in range
   const dateSet = new Set(filteredAppointments.map((a) => a.date));
   const sortedDates = Array.from(dateSet).sort();
   // Build data for each date
   const areaChartData = sortedDates.map((date) => {
-    const booked = filteredAppointments.filter((a) => a.date === date).length;
-    const completed = filteredAppointments.filter(
-      (a) => a.date === date && isFinishedStatus(a.status)
-    ).length;
-    const cancelled = filteredAppointments.filter(
-      (a) =>
-        a.date === date && (a.status === "cancelled" || a.status === "declined")
-    ).length;
-    return { date, booked, completed, cancelled };
+    const counts = statusKeys.reduce((acc, key) => {
+      acc[key] = 0;
+      return acc;
+    }, {});
+
+    filteredAppointments
+      .filter((a) => a.date === date)
+      .forEach((appointment) => {
+        const statusKey = String(appointment.status || "").toLowerCase();
+        if (counts[statusKey] !== undefined) {
+          counts[statusKey] += 1;
+        }
+      });
+
+    return { date, ...counts };
   });
 
   // Get next sessions for today (only confirmed appointments)
@@ -265,7 +280,7 @@ const TutorDashboard = () => {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={formatShortDate} />
-                <YAxis allowDecimals={false} />
+                <YAxis allowDecimals={false} tickLine={false} />
                 <Tooltip labelFormatter={formatShortDate} />
                 <Legend
                   layout="vertical"
@@ -274,11 +289,35 @@ const TutorDashboard = () => {
                 />
                 <Line
                   type="monotone"
-                  dataKey="booked"
+                  dataKey="pending"
+                  stroke="#c9c7c9"
+                  strokeWidth={3}
+                  dot={false}
+                  name="Pending"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="confirmed"
                   stroke="#4766fe"
                   strokeWidth={3}
                   dot={false}
-                  name="Booked"
+                  name="Confirmed"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="started"
+                  stroke="#76acf5"
+                  strokeWidth={3}
+                  dot={false}
+                  name="Started"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="awaiting_feedback"
+                  stroke="#935226"
+                  strokeWidth={3}
+                  dot={false}
+                  name="Awaiting Feedback"
                 />
                 <Line
                   type="monotone"
@@ -287,6 +326,14 @@ const TutorDashboard = () => {
                   strokeWidth={3}
                   dot={false}
                   name="Completed"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="declined"
+                  stroke="#323335"
+                  strokeWidth={3}
+                  dot={false}
+                  name="Declined"
                 />
                 <Line
                   type="monotone"
