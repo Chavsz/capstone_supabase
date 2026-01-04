@@ -37,6 +37,8 @@ const Appointment = () => {
   const [showTutorDrawer, setShowTutorDrawer] = useState(false);
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   const subjects = [
     {
@@ -761,6 +763,24 @@ const Appointment = () => {
   }, [formData.date, formData.start_time, formData.end_time]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const smallQuery = window.matchMedia("(max-width: 639px)");
+    const largeQuery = window.matchMedia("(min-width: 1024px)");
+    const handleChange = () => {
+      setIsSmallScreen(smallQuery.matches);
+      setIsLargeScreen(largeQuery.matches);
+    };
+
+    handleChange();
+    smallQuery.addEventListener("change", handleChange);
+    largeQuery.addEventListener("change", handleChange);
+    return () => {
+      smallQuery.removeEventListener("change", handleChange);
+      largeQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!formData.date) {
       setAppointmentsForDate([]);
       return;
@@ -818,11 +838,7 @@ const Appointment = () => {
       formData.end_time
     );
     const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
-    const isMobileViewport =
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 1023px)").matches;
-
-    if (!hasDetails || !isMobileViewport) {
+    if (!hasDetails || isLargeScreen) {
       setShowTutorDrawer(false);
       setDrawerDismissedKey("");
       return;
@@ -836,6 +852,7 @@ const Appointment = () => {
     formData.start_time,
     formData.end_time,
     drawerDismissedKey,
+    isLargeScreen,
   ]);
 
   const openTutorDrawer = () => setShowTutorDrawer(true);
@@ -1224,7 +1241,7 @@ const Appointment = () => {
               {/* Choose Subject */}
               <div>
                 <h3 className="font-semibold text-lg mb-3">Choose Subject</h3>
-                <div className="sm:hidden">
+                {isSmallScreen ? (
                   <select
                     value={selectedSubject}
                     onChange={(e) => handleSubjectSelect(e.target.value)}
@@ -1237,23 +1254,24 @@ const Appointment = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div className="hidden sm:flex gap-3 flex-wrap">
-                  {subjects.map((subject) => (
-                    <button
-                      key={subject.name}
-                      type="button"
-                      onClick={() => handleSubjectSelect(subject.name)}
-                      className={`px-4 py-2 rounded-md border transition-colors ${
-                        selectedSubject === subject.name
-                          ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
-                          : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
-                      }`}
-                    >
-                      {subject.name}
-                    </button>
-                  ))}
-                </div>
+                ) : (
+                  <div className="flex gap-3 flex-wrap">
+                    {subjects.map((subject) => (
+                      <button
+                        key={subject.name}
+                        type="button"
+                        onClick={() => handleSubjectSelect(subject.name)}
+                        className={`px-4 py-2 rounded-md border transition-colors ${
+                          selectedSubject === subject.name
+                            ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
+                            : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
+                        }`}
+                      >
+                        {subject.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Topic */}
@@ -1424,13 +1442,14 @@ const Appointment = () => {
           </form>
         </div>
         {/* Right Panel - Tutor Details */}
-        <div className="hidden lg:block">
-          {renderTutorDetails()}
-        </div>
+        {isLargeScreen && (
+          <div>
+            {renderTutorDetails()}
+          </div>
+        )}
 
         {/* Mobile Tutor Details Drawer */}
-        <div className="lg:hidden">
-          {showTutorDrawer && (
+        {!isLargeScreen && showTutorDrawer && (
             <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
               <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6 pointer-events-auto">
@@ -1447,8 +1466,7 @@ const Appointment = () => {
                 {renderTutorDetails({ compact: true, showHeading: false })}
               </div>
             </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
