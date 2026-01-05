@@ -6,6 +6,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
+import { capitalizeWords } from "../../utils/text";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
@@ -814,11 +815,12 @@ const Profile = () => {
           <div className="flex-1">
             <div className="space-y-2 md:space-y-3 md:grid md:grid-cols-2 md:gap-x-10 md:gap-y-3">
               <p>
-                <span className="font-semibold">Name:</span> {name}
+                <span className="font-semibold">Name:</span>{" "}
+                {capitalizeWords(name)}
               </p>
               <p>
                 <span className="font-semibold">Nickname:</span>{" "}
-                {profile.nickname || ""}
+                {capitalizeWords(profile.nickname || "")}
               </p>
               <p>
                 <span className="font-semibold">Year:</span>{" "}
@@ -826,19 +828,19 @@ const Profile = () => {
               </p>
               <p>
                 <span className="font-semibold">Subject:</span>{" "}
-                <span>{profile.subject || ""}</span>
+                <span>{capitalizeWords(profile.subject || "")}</span>
               </p>
               <p>
                 <span className="font-semibold">Program Course:</span>{" "}
-                {profile.program || ""}
+                {capitalizeWords(profile.program || "")}
               </p>
               <p>
                 <span className="font-semibold">College:</span>{" "}
-                {profile.college || ""}
+                {capitalizeWords(profile.college || "")}
               </p>
               <p>
                 <span className="font-semibold">Specialization:</span>{" "}
-                <span>{profile.specialization || ""}</span>
+                <span>{capitalizeWords(profile.specialization || "")}</span>
               </p>
               <p>
                 <span className="font-semibold">Online Link:</span>{" "}

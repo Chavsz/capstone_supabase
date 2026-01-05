@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import { capitalizeWords } from "../../utils/text";
 
   const STATUS_TABS = [
     { status: "all", label: "All" },
@@ -262,13 +263,17 @@ const EvaluationModal = ({
 
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm text-gray-700">
-            <span className="font-semibold">Tutor:</span> {appointment.tutor_name}
+            <span className="font-semibold">Tutor:</span>{" "}
+            {appointment.tutor_name
+              ? capitalizeWords(appointment.tutor_name)
+              : ""}
           </p>
           <p className="text-sm text-gray-700">
             <span className="font-semibold">Subject:</span> {appointment.subject}
           </p>
           <p className="text-sm text-gray-700">
-            <span className="font-semibold">Specialization:</span> {appointment.topic}
+            <span className="font-semibold">Specialization:</span>{" "}
+            {appointment.topic ? capitalizeWords(appointment.topic) : ""}
           </p>
         </div>
 
@@ -698,11 +703,15 @@ const AppointmentModal = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Specialization:</span>
-            <span className="text-gray-900">{appointment.topic}</span>
+            <span className="text-gray-900">
+              {capitalizeWords(appointment.topic)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Tutor:</span>
-            <span className="text-gray-900">{appointment.tutor_name}</span>
+            <span className="text-gray-900">
+              {capitalizeWords(appointment.tutor_name)}
+            </span>
           </div>
           {appointment.tutor_name && (
             <>
@@ -715,7 +724,9 @@ const AppointmentModal = ({
               {/* <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-600">Specialization:</span>
                 <span className="text-gray-900">
-                  {appointment.topic || "Not specified"}
+                  {appointment.topic
+                    ? capitalizeWords(appointment.topic)
+                    : "Not specified"}
                 </span>
               </div> */}
             </>
@@ -1646,10 +1657,12 @@ const Schedules = () => {
                             onClick={() => openModal(appointment)}
                           >
                             <td className="px-4 py-2 font-semibold text-[#323335]">
-                              {appointment.tutor_name}
+                              {capitalizeWords(appointment.tutor_name)}
                             </td>
                             <td className="px-4 py-2">{appointment.subject}</td>
-                            <td className="px-4 py-2">{appointment.topic}</td>
+                            <td className="px-4 py-2">
+                              {capitalizeWords(appointment.topic)}
+                            </td>
                             <td className="px-4 py-2">
                               {formatDate(appointment.date)}{" "}
                               {formatTime(appointment.start_time)} -{" "}

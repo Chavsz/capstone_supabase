@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase-client";
 import { motion } from "framer-motion";
+import { capitalizeWords } from "../utils/text";
 
 function OurTutors() {
   const [tutors, setTutors] = useState([]);
@@ -157,12 +158,14 @@ function OurTutors() {
                               tutor.profile_image ? "hidden" : "flex"
                             }`}
                           >
-                            {tutor.name.charAt(0).toUpperCase()}
+                            {capitalizeWords(tutor.name).charAt(0) || "T"}
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-center mt-2">{tutor.name}</div>
+                      <div className="text-center mt-2">
+                        {capitalizeWords(tutor.name)}
+                      </div>
                     </motion.div>
                   ))}
                 </div>

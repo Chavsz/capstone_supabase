@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import { capitalizeWords } from "../../utils/text";
 
 //component
 import { CardsOne } from "../../components/cards";
@@ -241,7 +242,7 @@ const TuteeDashboard = () => {
                         {formatTime(session.end_time)}
                       </td>
                       <td className="py-3 px-2">
-                        {session.tutor_name || "N/A"}
+                        {session.tutor_name ? capitalizeWords(session.tutor_name) : "N/A"}
                       </td>
                       <td className="py-3 px-2">{formatDate(session.date)}</td>
                     </tr>
@@ -303,7 +304,7 @@ const TuteeDashboard = () => {
                         className="border-b border-[#EBEDEF]"
                       >
                         <td className="py-2 px-2">
-                          {session.tutor_name || "N/A"}
+                          {session.tutor_name ? capitalizeWords(session.tutor_name) : "N/A"}
                         </td>
                         <td className="py-2 px-2">{formatDate(session.date)}</td>
                         <td className="py-2 px-2">
@@ -311,7 +312,9 @@ const TuteeDashboard = () => {
                           {formatTime(session.end_time)}
                         </td>
                         <td className="py-2 px-2">{session.subject || "N/A"}</td>
-                        <td className="py-2 px-2">{session.topic || "N/A"}</td>
+                        <td className="py-2 px-2">
+                          {session.topic ? capitalizeWords(session.topic) : "N/A"}
+                        </td>
                         <td className="py-2 px-2 text-right">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(

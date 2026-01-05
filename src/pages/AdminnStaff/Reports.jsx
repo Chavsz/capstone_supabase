@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import { capitalizeWords } from "../../utils/text";
 
 const tutorRatingFields = [
   { key: "presentation_clarity", label: "Presentation" },
@@ -1090,7 +1091,7 @@ const Reports = () => {
           <p className="mt-2 text-sm text-gray-600">
             Top tutor by teaching time:{" "}
             <span className="font-semibold text-blue-600">
-              {topTutorByHours.name} ({topTutorByHours.hours.toFixed(1)} hrs)
+              {capitalizeWords(topTutorByHours.name)} ({topTutorByHours.hours.toFixed(1)} hrs)
             </span>
           </p>
         )}

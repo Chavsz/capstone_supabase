@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import { capitalizeWords } from "../../utils/text";
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
@@ -202,7 +203,9 @@ const Lavroom = () => {
                       {appointment.subject || "Untitled Session"}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {appointment.topic || "No specialization provided"}
+                      {appointment.topic
+                        ? capitalizeWords(appointment.topic)
+                        : "No specialization provided"}
                     </p>
                   </div>
                   <span
@@ -215,8 +218,14 @@ const Lavroom = () => {
                 </div>
 
                 <div className="p-4 space-y-3 text-sm text-gray-700">
-                  <DetailRow label="Tutor" value={appointment.tutor_name} />
-                  <DetailRow label="Student" value={appointment.student_name} />
+                  <DetailRow
+                    label="Tutor"
+                    value={capitalizeWords(appointment.tutor_name)}
+                  />
+                  <DetailRow
+                    label="Student"
+                    value={capitalizeWords(appointment.student_name)}
+                  />
                   <DetailRow
                     label="Mode"
                     value={appointment.mode_of_session || "No mode specified"}

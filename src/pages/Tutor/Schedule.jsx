@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import { capitalizeWords } from "../../utils/text";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
 const STATUS_META = {
@@ -162,11 +163,15 @@ const AppointmentModal = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-700">Specialization:</span>
-            <span className="text-gray-900">{appointment.topic}</span>
+            <span className="text-gray-900">
+              {capitalizeWords(appointment.topic)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-700">Student:</span>
-            <span className="text-gray-900">{appointment.student_name}</span>
+            <span className="text-gray-900">
+              {capitalizeWords(appointment.student_name)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-700">Date:</span>
@@ -897,10 +902,12 @@ const Schedule = () => {
                       onClick={() => openModal(appointment)}
                     >
                       <td className="px-4 py-2 font-semibold text-[#323335]">
-                        {appointment.student_name}
+                        {capitalizeWords(appointment.student_name)}
                       </td>
                       <td className="px-4 py-2">{appointment.subject}</td>
-                      <td className="px-4 py-2">{appointment.topic}</td>
+                      <td className="px-4 py-2">
+                        {capitalizeWords(appointment.topic)}
+                      </td>
                       <td className="px-4 py-2">
                         {formatDate(appointment.date)}{" "}
                         {formatTime(appointment.start_time)} -{" "}

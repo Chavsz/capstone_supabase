@@ -7,6 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
+import { capitalizeWords } from "../../utils/text";
 
 const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
 
@@ -1136,9 +1137,11 @@ const Appointment = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className={nameClass}>{tutor.name}</p>
+                      <p className={nameClass}>{capitalizeWords(tutor.name)}</p>
                       <p className={metaClass}>
-                        {details.specialization || details.subject || "Tutor"}
+                        {capitalizeWords(
+                          details.specialization || details.subject || "Tutor"
+                        )}
                       </p>
                       {hasSlot && (
                         <p
@@ -1221,7 +1224,9 @@ const Appointment = () => {
                           )}
                         </div>
                         <div>
-                          <p className={nameClass}>{detailsTutor.name}</p>
+                          <p className={nameClass}>
+                            {capitalizeWords(detailsTutor.name)}
+                          </p>
                           <p className={detailsTextClass}>
                             {tutorDetails[detailsTutor.user_id]?.college ||
                               "College not specified"}
@@ -1231,8 +1236,12 @@ const Appointment = () => {
                               "No subject"}
                           </p>
                           <p className={detailsTextClass}>
-                            {tutorDetails[detailsTutor.user_id]?.specialization ||
-                              "No specialization"}
+                            {tutorDetails[detailsTutor.user_id]?.specialization
+                              ? capitalizeWords(
+                                  tutorDetails[detailsTutor.user_id]
+                                    ?.specialization
+                                )
+                              : "No specialization"}
                           </p>
                         </div>
                       </div>
@@ -1368,7 +1377,6 @@ const Appointment = () => {
                   min={1}
                   max={10}
                   className="border border-gray-300 rounded-md p-3 w-full"
-                  required
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Optional: leave blank for a single student, or enter 2-10 learners (values above 10 are capped automatically).

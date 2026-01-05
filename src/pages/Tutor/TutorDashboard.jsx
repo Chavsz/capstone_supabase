@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
+import { capitalizeWords } from "../../utils/text";
 import {
   LineChart,
   Line,
@@ -232,7 +233,9 @@ const TutorDashboard = () => {
         </p>
       </div>
 
-      <h2 className="ttext-[24px] font-bold text-blue-600">Welcome, {name}!</h2>
+      <h2 className="ttext-[24px] font-bold text-blue-600">
+        Welcome, {capitalizeWords(name)}!
+      </h2>
 
       <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-7 mt-6">
         <Cards
@@ -405,7 +408,9 @@ const TutorDashboard = () => {
                           {formatTime(session.end_time)}
                         </td>
                         <td className="py-3 px-2">
-                          {session.student_name || "N/A"}
+                          {session.student_name
+                            ? capitalizeWords(session.student_name)
+                            : "N/A"}
                         </td>
                         <td className="py-3 px-2">
                           {formatDate(session.date)}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import { capitalizeWords } from "../../utils/text";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -476,7 +477,9 @@ const Header = () => {
                               </p>
                               <p>
                                 {appointment.tutor_name
-                                  ? `With ${appointment.tutor_name}`
+                                  ? `With ${capitalizeWords(
+                                      appointment.tutor_name
+                                    )}`
                                   : "Tutoring session"}{" "}
                                 at{" "}
                                 {new Date(
