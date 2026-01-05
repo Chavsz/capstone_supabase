@@ -503,6 +503,19 @@ const Profile = () => {
   const handleRemoveUnavailableDay = async (entry) => {
     try {
       if (!entry) return;
+      const formattedDate = new Date(`${entry.date}T00:00:00`).toLocaleDateString(
+        "en-US",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }
+      );
+      const confirmDelete = window.confirm(
+        `Remove unavailable day for ${formattedDate}? Appointments on this date will return to pending if the date has not passed.`
+      );
+      if (!confirmDelete) return;
+
       const hasId = Boolean(entry.unavailable_id);
       if (!hasId && !profileId) {
         alert("Unable to remove this date right now. Please try again.");
@@ -518,9 +531,134 @@ const Profile = () => {
 
       if (error) throw error;
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        await autoRestoreAppointmentsForAvailableDay(
+          session.user.id,
+          entry.date,
+          entry.reason || ""
+        );
+      }
+
       getUnavailableDays();
     } catch (err) {
       console.error(err.message);
+    }
+  };
+
+  const autoRestoreAppointmentsForAvailableDay = async (
+    tutorId,
+    targetDate,
+    reason
+  ) => {
+    try {
+      if (!tutorId || !targetDate) return;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dateValue = new Date(`${targetDate}T00:00:00`);
+      if (Number.isNaN(dateValue.getTime()) || dateValue < today) return;
+
+      const { data: appointments, error } = await supabase
+        .from("appointment")
+        .select(
+          "appointment_id, user_id, subject, topic, date, start_time, end_time, status, tutor_decline_reason"
+        )
+        .eq("tutor_id", tutorId)
+        .eq("date", targetDate)
+        .in("status", ["declined", "cancelled"]);
+
+      if (error) throw error;
+
+      const eligibleAppointments = (appointments || []).filter((appointment) => {
+        if (!reason) return true;
+        return appointment.tutor_decline_reason === reason;
+      });
+
+      for (const appointment of eligibleAppointments) {
+        const startMinutes = getMinutesFromString(appointment.start_time);
+        const endMinutes = getMinutesFromString(appointment.end_time);
+
+        if (startMinutes === null || endMinutes === null) continue;
+
+        const { data: tuteeBookings, error: tuteeError } = await supabase
+          .from("appointment")
+          .select("start_time, end_time")
+          .eq("user_id", appointment.user_id)
+          .eq("date", targetDate)
+          .in("status", ["confirmed", "started", "awaiting_feedback"]);
+
+        if (tuteeError) {
+          console.error("Error checking tutee conflicts:", tuteeError.message);
+          continue;
+        }
+
+        const hasConflict = (tuteeBookings || []).some((booking) => {
+          const bookingStart = getMinutesFromString(booking.start_time);
+          const bookingEnd = getMinutesFromString(booking.end_time);
+          if (bookingStart === null || bookingEnd === null) return false;
+          return startMinutes < bookingEnd && endMinutes > bookingStart;
+        });
+
+        const formattedDate = new Date(`${appointment.date}T00:00:00`).toLocaleDateString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }
+        );
+        const formattedTime = new Date(`2000-01-01T${appointment.start_time}`).toLocaleTimeString(
+          "en-US",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        );
+        const appointmentLabel = `${appointment.subject}${
+          appointment.topic ? ` - ${appointment.topic}` : ""
+        }`;
+
+        if (hasConflict) {
+          const conflictReason =
+            "Tutee already has a confirmed appointment at this time.";
+          await supabase
+            .from("appointment")
+            .update({
+              status: "declined",
+              tutor_decline_reason: conflictReason,
+            })
+            .eq("appointment_id", appointment.appointment_id);
+
+          const conflictNotification = `Your appointment request for ${appointmentLabel} on ${formattedDate} at ${formattedTime} remains declined. Reason: ${conflictReason} [appointment_id:${appointment.appointment_id}]`;
+          await supabase.from("notification").insert([
+            {
+              user_id: appointment.user_id,
+              notification_content: conflictNotification,
+            },
+          ]);
+          continue;
+        }
+
+        await supabase
+          .from("appointment")
+          .update({
+            status: "pending",
+            tutor_decline_reason: null,
+          })
+          .eq("appointment_id", appointment.appointment_id);
+
+        const restoreNotification = `Your appointment request for ${appointmentLabel} on ${formattedDate} at ${formattedTime} is pending again because the tutor is now available. [appointment_id:${appointment.appointment_id}]`;
+        await supabase.from("notification").insert([
+          {
+            user_id: appointment.user_id,
+            notification_content: restoreNotification,
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Auto-restore unavailable day appointments failed:", err.message);
     }
   };
 
@@ -904,7 +1042,7 @@ const Profile = () => {
             ))}
           </div>
         </div>
-      </div>
+        </div>
 
       {/* Edit Information Modal */}
       {showEditModal && (
