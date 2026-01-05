@@ -500,12 +500,21 @@ const Profile = () => {
     }
   };
 
-  const handleRemoveUnavailableDay = async (unavailableId) => {
+  const handleRemoveUnavailableDay = async (entry) => {
     try {
-      const { error } = await supabase
-        .from("tutor_unavailable_days")
-        .delete()
-        .eq("unavailable_id", unavailableId);
+      if (!entry) return;
+      const hasId = Boolean(entry.unavailable_id);
+      if (!hasId && !profileId) {
+        alert("Unable to remove this date right now. Please try again.");
+        return;
+      }
+
+      const deleteQuery = supabase.from("tutor_unavailable_days").delete();
+      const { error } = hasId
+        ? await deleteQuery.eq("unavailable_id", entry.unavailable_id)
+        : await deleteQuery
+            .eq("profile_id", profileId)
+            .eq("date", entry.date);
 
       if (error) throw error;
 
@@ -885,7 +894,7 @@ const Profile = () => {
                   )}
                 </div>
                 <button
-                  onClick={() => handleRemoveUnavailableDay(entry.unavailable_id)}
+                  onClick={() => handleRemoveUnavailableDay(entry)}
                   className="text-red-500 hover:text-red-600"
                   title="Remove"
                 >
