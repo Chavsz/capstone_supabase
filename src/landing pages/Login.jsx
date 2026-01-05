@@ -119,7 +119,7 @@ const Login = ({ setAuth }) => {
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-[1fr_1.2fr]">
         {/* Left Panel - Illustration */}
         <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
-          <Link to="/" className="absolute top-6 left-6 flex items-center">
+          <Link to="/" className="absolute top-6 left-6 hidden md:flex items-center">
             <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
             <span className="ml-2 text-[#3142a6] font-semibold text-lg">LAV</span>
           </Link>
@@ -140,11 +140,6 @@ const Login = ({ setAuth }) => {
 
         {/* Right Panel - Form */}
         <div className="flex flex-col items-center justify-center px-6 md:px-12 py-10 md:py-14 relative">
-          <Link to="/" className="absolute top-6 right-6 md:hidden flex items-center">
-            <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
-            <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
-          </Link>
-
           <div className="max-w-md w-full">
             <h2 className="text-2xl md:text-3xl font-bold text-[#3142a6] mb-2">
               Hello, welcome back
