@@ -31,6 +31,7 @@ const Profile = () => {
   const [profileId, setProfileId] = useState(null);
   const [unavailableDays, setUnavailableDays] = useState([]);
   const [newUnavailableDate, setNewUnavailableDate] = useState("");
+  const [newUnavailableReason, setNewUnavailableReason] = useState("");
   const [loadingUnavailable, setLoadingUnavailable] = useState(false);
 
   const ALLOWED_TIME_BLOCKS = [
@@ -206,7 +207,7 @@ const Profile = () => {
 
       const { data, error } = await supabase
         .from("tutor_unavailable_days")
-        .select("unavailable_id, date")
+        .select("unavailable_id, date, reason")
         .eq("profile_id", activeProfileId)
         .order("date", { ascending: true });
 
@@ -379,6 +380,11 @@ const Profile = () => {
 
   const handleAddUnavailableDay = async () => {
     if (!newUnavailableDate) return;
+    const trimmedReason = newUnavailableReason.trim();
+    if (!trimmedReason) {
+      alert("Please provide a reason for this unavailable day.");
+      return;
+    }
     if (!profileId) {
       alert("Please save your profile first.");
       return;
@@ -391,19 +397,106 @@ const Profile = () => {
       return;
     }
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
       const { error } = await supabase.from("tutor_unavailable_days").insert([
         {
           profile_id: profileId,
           date: newUnavailableDate,
+          reason: trimmedReason,
         },
       ]);
 
       if (error) throw error;
 
       setNewUnavailableDate("");
+      setNewUnavailableReason("");
+      await autoUpdateAppointmentsForUnavailableDay(
+        session.user.id,
+        newUnavailableDate,
+        trimmedReason
+      );
       getUnavailableDays();
     } catch (err) {
       console.error(err.message);
+    }
+  };
+
+  const autoUpdateAppointmentsForUnavailableDay = async (
+    tutorId,
+    unavailableDate,
+    reason
+  ) => {
+    try {
+      const { data: appointments, error } = await supabase
+        .from("appointment")
+        .select("appointment_id, user_id, subject, topic, date, start_time, status")
+        .eq("tutor_id", tutorId)
+        .eq("date", unavailableDate)
+        .in("status", ["pending", "confirmed"]);
+
+      if (error) throw error;
+
+      for (const appointment of appointments || []) {
+        const nextStatus = appointment.status === "confirmed" ? "cancelled" : "declined";
+        const { error: updateError } = await supabase
+          .from("appointment")
+          .update({
+            status: nextStatus,
+            tutor_decline_reason: reason,
+          })
+          .eq("appointment_id", appointment.appointment_id);
+
+        if (updateError) {
+          console.error("Error updating appointment:", updateError.message);
+          continue;
+        }
+
+        const formattedDate = new Date(`${appointment.date}T00:00:00`).toLocaleDateString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }
+        );
+        const formattedTime = new Date(`2000-01-01T${appointment.start_time}`).toLocaleTimeString(
+          "en-US",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        );
+        const appointmentLabel = `${appointment.subject}${
+          appointment.topic ? ` - ${appointment.topic}` : ""
+        }`;
+        let notificationMessage =
+          nextStatus === "declined"
+            ? `Your appointment request for ${appointmentLabel} on ${formattedDate} at ${formattedTime} has been declined.`
+            : `Your appointment for ${appointmentLabel} on ${formattedDate} at ${formattedTime} has been cancelled.`;
+        if (reason) {
+          notificationMessage += ` Reason: ${reason}`;
+        }
+        notificationMessage += ` [appointment_id:${appointment.appointment_id}]`;
+
+        const { error: notificationError } = await supabase
+          .from("notification")
+          .insert([
+            {
+              user_id: appointment.user_id,
+              notification_content: notificationMessage,
+            },
+          ]);
+
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+        }
+      }
+    } catch (err) {
+      console.error("Auto-update unavailable day appointments failed:", err.message);
     }
   };
 
@@ -746,12 +839,19 @@ const Profile = () => {
           <p className="text-xs text-gray-500 mb-4">
             Mark whole days you are unavailable so tutees cannot book sessions.
           </p>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center">
             <input
               type="date"
               value={newUnavailableDate}
               onChange={(e) => setNewUnavailableDate(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
+            />
+            <input
+              type="text"
+              value={newUnavailableReason}
+              onChange={(e) => setNewUnavailableReason(e.target.value)}
+              placeholder="Reason (required)"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
             />
             <button
               onClick={handleAddUnavailableDay}
@@ -772,13 +872,18 @@ const Profile = () => {
                 key={entry.unavailable_id}
                 className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 text-sm"
               >
-                <span>
-                  {new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
+                <div className="flex flex-col">
+                  <span>
+                    {new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                  {entry.reason && (
+                    <span className="text-xs text-gray-500">Reason: {entry.reason}</span>
+                  )}
+                </div>
                 <button
                   onClick={() => handleRemoveUnavailableDay(entry.unavailable_id)}
                   className="text-red-500 hover:text-red-600"

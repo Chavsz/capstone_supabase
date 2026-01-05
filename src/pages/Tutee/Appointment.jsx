@@ -139,7 +139,7 @@ const Appointment = () => {
           const { data: unavailableData, error: unavailableError } =
             await supabase
               .from("tutor_unavailable_days")
-              .select("profile_id, date")
+              .select("profile_id, date, reason")
               .in("profile_id", profileIds);
 
           if (unavailableError) throw unavailableError;
@@ -151,7 +151,10 @@ const Appointment = () => {
             if (!unavailableMap[userId]) {
               unavailableMap[userId] = [];
             }
-            unavailableMap[userId].push(entry.date);
+            unavailableMap[userId].push({
+              date: entry.date,
+              reason: entry.reason || "",
+            });
           });
 
           setTutorUnavailableDays(unavailableMap);
@@ -508,11 +511,16 @@ const Appointment = () => {
       weekday: "long",
     });
 
-    const unavailableDates = tutorUnavailableDays[selectedTutor.user_id] || [];
-    if (unavailableDates.includes(formData.date)) {
+    const unavailableEntries = tutorUnavailableDays[selectedTutor.user_id] || [];
+    const unavailableEntry = unavailableEntries.find(
+      (entry) => entry.date === formData.date
+    );
+    if (unavailableEntry) {
       return {
         valid: false,
-        message: "Tutor is not available on the selected date.",
+        message: unavailableEntry.reason
+          ? `Tutor is not available on the selected date. Reason: ${unavailableEntry.reason}`
+          : "Tutor is not available on the selected date.",
       };
     }
 
@@ -1015,9 +1023,17 @@ const Appointment = () => {
 
         const availabilityForTutor = (tutorId) => {
           if (!hasSlot) return { available: false, label: "Select date & time" };
-          const unavailableDates = tutorUnavailableDays[tutorId] || [];
-          if (hasDate && unavailableDates.includes(formData.date)) {
-            return { available: false, label: "Not available on selected date" };
+          const unavailableEntries = tutorUnavailableDays[tutorId] || [];
+          const unavailableEntry = unavailableEntries.find(
+            (entry) => entry.date === formData.date
+          );
+          if (hasDate && unavailableEntry) {
+            return {
+              available: false,
+              label: unavailableEntry.reason
+                ? `Not available: ${unavailableEntry.reason}`
+                : "Not available on selected date",
+            };
           }
           if (conflictTutorIds.has(tutorId)) {
             return { available: false, label: "Booked" };
@@ -1043,8 +1059,12 @@ const Appointment = () => {
           .filter((tutor) => matchesSubject(tutor))
           .filter((tutor) => {
             if (!hasDate || showAllSubjectTutors) return true;
-            const unavailableDates = tutorUnavailableDays[tutor.user_id] || [];
-            if (unavailableDates.includes(formData.date)) return false;
+            const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
+            if (
+              unavailableEntries.some((entry) => entry.date === formData.date)
+            ) {
+              return false;
+            }
             const schedules = tutorSchedules[tutor.user_id] || [];
             const daySchedules = schedules.filter((s) => s.day === dayName);
             if (daySchedules.length === 0) return false;
