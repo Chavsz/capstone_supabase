@@ -236,9 +236,7 @@ const LavRoomCalendar = () => {
                           <AiOutlineEye className="h-4 w-4" />
                         </div>
                         <div
-                          className={`pointer-events-none absolute top-0 hidden w-[360px] rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl group-hover:block ${
-                            dayIndex >= 3 ? "right-full mr-4" : "left-full ml-4"
-                          }`}
+                          className="pointer-events-none absolute left-1/2 top-1/2 hidden w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl group-hover:block z-20"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[18px] font-bold text-[#8a5328]">
