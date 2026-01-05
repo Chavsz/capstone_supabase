@@ -814,7 +814,9 @@ const AppointmentModal = ({
               Tutor note: {appointment.tutor_decline_reason}
             </div>
           )}
-        {(appointment.status === "confirmed" || appointment.status === "started") && appointment.online_link && (
+        {(appointment.status === "confirmed" || appointment.status === "started") &&
+          appointment.mode_of_session === "Online" &&
+          appointment.online_link && (
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-600">Online Link:</span>
               <a

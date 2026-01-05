@@ -495,6 +495,20 @@ const Profile = () => {
         if (notificationError) {
           console.error("Error creating notification:", notificationError);
         }
+
+        const tutorNotice = `Appointment for ${appointmentLabel} on ${formattedDate} at ${formattedTime} was ${nextStatus} automatically. Reason: ${reason} [appointment_id:${appointment.appointment_id}]`;
+        const { error: tutorNoticeError } = await supabase
+          .from("notification")
+          .insert([
+            {
+              user_id: tutorId,
+              notification_content: tutorNotice,
+            },
+          ]);
+
+        if (tutorNoticeError) {
+          console.error("Error creating tutor notification:", tutorNoticeError);
+        }
       }
     } catch (err) {
       console.error("Auto-update unavailable day appointments failed:", err.message);
@@ -639,6 +653,12 @@ const Profile = () => {
               notification_content: conflictNotification,
             },
           ]);
+          await supabase.from("notification").insert([
+            {
+              user_id: tutorId,
+              notification_content: `Appointment for ${appointmentLabel} on ${formattedDate} at ${formattedTime} stays declined. Reason: ${conflictReason} [appointment_id:${appointment.appointment_id}]`,
+            },
+          ]);
           continue;
         }
 
@@ -655,6 +675,12 @@ const Profile = () => {
           {
             user_id: appointment.user_id,
             notification_content: restoreNotification,
+          },
+        ]);
+        await supabase.from("notification").insert([
+          {
+            user_id: tutorId,
+            notification_content: `Appointment for ${appointmentLabel} on ${formattedDate} at ${formattedTime} is back to pending after removing the unavailable day. [appointment_id:${appointment.appointment_id}]`,
           },
         ]);
       }
