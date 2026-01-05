@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AiOutlineEye } from "react-icons/ai";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FiCalendar } from "react-icons/fi";
 import { supabase } from "../../supabase-client";
 
@@ -225,7 +225,7 @@ const LavRoomCalendar = () => {
       <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1">
+            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1 pb-2">
               <input
                 type="text"
                 value={searchTerm}
@@ -377,7 +377,11 @@ const LavRoomCalendar = () => {
                       className={`absolute bottom-3 right-3 ${getTextColor(booking.status)}`}
                       aria-label="Toggle appointment details"
                     >
-                      <AiOutlineEye className="h-4 w-4" />
+                      {isExpanded ? (
+                        <AiOutlineEyeInvisible className="h-4 w-4" />
+                      ) : (
+                        <AiOutlineEye className="h-4 w-4" />
+                      )}
                     </button>
                     {isExpanded && (
                       <div className="mt-3 rounded-xl border border-[#caa37b] bg-[#fffdf7] p-3 text-[11px] text-[#2d3a6d]">
