@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 
 // icons
-import * as fiIcons from "react-icons/fi";
+import { FaClipboardList, FaCheckCircle, FaUserPlus, FaTimesCircle } from "react-icons/fa";
 
 // Components
-import { Cards } from "../../components/cards";
 import {
   CollegePieChart,
   SessionBarChart,
@@ -19,6 +18,7 @@ const isFinishedStatus = (status = "") =>
 function Dashboard() {
   const [appointments, setAppointments] = useState([]);
   const [collegeData, setCollegeData] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
 
   async function getAppointments() {
     try {
@@ -73,10 +73,24 @@ function Dashboard() {
     }
   }
 
+  async function getEvaluations() {
+    try {
+      const { data, error } = await supabase
+        .from("evaluation")
+        .select("evaluation_id, created_at");
+
+      if (error) throw error;
+
+      setEvaluations(data || []);
+    } catch (error) {
+      console.error("Error fetching evaluations:", error);
+      setEvaluations([]);
+    }
+  }
+
   useEffect(() => {
     getAppointments();
-    // getFeedbacks();
-    // getEvaluatedAppointments();
+    getEvaluations();
     getCollegeData();
   }, []);
 
@@ -90,6 +104,20 @@ function Dashboard() {
     isFinishedStatus(a.status)
   );
 
+  const tuteeRequests = appointments.filter((a) => a.status);
+  const pendingAppointments = appointments.filter((a) => a.status === "pending");
+
+  const isSameDay = (value) => {
+    if (!value) return false;
+    const dateValue = new Date(value);
+    if (Number.isNaN(dateValue.getTime())) return false;
+    const today = new Date();
+    return (
+      dateValue.getFullYear() === today.getFullYear() &&
+      dateValue.getMonth() === today.getMonth() &&
+      dateValue.getDate() === today.getDate()
+    );
+  };
 
   // Date today
   const dateToday = new Date().toLocaleDateString("en-US", {
@@ -109,12 +137,18 @@ function Dashboard() {
   const completedSessionsToday = completedAppointments.filter(
     (a) => formatDate(a.date) === dateToday
   );
-  const bookedSessionsToday = appointments.filter(
-    (a) => formatDate(a.date) === dateToday
+  const tuteeRequestsToday = tuteeRequests.filter((a) =>
+    isSameDay(a.created_at || a.date)
   );
   const cancelledSessionsToday = cancelledAppointments.filter(
     (a) => formatDate(a.date) === dateToday
   );
+  const evaluationsToday = evaluations.filter((e) => isSameDay(e.created_at));
+  const evaluationTotal = completedAppointments.length;
+  const evaluationDone = evaluations.length;
+  const evaluationRate = evaluationTotal
+    ? (evaluationDone / evaluationTotal) * 100
+    : 0;
 
   return (
     <div className="flex">
@@ -130,65 +164,84 @@ function Dashboard() {
           </div>
 
           {/* Admin Dashboard Cards  */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 md:mt-6">
-            {/* Sessions Card */}
-            <Cards
-              title="Sessions"
-              icon={<fiIcons.FiCalendar />}
-              total={completedAppointments.length}
-              newToday={
-                completedSessionsToday.length === 0
-                  ? ""
-                  : completedSessionsToday.length
-              }
-              latestText={
-                completedSessionsToday.length === 0
-                  ? "No completed sessions today"
-                  : "Completed Sessions Today"
-              }
-            />
-
-
-            {/* Student Request Card */}
-            <Cards
-              title="Tutee Request"
-              icon={<fiIcons.FiUser />}
-              total={appointments.length}
-              newToday={
-                bookedSessionsToday.length === 0
-                  ? ""
-                  : bookedSessionsToday.length
-              }
-              latestText={
-                bookedSessionsToday.length === 0
-                  ? "No bookings today"
-                  : "Bookings Today"
-              }
-            />
-
-            {/* Cancellations Card */}
-            <div className="bg-[#ffffff] p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 md:mt-6">
+            {/* Sessions */}
+            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <p className="text-gray-600 font-semibold text-sm md:text-base">Cancellations</p>
-                <p className="text-xl md:text-2xl text-blue-600">
-                  <fiIcons.FiCalendar />
-                </p>
+                <p className="text-[#1f3b94] font-semibold">Sessions</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                  <FaClipboardList />
+                </span>
               </div>
-              <p className="text-[24px] md:text-[30px] font-bold pl-4 py-4 text-gray-600">
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+                {completedAppointments.length}
+              </p>
+              <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#1f9e2c]">
+                  {completedSessionsToday.length || 0}
+                </span>
+                <span className="text-[#7b8bb8]">New Sessions Today!</span>
+              </div>
+            </div>
+
+            {/* Evaluations */}
+            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[#1f3b94] font-semibold">Evaluations</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                  <FaCheckCircle />
+                </span>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+                {evaluationDone} / {evaluationTotal}
+              </p>
+              <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#1f9e2c]">
+                  {evaluationTotal ? evaluationRate.toFixed(2) : "0.00"}%
+                </span>
+                <span className="text-[#7b8bb8]">Evaluated!</span>
+              </div>
+            </div>
+
+            {/* Tutee Request */}
+            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[#1f3b94] font-semibold">Tutee Request</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                  <FaUserPlus />
+                </span>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+                {tuteeRequests.length}
+              </p>
+              <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#1f9e2c]">
+                  {tuteeRequestsToday.length || 0}
+                </span>
+                <span className="text-[#7b8bb8]">New Booked Today!</span>
+              </div>
+            </div>
+
+            {/* Cancellations */}
+            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[#1f3b94] font-semibold">Cancellations</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                  <FaTimesCircle />
+                </span>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
                 {cancelledAppointments.length}
               </p>
-              <div className="flex gap-2 flex-wrap">
-                <p className="text-[12px] md:text-[13.5px] text-[#ad0d0d] font-bold">
-                  {cancelledSessionsToday.length === 0
-                    ? ""
-                    : cancelledSessionsToday.length}
-                </p>
-                <p className="text-[12px] md:text-[13.5px] text-[#A0A0A0]">
-                  {" "}
-                  {cancelledSessionsToday.length === 0
-                    ? "No cancelled sessions today"
-                    : "Cancelled Sessions Today"}
-                </p>
+              <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#b10f0f]">
+                  {cancelledSessionsToday.length || 0}
+                </span>
+                <span className="text-[#7b8bb8]">New Cancelled Today!</span>
               </div>
             </div>
           </div>
