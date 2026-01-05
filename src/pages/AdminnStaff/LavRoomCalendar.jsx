@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AiOutlineEye } from "react-icons/ai";
+import { FiCalendar } from "react-icons/fi";
 import { supabase } from "../../supabase-client";
 
 const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -84,6 +85,10 @@ const LavRoomCalendar = () => {
   const [appointments, setAppointments] = useState([]);
   const [hoveredAppointment, setHoveredAppointment] = useState(null);
   const gridRef = useRef(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showWeekPicker, setShowWeekPicker] = useState(false);
+  const [weekPickerValue, setWeekPickerValue] = useState("");
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -103,6 +108,13 @@ const LavRoomCalendar = () => {
     const next = new Date(weekStart);
     next.setDate(weekStart.getDate() + 7);
     setWeekStart(next);
+  };
+
+  const handleWeekPick = (value) => {
+    if (!value) return;
+    const picked = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(picked.getTime())) return;
+    setWeekStart(getMonday(picked));
   };
 
   const fetchAppointments = async (startDate) => {
@@ -160,9 +172,29 @@ const LavRoomCalendar = () => {
     };
   }, [weekStart]);
 
+  const filteredAppointments = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return appointments.filter((appointment) => {
+      if (statusFilter !== "all" && appointment.status !== statusFilter) {
+        return false;
+      }
+      if (!term) return true;
+      const haystack = [
+        appointment.subject,
+        appointment.topic,
+        appointment.tutor?.name,
+        appointment.tutee?.name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [appointments, searchTerm, statusFilter]);
+
   const bookingsByDay = useMemo(() => {
     const grouped = dayLabels.map(() => []);
-    appointments.forEach((appointment) => {
+    filteredAppointments.forEach((appointment) => {
       if (!appointment.date) return;
       const dateValue = new Date(`${appointment.date}T00:00:00`);
       const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
@@ -172,7 +204,7 @@ const LavRoomCalendar = () => {
     return grouped.map((items) =>
       items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
     );
-  }, [appointments]);
+  }, [filteredAppointments]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -186,12 +218,77 @@ const LavRoomCalendar = () => {
         <div className="text-sm text-gray-500">{formatRange(weekStart)}</div>
       </div>
 
-      <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-4 shadow-sm">
+      <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-3 shadow-sm">
+        <div className="flex flex-col gap-3 mb-3">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search tutor, student, or subject"
+                className="w-full max-w-xs rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm"
+              />
+              {[
+                "all",
+                "pending",
+                "confirmed",
+                "started",
+                "awaiting_feedback",
+                "completed",
+                "declined",
+                "cancelled",
+              ].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                    statusFilter === status
+                      ? "bg-[#1f3b94] text-white border-[#1f3b94]"
+                      : "bg-white text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {STATUS_LABELS[status] || "All"}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowWeekPicker((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm"
+              >
+                <FiCalendar />
+                Choose Week
+              </button>
+              {showWeekPicker && (
+                <input
+                  type="date"
+                  value={weekPickerValue}
+                  onChange={(event) => {
+                    setWeekPickerValue(event.target.value);
+                    handleWeekPick(event.target.value);
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 shadow-sm"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-5 text-center text-[#1f3b94] font-semibold">
           {weekDates.map((day) => (
             <div key={day.label} className="pb-2">
               <div className="text-base md:text-lg tracking-wide">
                 {day.label.toUpperCase()}
+              </div>
+              <div className="text-[10px] text-[#8a8fa8] mt-1">
+                {day.date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
               </div>
             </div>
           ))}
@@ -204,9 +301,10 @@ const LavRoomCalendar = () => {
             {bookingsByDay.map((items, dayIndex) => (
               <div
                 key={dayLabels[dayIndex]}
+                data-day-col
                 className="border border-[#1433a5] p-2"
               >
-                <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
                   {items.length === 0 ? (
                     <div className="text-xs text-[#7b8bb8] py-8 text-center">
                       No bookings
@@ -221,10 +319,27 @@ const LavRoomCalendar = () => {
                           if (!gridRef.current) return;
                           const rect = event.currentTarget.getBoundingClientRect();
                           const containerRect = gridRef.current.getBoundingClientRect();
+                          const column = event.currentTarget.closest("[data-day-col]");
+                          const columnRect = column
+                            ? column.getBoundingClientRect()
+                            : rect;
+                          const overlayWidth = 380;
+                          const centerX =
+                            columnRect.left -
+                            containerRect.left +
+                            columnRect.width / 2;
+                          const left = Math.max(
+                            -20,
+                            Math.min(
+                              centerX - overlayWidth / 2,
+                              containerRect.width - overlayWidth + 20
+                            )
+                          );
                           setHoveredAppointment({
                             ...booking,
                             dayIndex,
                             top: rect.top - containerRect.top,
+                            left,
                           });
                         }}
                         onMouseLeave={() => setHoveredAppointment(null)}
@@ -259,12 +374,11 @@ const LavRoomCalendar = () => {
             ))}
           {hoveredAppointment && (
             <div
-              className={`pointer-events-none absolute z-20 w-[380px] rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl ${
-                hoveredAppointment.dayIndex >= 3
-                  ? "right-full mr-4"
-                  : "left-full ml-4"
-              }`}
-              style={{ top: Math.max(8, hoveredAppointment.top - 20) }}
+              className="pointer-events-none absolute z-20 w-[380px] rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl"
+              style={{
+                top: Math.max(8, hoveredAppointment.top - 20),
+                left: hoveredAppointment.left ?? 0,
+              }}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[18px] font-bold text-[#8a5328]">
