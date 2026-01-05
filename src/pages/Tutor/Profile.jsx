@@ -455,25 +455,25 @@ const Profile = () => {
           </button>
         </div>
 
-        <div className="">
+        <div className="flex flex-col md:flex-row md:items-start md:gap-8">
           {/* Profile Image */}
-          <div className="w-32 h-32 bg-blue-500 rounded-full flex items-center justify-center mb-3">
+          <div className="w-32 h-32 md:w-44 md:h-44 bg-blue-500 rounded-full flex items-center justify-center mb-4 md:mb-0">
             {profile.profile_image ? (
               <img
                 src={profile.profile_image}
                 alt="Profile"
-                className="w-32 h-32 rounded-full object-cover"
+                className="w-32 h-32 md:w-44 md:h-44 rounded-full object-cover"
               />
             ) : (
-              <span className="text-white text-4xl font-bold">
+              <span className="text-white text-4xl md:text-5xl font-bold">
                 {name.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
 
           {/* Profile Information */}
-          <div className="flex flex-col">
-            <div className="space-y-2 ">
+          <div className="flex-1">
+            <div className="space-y-2 md:space-y-3 md:grid md:grid-cols-2 md:gap-x-10 md:gap-y-3">
               <p>
                 <span className="font-semibold">Name:</span> {name}
               </p>
@@ -505,7 +505,6 @@ const Profile = () => {
                 <span className="font-semibold">Online Link:</span>{" "}
                 <span>{profile.online_link || "Not provided"}</span>
               </p>
-              
             </div>
           </div>
         </div>
