@@ -115,41 +115,43 @@ const Login = ({ setAuth }) => {
   const heroLogoSrc = loginPhoto || LAVLogo;
 
   return (
-    <div className="flex h-screen p-0 md:p-3">
-      {/* Left Panel - Blue Background with Logo (Hidden on Mobile) */}
-      <div className="hidden md:flex w-1/3 bg-gradient-to-b from-[#4c4ba2] via-[#4257a9] to-[#132c91] flex-col items-center justify-center relative rounded-md overflow-hidden">
-        <Link to="/" className="absolute top-8 left-8 flex items-center ">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
-          <span className="ml-2 text-white font-semibold text-lg">LAV</span>
-        </Link>
+    <div className="min-h-screen bg-[#eeeeee] flex items-center justify-center p-4 md:p-6">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-[1fr_1.2fr]">
+        {/* Left Panel - Illustration */}
+        <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
+          <Link to="/" className="absolute top-6 left-6 flex items-center">
+            <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
+            <span className="ml-2 text-[#3142a6] font-semibold text-lg">LAV</span>
+          </Link>
 
-        {/* Large Centered Logo */}
-        <div className="flex flex-col items-center gap-4 px-6 text-center w-full">
-          <div className="w-full max-w-xl rounded-2xl border border-white/25 bg-white/10 backdrop-blur-sm shadow-xl p-3">
-            <img
-              src={heroLogoSrc}
-              alt="LAV"
-              className="w-full aspect-[4/3] rounded-xl object-cover shadow-md border border-white/30"
-            />
+          <div className="flex flex-col items-center gap-4 text-center w-full">
+            <div className="w-full max-w-xs rounded-2xl border border-blue-100 bg-white/70 shadow-md p-3">
+              <img
+                src={heroLogoSrc}
+                alt="LAV"
+                className="w-full h-56 object-contain"
+              />
+            </div>
+            <p className="text-sm text-[#4b5aa9] max-w-xs">
+              Peer tutoring support with a simple, welcoming experience.
+            </p>
           </div>
-          <p className="text-sm text-blue-100 max-w-xs">
-            Peer tutoring support with a simple, welcoming experience.
-          </p>
         </div>
-      </div>
 
-      {/* Right Panel - White Background with Form */}
-      <div className="flex-1 bg-white/90 backdrop-blur flex flex-col items-center justify-center px-4 md:px-16 py-6 md:py-0 relative">
-        {/* Small Logo and LAV Text - Visible on Mobile */}
-        <Link to="/" className="absolute top-4 md:top-8 left-4 md:left-8 flex items-center md:hidden">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
-          <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
-        </Link>
+        {/* Right Panel - Form */}
+        <div className="flex flex-col items-center justify-center px-6 md:px-12 py-10 md:py-14 relative">
+          <Link to="/" className="absolute top-6 right-6 md:hidden flex items-center">
+            <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
+            <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
+          </Link>
 
-        <div className="max-w-md w-full mt-8 md:mt-0">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#4c4ba2] mb-6 md:mb-8 text-center">
-            Welcome!
-          </h2>
+          <div className="max-w-md w-full">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#3142a6] mb-2">
+              Hello, welcome back
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Sign in to continue your tutoring journey.
+            </p>
 
           {message && (
             <div className="mb-4 p-3 rounded-lg bg-red-100 border border-red-300">
@@ -219,6 +221,7 @@ const Login = ({ setAuth }) => {
               Sign up
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

@@ -80,38 +80,43 @@ const Register = ({ setAuth }) => {
   };
 
   return (
-    <div className="flex h-screen p-0 md:p-3">
-      {/* Left Panel - Blue Background with Logo (Hidden on Mobile) */}
-      <div className="hidden md:flex w-1/3 bg-blue-600 flex-col items-center justify-center relative rounded-md">
-        <Link to="/" className="absolute top-8 left-8 flex items-center ">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
-          <span className="ml-2 text-white font-semibold text-lg">
-            LAV
-          </span>
-        </Link>
+    <div className="min-h-screen bg-[#eeeeee] flex items-center justify-center p-4 md:p-6">
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-[1fr_1.2fr]">
+        {/* Left Panel - Illustration */}
+        <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
+          <Link to="/" className="absolute top-6 left-6 flex items-center">
+            <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
+            <span className="ml-2 text-[#3142a6] font-semibold text-lg">LAV</span>
+          </Link>
 
-        {/* Large Centered Logo */}
-        <div className="flex flex-col items-center">
-          <img src={LAVLogo} alt="LAV Logo" className="w-50 h-50 mb-4" />
-          <h1
-            className="text-6xl font-bold text-white tracking-wider"
-          >
-          </h1>
+          <div className="flex flex-col items-center gap-4 text-center w-full">
+            <div className="w-full max-w-xs rounded-2xl border border-blue-100 bg-white/70 shadow-md p-3">
+              <img
+                src={LAVLogo}
+                alt="LAV"
+                className="w-full h-56 object-contain"
+              />
+            </div>
+            <p className="text-sm text-[#4b5aa9] max-w-xs">
+              Join the learning community and book your first session.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Right Panel - White Background with Form */}
-      <div className="flex-1 bg-white flex flex-col items-center justify-center px-4 md:px-16 py-4 md:py-0 relative">
-        {/* Small Logo and LAV Text - Visible on Mobile */}
-        <Link to="/" className="absolute top-4 md:top-8 left-4 md:left-8 flex items-center md:hidden">
-          <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8" />
-          <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
-        </Link>
+        {/* Right Panel - Form */}
+        <div className="flex flex-col items-center justify-center px-6 md:px-12 py-10 md:py-14 relative">
+          <Link to="/" className="absolute top-6 right-6 md:hidden flex items-center">
+            <img src={LAVLogo} alt="LAV Logo" className="w-8 h-8 object-contain" />
+            <span className="ml-2 text-blue-600 font-semibold text-lg">LAV</span>
+          </Link>
 
-        <div className="max-w-md w-full mt-8 md:mt-0">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#4c4ba2] mb-6 md:mb-8 text-center">
-              Create an Account
+          <div className="max-w-md w-full">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#3142a6] mb-2">
+              Create an account
             </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Set up your details to start booking sessions.
+            </p>
 
           {message && (
             <div
@@ -200,7 +205,8 @@ const Register = ({ setAuth }) => {
               Log in
             </Link>
           </p>
-          
+
+          </div>
         </div>
       </div>
     </div>
