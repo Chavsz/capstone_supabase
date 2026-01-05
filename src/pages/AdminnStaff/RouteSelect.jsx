@@ -14,12 +14,7 @@ const RouteSelect = ({ onClose }) => {
         title="Dashboard"
         onClose={onClose}
       />
-      <Route
-        to="/dashboard/lavroom"
-        Icon={mdIcons.MdCalendarMonth}
-        title="Lavroom"
-        onClose={onClose}
-      />
+     
       <Route
         to="/dashboard/lav-room"
         Icon={mdIcons.MdViewWeek}

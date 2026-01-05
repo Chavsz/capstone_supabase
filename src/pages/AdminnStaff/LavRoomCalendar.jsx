@@ -89,6 +89,8 @@ const LavRoomCalendar = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showWeekPicker, setShowWeekPicker] = useState(false);
   const [weekPickerValue, setWeekPickerValue] = useState("");
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -206,6 +208,8 @@ const LavRoomCalendar = () => {
     );
   }, [filteredAppointments]);
 
+  const activeDayBookings = bookingsByDay[selectedDayIndex] || [];
+
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
@@ -245,9 +249,24 @@ const LavRoomCalendar = () => {
                   onClick={() => setStatusFilter(status)}
                   className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
                     statusFilter === status
-                      ? "bg-[#1f3b94] text-white border-[#1f3b94]"
+                      ? "text-white"
                       : "bg-white text-gray-600 border-gray-200"
                   }`}
+                  style={
+                    statusFilter === status && status !== "all"
+                      ? {
+                          backgroundColor: getStatusColor(status),
+                          borderColor: getStatusColor(status),
+                          color: status === "pending" ? "#323335" : "#ffffff",
+                        }
+                      : statusFilter === status
+                        ? {
+                            backgroundColor: "#1f3b94",
+                            borderColor: "#1f3b94",
+                            color: "#ffffff",
+                          }
+                        : undefined
+                  }
                 >
                   {STATUS_LABELS[status] || "All"}
                 </button>
@@ -278,7 +297,7 @@ const LavRoomCalendar = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-5 text-center text-[#1f3b94] font-semibold">
+        <div className="grid grid-cols-5 text-center text-[#1f3b94] font-semibold hidden lg:grid">
           {weekDates.map((day) => (
             <div key={day.label} className="pb-2">
               <div className="text-base md:text-lg tracking-wide">
@@ -294,9 +313,136 @@ const LavRoomCalendar = () => {
           ))}
         </div>
 
+        {/* Mobile day selector */}
+        <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+          {weekDates.map((day, index) => (
+            <button
+              key={day.label}
+              type="button"
+              onClick={() => setSelectedDayIndex(index)}
+              className={`min-w-[72px] rounded-2xl border px-3 py-2 text-xs font-semibold ${
+                selectedDayIndex === index
+                  ? "border-[#1f3b94] bg-[#1f3b94] text-white"
+                  : "border-gray-200 bg-white text-[#1f3b94]"
+              }`}
+            >
+              <div className="text-[11px]">{day.label.toUpperCase()}</div>
+              <div className="text-[10px] opacity-80">
+                {day.date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile single-day list */}
+        <div className="lg:hidden border border-[#1433a5] bg-[#f7efe6] rounded-2xl p-2">
+          <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+            {activeDayBookings.length === 0 ? (
+              <div className="text-xs text-[#7b8bb8] py-10 text-center">
+                No bookings
+              </div>
+            ) : (
+              activeDayBookings.map((booking) => {
+                const isExpanded = expandedAppointmentId === booking.appointment_id;
+                return (
+                  <div
+                    key={booking.appointment_id}
+                    className="relative rounded-md border border-[#1433a5] p-3 text-xs"
+                    style={{ backgroundColor: getStatusColor(booking.status) }}
+                  >
+                    <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
+                      <span>start</span>
+                      <span>{booking.start_time?.slice(0, 5) || "--:--"}</span>
+                    </div>
+                    <div className={`flex justify-between font-semibold mb-2 ${getTextColor(booking.status)}`}>
+                      <span>end</span>
+                      <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
+                    </div>
+                    <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
+                    <div className={getTextColor(booking.status)}>
+                      {booking.tutor?.name || "N/A"}
+                    </div>
+                    <div className={`font-semibold mt-2 ${getTextColor(booking.status)}`}>tutee</div>
+                    <div className={getTextColor(booking.status)}>
+                      {booking.tutee?.name || "N/A"}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedAppointmentId(isExpanded ? null : booking.appointment_id)
+                      }
+                      className={`absolute bottom-3 right-3 ${getTextColor(booking.status)}`}
+                      aria-label="Toggle appointment details"
+                    >
+                      <AiOutlineEye className="h-4 w-4" />
+                    </button>
+                    {isExpanded && (
+                      <div className="mt-3 rounded-xl border border-[#caa37b] bg-[#fffdf7] p-3 text-[11px] text-[#2d3a6d]">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-[#8a5328]">
+                            {booking.subject || "Appointment"}
+                          </span>
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                            style={{ backgroundColor: getStatusColor(booking.status) }}
+                          >
+                            {(STATUS_LABELS[booking.status] || booking.status).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Subject</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {booking.subject || "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Specialization</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {booking.topic || "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Date</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {formatLongDate(booking.date) || "--"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Time</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Mode</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {booking.mode_of_session || "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[#1f3b94]">Tutees</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {booking.number_of_tutees || 1}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Desktop grid */}
         <div
           ref={gridRef}
-          className="relative grid grid-cols-5 border border-[#1433a5] bg-[#f7efe6] overflow-visible"
+          className="relative grid grid-cols-5 border border-[#1433a5] bg-[#f7efe6] overflow-visible hidden lg:grid"
         >
             {bookingsByDay.map((items, dayIndex) => (
               <div
