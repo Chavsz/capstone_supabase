@@ -166,7 +166,7 @@ function Dashboard() {
           {/* Admin Dashboard Cards  */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 md:mt-6">
             {/* Sessions */}
-            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+            <div className="rounded-3xl bg-[#e9f2ff] p-4 shadow-sm border border-[#d4e2ff]">
               <div className="flex items-center justify-between">
                 <p className="text-[#1f3b94] font-semibold">Sessions</p>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
@@ -186,7 +186,7 @@ function Dashboard() {
             </div>
 
             {/* Evaluations */}
-            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+            <div className="rounded-3xl bg-[#e9f2ff] p-4 shadow-sm border border-[#d4e2ff]">
               <div className="flex items-center justify-between">
                 <p className="text-[#1f3b94] font-semibold">Evaluations</p>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
@@ -206,7 +206,7 @@ function Dashboard() {
             </div>
 
             {/* Tutee Request */}
-            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+            <div className="rounded-3xl bg-[#e9f2ff] p-4 shadow-sm border border-[#d4e2ff]">
               <div className="flex items-center justify-between">
                 <p className="text-[#1f3b94] font-semibold">Tutee Request</p>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
@@ -226,7 +226,7 @@ function Dashboard() {
             </div>
 
             {/* Cancellations */}
-            <div className="rounded-3xl bg-[#f7efe6] p-4 shadow-sm">
+            <div className="rounded-3xl bg-[#e9f2ff] p-4 shadow-sm border border-[#d4e2ff]">
               <div className="flex items-center justify-between">
                 <p className="text-[#1f3b94] font-semibold">Cancellations</p>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
