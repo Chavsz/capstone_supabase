@@ -80,6 +80,11 @@ const getTextColor = (status) => {
   return darkStatuses.has(status) ? "text-white" : "text-[#1433a5]";
 };
 
+const getMobileTextColor = (status) => {
+  if (status === "completed") return "text-white";
+  return getTextColor(status);
+};
+
 const LavRoomCalendar = () => {
   const [weekStart, setWeekStart] = useState(getMonday(new Date()));
   const [appointments, setAppointments] = useState([]);
@@ -247,11 +252,6 @@ const LavRoomCalendar = () => {
     const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
     return dayIndex >= 0 && dayIndex <= 4 ? dayIndex : null;
   }, [activeSearchDate]);
-  const displayDayIndices = useMemo(() => {
-    if (!searchTerm.trim()) return dayLabels.map((_, index) => index);
-    if (activeSearchDayIndex === null) return [];
-    return [activeSearchDayIndex];
-  }, [searchTerm, activeSearchDayIndex]);
 
   useEffect(() => {
     if (!isSearchMode || !activeSearchDate) return;
@@ -263,12 +263,15 @@ const LavRoomCalendar = () => {
 
   const bookingsByDay = useMemo(() => {
     const grouped = dayLabels.map(() => []);
+    const weekStartDate = new Date(weekStart);
+    const weekEndDate = new Date(weekStart);
+    weekEndDate.setDate(weekStartDate.getDate() + 4);
     filteredAppointments.forEach((appointment) => {
       if (!appointment.date) return;
-      if (isSearchMode && activeSearchDate && appointment.date !== activeSearchDate) {
+      const dateValue = new Date(`${appointment.date}T00:00:00`);
+      if (isSearchMode && (dateValue < weekStartDate || dateValue > weekEndDate)) {
         return;
       }
-      const dateValue = new Date(`${appointment.date}T00:00:00`);
       const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
       if (dayIndex < 0 || dayIndex > 4) return;
       grouped[dayIndex].push(appointment);
@@ -276,9 +279,31 @@ const LavRoomCalendar = () => {
     return grouped.map((items) =>
       items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
     );
-  }, [filteredAppointments, isSearchMode, activeSearchDate]);
+  }, [filteredAppointments, isSearchMode, weekStart]);
 
   const activeDayBookings = bookingsByDay[selectedDayIndex] || [];
+
+  const matchingDayIndices = useMemo(() => {
+    if (!searchTerm.trim() && statusFilter === "all") return new Set();
+    const start = new Date(weekStart);
+    const end = new Date(weekStart);
+    end.setDate(start.getDate() + 4);
+    const set = new Set();
+    filteredAppointments.forEach((appointment) => {
+      if (!appointment.date) return;
+      const dateValue = new Date(`${appointment.date}T00:00:00`);
+      if (dateValue < start || dateValue > end) return;
+      const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
+      if (dayIndex < 0 || dayIndex > 4) return;
+      set.add(dayIndex);
+    });
+    return set;
+  }, [filteredAppointments, searchTerm, statusFilter, weekStart]);
+
+  const desktopMatchingDayIndices = useMemo(() => {
+    if (!searchTerm.trim() && statusFilter === "all") return new Set();
+    return matchingDayIndices;
+  }, [matchingDayIndices, searchTerm, statusFilter]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -371,21 +396,24 @@ const LavRoomCalendar = () => {
           </div>
         </div>
 
-        <div
-          className="text-center text-[#1f3b94] font-semibold hidden lg:grid"
-          style={{
-            gridTemplateColumns: `repeat(${displayDayIndices.length || 1}, minmax(0, 1fr))`,
-          }}
-        >
-          {(searchTerm.trim()
-            ? displayDayIndices.map((index) => weekDates[index])
-            : weekDates
-          ).map((day) => (
-            <div key={day.label} className="pb-2">
+        <div className="text-center text-[#1f3b94] font-semibold hidden lg:grid grid-cols-5">
+          {weekDates.map((day, index) => (
+            <div
+              key={day.label}
+              className={`pb-2 rounded-xl ${
+                desktopMatchingDayIndices.has(index) ? "bg-[#feda3c]" : ""
+              }`}
+            >
               <div className="text-base md:text-lg tracking-wide">
                 {day.label.toUpperCase()}
               </div>
-              <div className="text-[10px] text-[#8a8fa8] mt-1">
+              <div
+                className={`text-[10px] mt-1 ${
+                  desktopMatchingDayIndices.has(index)
+                    ? "text-[#181718]"
+                    : "text-[#8a8fa8]"
+                }`}
+              >
                 {day.date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -404,8 +432,12 @@ const LavRoomCalendar = () => {
               onClick={() => setSelectedDayIndex(index)}
               className={`min-w-[72px] rounded-2xl border px-3 py-2 text-xs font-semibold ${
                 selectedDayIndex === index
-                  ? "border-[#1f3b94] bg-[#1f3b94] text-white"
-                  : "border-gray-200 bg-white text-[#1f3b94]"
+                  ? matchingDayIndices.has(index)
+                    ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
+                    : "border-[#1f3b94] bg-[#1f3b94] text-white"
+                  : matchingDayIndices.has(index)
+                    ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
+                    : "border-gray-200 bg-white text-[#1f3b94]"
               }`}
             >
               <div className="text-[11px]">{day.label.toUpperCase()}</div>
@@ -435,20 +467,20 @@ const LavRoomCalendar = () => {
                     className="relative rounded-md border border-[#1433a5] p-3 text-xs"
                     style={{ backgroundColor: getStatusColor(booking.status) }}
                   >
-                    <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
+                    <div className={`flex justify-between font-semibold ${getMobileTextColor(booking.status)}`}>
                       <span>start</span>
                       <span>{booking.start_time?.slice(0, 5) || "--:--"}</span>
                     </div>
-                    <div className={`flex justify-between font-semibold mb-2 ${getTextColor(booking.status)}`}>
+                    <div className={`flex justify-between font-semibold mb-2 ${getMobileTextColor(booking.status)}`}>
                       <span>end</span>
                       <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
                     </div>
-                    <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
-                    <div className={getTextColor(booking.status)}>
+                    <div className={`font-semibold ${getMobileTextColor(booking.status)}`}>tutor</div>
+                    <div className={getMobileTextColor(booking.status)}>
                       {booking.tutor?.name || "N/A"}
                     </div>
-                    <div className={`font-semibold mt-2 ${getTextColor(booking.status)}`}>tutee</div>
-                    <div className={getTextColor(booking.status)}>
+                    <div className={`font-semibold mt-2 ${getMobileTextColor(booking.status)}`}>tutee</div>
+                    <div className={getMobileTextColor(booking.status)}>
                       {booking.tutee?.name || "N/A"}
                     </div>
                     <button
@@ -456,7 +488,7 @@ const LavRoomCalendar = () => {
                       onClick={() =>
                         setExpandedAppointmentId(isExpanded ? null : booking.appointment_id)
                       }
-                      className={`absolute bottom-3 right-3 ${getTextColor(booking.status)}`}
+                      className={`absolute bottom-3 right-3 ${getMobileTextColor(booking.status)}`}
                       aria-label="Toggle appointment details"
                     >
                       {isExpanded ? (
@@ -528,18 +560,9 @@ const LavRoomCalendar = () => {
         {/* Desktop grid */}
         <div
           ref={gridRef}
-          className="relative border border-[#1433a5] bg-[#f7efe6] overflow-visible hidden lg:grid"
-          style={{
-            gridTemplateColumns: `repeat(${displayDayIndices.length || 1}, minmax(0, 1fr))`,
-          }}
+          className="relative border border-[#1433a5] bg-[#f7efe6] overflow-visible hidden lg:grid grid-cols-5"
         >
-            {(searchTerm.trim()
-              ? displayDayIndices.map((index) => ({
-                  items: bookingsByDay[index] || [],
-                  dayIndex: index,
-                }))
-              : bookingsByDay.map((items, dayIndex) => ({ items, dayIndex }))
-            ).map(({ items, dayIndex }) => (
+            {bookingsByDay.map((items, dayIndex) => (
               <div
                 key={dayLabels[dayIndex]}
                 data-day-col
