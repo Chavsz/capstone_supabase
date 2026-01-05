@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
-import { FaEdit, FaPlus, FaTrash, FaTimes } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTrash, FaTimes, FaCalendarAlt } from "react-icons/fa";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -28,6 +28,10 @@ const Profile = () => {
   const [scheduleEditDay, setScheduleEditDay] = useState(null);
   const [newTime, setNewTime] = useState({ start: "", end: "" });
   const [loadingSchedules, setLoadingSchedules] = useState(false);
+  const [profileId, setProfileId] = useState(null);
+  const [unavailableDays, setUnavailableDays] = useState([]);
+  const [newUnavailableDate, setNewUnavailableDate] = useState("");
+  const [loadingUnavailable, setLoadingUnavailable] = useState(false);
 
   const ALLOWED_TIME_BLOCKS = [
     { start: 8 * 60, end: 12 * 60 },
@@ -167,10 +171,52 @@ const Profile = () => {
         file_link: "",
       };
 
+      setProfileId(data?.profile_id || null);
       setProfile(profileData);
       setForm(profileData);
     } catch (err) {
       console.error(err.message);
+    }
+  }
+
+  async function getUnavailableDays() {
+    setLoadingUnavailable(true);
+    try {
+      let activeProfileId = profileId;
+      if (!activeProfileId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { data } = await supabase
+          .from("profile")
+          .select("profile_id")
+          .eq("user_id", session.user.id)
+          .single();
+
+        activeProfileId = data?.profile_id || null;
+        setProfileId(activeProfileId);
+      }
+
+      if (!activeProfileId) {
+        setUnavailableDays([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("tutor_unavailable_days")
+        .select("unavailable_id, date")
+        .eq("profile_id", activeProfileId)
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+
+      setUnavailableDays(data || []);
+    } catch (err) {
+      console.error(err.message);
+    } finally {
+      setLoadingUnavailable(false);
     }
   }
 
@@ -183,11 +229,20 @@ const Profile = () => {
       if (!session) return;
 
       // Get profile_id first
-      const { data: profileData } = await supabase
-        .from("profile")
-        .select("profile_id")
-        .eq("user_id", session.user.id)
-        .single();
+      let profileData = null;
+      if (!profileId) {
+        const { data } = await supabase
+          .from("profile")
+          .select("profile_id")
+          .eq("user_id", session.user.id)
+          .single();
+        profileData = data;
+        if (data?.profile_id) {
+          setProfileId(data.profile_id);
+        }
+      } else {
+        profileData = { profile_id: profileId };
+      }
 
       if (!profileData) {
         setSchedules([]);
@@ -215,6 +270,7 @@ const Profile = () => {
     getName();
     getProfile();
     getSchedules();
+    getUnavailableDays();
   }, []);
 
   // Group schedules by day
@@ -316,6 +372,51 @@ const Profile = () => {
 
       setScheduleEditDay(null);
       getSchedules();
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const handleAddUnavailableDay = async () => {
+    if (!newUnavailableDate) return;
+    if (!profileId) {
+      alert("Please save your profile first.");
+      return;
+    }
+    const exists = unavailableDays.some(
+      (entry) => entry.date === newUnavailableDate
+    );
+    if (exists) {
+      alert("That date is already marked as unavailable.");
+      return;
+    }
+    try {
+      const { error } = await supabase.from("tutor_unavailable_days").insert([
+        {
+          profile_id: profileId,
+          date: newUnavailableDate,
+        },
+      ]);
+
+      if (error) throw error;
+
+      setNewUnavailableDate("");
+      getUnavailableDays();
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const handleRemoveUnavailableDay = async (unavailableId) => {
+    try {
+      const { error } = await supabase
+        .from("tutor_unavailable_days")
+        .delete()
+        .eq("unavailable_id", unavailableId);
+
+      if (error) throw error;
+
+      getUnavailableDays();
     } catch (err) {
       console.error(err.message);
     }
@@ -443,9 +544,7 @@ const Profile = () => {
       {/* Student Information Card */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 max-w">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
-            Student Information
-          </h2>
+          
           <button
             onClick={handleEdit}
             className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
@@ -510,130 +609,187 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Schedules Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 max-w">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Schedules</h2>
-        <div className="space-y-4">
-          {daysOfWeek.map((day) => (
-            <div key={day} className="flex items-start gap-4">
-              <span className="font-semibold text-gray-900 w-24">{day}</span>
-              <div className="flex-1 flex flex-wrap gap-2">
-                {schedulesByDay[day] && schedulesByDay[day].length > 0 ? (
-                  schedulesByDay[day].map((slot) => (
-                    <div
-                      key={slot.schedule_id}
-                      className="flex items-center bg-white border-1 border-[#c2c2c2] rounded-md px-3 py-1 gap-2"
-                    >
-                      <span className="text-sm font-mono">
-                        {slot.start_time.slice(0, 5)} -{" "}
-                        {slot.end_time.slice(0, 5)}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteTime(slot.schedule_id)}
-                        className="text-[#c2c2c2]"
-                        title="Delete"
+      {/* Schedules + Unavailable Days */}
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Schedules</h2>
+          <div className="space-y-4">
+            {daysOfWeek.map((day) => (
+              <div key={day} className="flex items-start gap-4">
+                <span className="font-semibold text-gray-900 w-24">{day}</span>
+                <div className="flex-1 flex flex-wrap gap-2">
+                  {schedulesByDay[day] && schedulesByDay[day].length > 0 ? (
+                    schedulesByDay[day].map((slot) => (
+                      <div
+                        key={slot.schedule_id}
+                        className="flex items-center bg-white border border-[#c2c2c2] rounded-md px-3 py-1 gap-2"
                       >
-                        <FaTrash size={12} />
+                        <span className="text-sm font-mono">
+                          {slot.start_time.slice(0, 5)} -{" "}
+                          {slot.end_time.slice(0, 5)}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteTime(slot.schedule_id)}
+                          className="text-[#c2c2c2]"
+                          title="Delete"
+                        >
+                          <FaTrash size={12} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-gray-400">No schedule</span>
+                  )}
+                  {scheduleEditDay === day ? (
+                    <div className="flex items-center gap-2">
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DemoContainer components={["TimePicker"]}>
+                          <TimePicker
+                            value={
+                              newTime.start
+                                ? dayjs(`2000-01-01T${newTime.start}`)
+                                : null
+                            }
+                            onChange={(value) => handleTimeChange("start", value)}
+                            onAccept={(value) => handleTimeAccept("start", value)}
+                            label="Start Time"
+                            minTime={minScheduleTime}
+                            maxTime={maxScheduleTime}
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                "& fieldset": {
+                                  borderColor: "red",
+                                },
+                                "&:hover fieldset": {
+                                  borderColor: "red",
+                                },
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "red",
+                                },
+                              },
+                            }}
+                          />
+                        </DemoContainer>
+                      </LocalizationProvider>
+                      <span>-</span>
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DemoContainer components={["TimePicker"]}>
+                          <TimePicker
+                            value={
+                              newTime.end
+                                ? dayjs(`2000-01-01T${newTime.end}`)
+                                : null
+                            }
+                            onChange={(value) => handleTimeChange("end", value)}
+                            onAccept={(value) => handleTimeAccept("end", value)}
+                            label="End Time"
+                            minTime={minScheduleTime}
+                            maxTime={maxScheduleTime}
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                "& fieldset": {
+                                  borderColor: "red",
+                                },
+                                "&:hover fieldset": {
+                                  borderColor: "red",
+                                },
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "red",
+                                },
+                              },
+                            }}
+                          />
+                        </DemoContainer>
+                      </LocalizationProvider>
+                      <button
+                        onClick={() => handleAddTime(day)}
+                        className="text-green-600 hover:text-green-700"
+                        title="Add"
+                      >
+                        <FaPlus size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setScheduleEditDay(null);
+                          setNewTime({ start: "", end: "" });
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        Cancel
                       </button>
                     </div>
-                  ))
-                ) : (
-                  <span className="text-gray-400">No schedule</span>
-                )}
-                {scheduleEditDay === day ? (
-                  <div className="flex items-center gap-2">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DemoContainer components={["TimePicker"]}>
-                        <TimePicker
-                          value={
-                            newTime.start
-                              ? dayjs(`2000-01-01T${newTime.start}`)
-                              : null
-                          }
-                          onChange={(value) => handleTimeChange("start", value)}
-                          onAccept={(value) => handleTimeAccept("start", value)}
-                          label="Start Time"
-                          minTime={minScheduleTime}
-                          maxTime={maxScheduleTime}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              "& fieldset": {
-                                borderColor: "red",
-                              },
-                              "&:hover fieldset": {
-                                borderColor: "red",
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: "red",
-                              },
-                            },
-                          }}
-                        />
-                      </DemoContainer>
-                    </LocalizationProvider>
-                    <span>-</span>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DemoContainer components={["TimePicker"]}>
-                        <TimePicker
-                          value={
-                            newTime.end
-                              ? dayjs(`2000-01-01T${newTime.end}`)
-                              : null
-                          }
-                          onChange={(value) => handleTimeChange("end", value)}
-                          onAccept={(value) => handleTimeAccept("end", value)}
-                          label="End Time"
-                          minTime={minScheduleTime}
-                          maxTime={maxScheduleTime}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              "& fieldset": {
-                                borderColor: "red",
-                              },
-                              "&:hover fieldset": {
-                                borderColor: "red",
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: "red",
-                              },
-                            },
-                          }}
-                        />
-                      </DemoContainer>
-                    </LocalizationProvider>
+                  ) : (
                     <button
-                      onClick={() => handleAddTime(day)}
-                      className="text-green-600 hover:text-green-700"
-                      title="Add"
+                      onClick={() => setScheduleEditDay(day)}
+                      className="text-blue-700 hover:text-blue-900"
+                      title="Add time slot"
                     >
-                      <FaPlus size={14} />
+                      <FaEdit size={14} />
                     </button>
-                    <button
-                      onClick={() => {
-                        setScheduleEditDay(null);
-                        setNewTime({ start: "", end: "" });
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setScheduleEditDay(day)}
-                    className="text-blue-700 hover:text-blue-900"
-                    title="Add time slot"
-                  >
-                    <FaEdit size={14} />
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {loadingSchedules && (
+            <div className="text-gray-500 mt-4">Loading schedules...</div>
+          )}
         </div>
-        {loadingSchedules && (
-          <div className="text-gray-500 mt-4">Loading schedules...</div>
-        )}
+
+        <div className="bg-white rounded-lg border border-gray-200 p-6 h-fit">
+          <div className="flex items-center gap-2 mb-4">
+            <FaCalendarAlt className="text-blue-600" />
+            <h2 className="text-lg font-bold text-gray-900">
+              Tutor Not Available
+            </h2>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            Mark whole days you are unavailable so tutees cannot book sessions.
+          </p>
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="date"
+              value={newUnavailableDate}
+              onChange={(e) => setNewUnavailableDate(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
+            />
+            <button
+              onClick={handleAddUnavailableDay}
+              className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+            >
+              Add
+            </button>
+          </div>
+          {loadingUnavailable && (
+            <div className="text-gray-500 text-sm">Loading dates...</div>
+          )}
+          {!loadingUnavailable && unavailableDays.length === 0 && (
+            <div className="text-sm text-gray-400">No blocked days.</div>
+          )}
+          <div className="space-y-2">
+            {unavailableDays.map((entry) => (
+              <div
+                key={entry.unavailable_id}
+                className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 text-sm"
+              >
+                <span>
+                  {new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+                <button
+                  onClick={() => handleRemoveUnavailableDay(entry.unavailable_id)}
+                  className="text-red-500 hover:text-red-600"
+                  title="Remove"
+                >
+                  <FaTrash size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Edit Information Modal */}
