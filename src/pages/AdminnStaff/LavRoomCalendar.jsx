@@ -101,8 +101,11 @@ const LavRoomCalendar = () => {
     });
   }, [weekStart]);
 
+  const isSearchMode = searchTerm.trim().length > 0;
+
   const handlePrevWeek = () => {
-    if (searchTerm.trim()) {
+    if (isSearchMode) {
+      if (searchResults.length === 0) return;
       setSearchIndex((prev) => Math.max(prev - 1, 0));
       return;
     }
@@ -112,7 +115,8 @@ const LavRoomCalendar = () => {
   };
 
   const handleNextWeek = () => {
-    if (searchTerm.trim()) {
+    if (isSearchMode) {
+      if (searchResults.length === 0) return;
       setSearchIndex((prev) =>
         Math.min(prev + 1, Math.max(searchResults.length - 1, 0))
       );
@@ -175,12 +179,12 @@ const LavRoomCalendar = () => {
   };
 
   useEffect(() => {
-    if (searchTerm.trim()) {
+    if (isSearchMode) {
       fetchAppointments({ searchAll: true });
     } else {
       fetchAppointments({ startDate: weekStart });
     }
-  }, [weekStart, searchTerm]);
+  }, [weekStart, searchTerm, isSearchMode]);
 
   useEffect(() => {
     const channel = supabase
@@ -201,7 +205,7 @@ const LavRoomCalendar = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [weekStart, searchTerm]);
+  }, [weekStart, searchTerm, isSearchMode]);
 
   const filteredAppointments = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -262,6 +266,14 @@ const LavRoomCalendar = () => {
     if (activeSearchDayIndex === null) return [];
     return [activeSearchDayIndex];
   }, [searchTerm, activeSearchDayIndex]);
+
+  useEffect(() => {
+    if (!isSearchMode || !activeSearchDate) return;
+    const nextWeekStart = getMonday(new Date(`${activeSearchDate}T00:00:00`));
+    if (nextWeekStart.getTime() !== weekStart.getTime()) {
+      setWeekStart(nextWeekStart);
+    }
+  }, [activeSearchDate, isSearchMode, weekStart]);
 
   const activeDayBookings = bookingsByDay[selectedDayIndex] || [];
 
