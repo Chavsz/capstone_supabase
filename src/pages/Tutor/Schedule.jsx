@@ -688,15 +688,14 @@ const Schedule = () => {
     if (!notification || !appointments.length) return;
     if (handledNotificationId === notification.notification_id) return;
 
-    const details = parseNotificationDetails(
-      notification.notification_content || ""
-    );
-    if (!details) {
-      setHandledNotificationId(notification.notification_id);
-      clearStoredNotification();
-      navigate("/dashboard/schedule", { replace: true, state: {} });
-      return;
-    }
+    const notificationContent = notification.notification_content || "";
+    const details = parseNotificationDetails(notificationContent) || {
+      appointmentId: "",
+      subject: "",
+      topic: "",
+      dateText: "",
+      timeText: "",
+    };
 
     const subjectMatch = (appointment) => {
       if (details.subject && appointment.subject !== details.subject) return false;
@@ -725,6 +724,23 @@ const Schedule = () => {
       });
     } else {
       const candidates = appointments.filter(subjectMatch);
+      if (candidates.length) {
+        candidates.sort((a, b) => {
+          const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
+          const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
+          return bTime - aTime;
+        });
+        match = candidates[0];
+      }
+    }
+
+    if (!match) {
+      const wantsPending = /pending appointment|pending request|appointment request/i.test(
+        notificationContent
+      );
+      const candidates = wantsPending
+        ? appointments.filter((appointment) => appointment.status === "pending")
+        : appointments;
       if (candidates.length) {
         candidates.sort((a, b) => {
           const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
