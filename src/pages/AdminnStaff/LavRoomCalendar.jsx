@@ -130,15 +130,19 @@ const LavRoomCalendar = () => {
     setWeekStart(getMonday(picked));
   };
 
-  const fetchAppointments = async (startDate) => {
-    const start = new Date(startDate);
-    const end = new Date(startDate);
-    end.setDate(start.getDate() + 4);
-    const startKey = start.toISOString().slice(0, 10);
-    const endKey = end.toISOString().slice(0, 10);
+  const fetchAppointments = async ({ startDate, searchAll = false } = {}) => {
+    let startKey = null;
+    let endKey = null;
+    if (!searchAll && startDate) {
+      const start = new Date(startDate);
+      const end = new Date(startDate);
+      end.setDate(start.getDate() + 4);
+      startKey = start.toISOString().slice(0, 10);
+      endKey = end.toISOString().slice(0, 10);
+    }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("appointment")
         .select(
           `appointment_id,
@@ -152,9 +156,13 @@ const LavRoomCalendar = () => {
           status,
           tutor:users!appointment_tutor_id_fkey(name),
           tutee:users!appointment_user_id_fkey(name)`
-        )
-        .gte("date", startKey)
-        .lte("date", endKey)
+        );
+
+      if (!searchAll && startKey && endKey) {
+        query = query.gte("date", startKey).lte("date", endKey);
+      }
+
+      const { data, error } = await query
         .order("date", { ascending: true })
         .order("start_time", { ascending: true });
 
@@ -167,8 +175,12 @@ const LavRoomCalendar = () => {
   };
 
   useEffect(() => {
-    fetchAppointments(weekStart);
-  }, [weekStart]);
+    if (searchTerm.trim()) {
+      fetchAppointments({ searchAll: true });
+    } else {
+      fetchAppointments({ startDate: weekStart });
+    }
+  }, [weekStart, searchTerm]);
 
   useEffect(() => {
     const channel = supabase
@@ -176,14 +188,20 @@ const LavRoomCalendar = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointment" },
-        () => fetchAppointments(weekStart)
+        () => {
+          if (searchTerm.trim()) {
+            fetchAppointments({ searchAll: true });
+          } else {
+            fetchAppointments({ startDate: weekStart });
+          }
+        }
       );
 
     channel.subscribe();
     return () => {
       channel.unsubscribe();
     };
-  }, [weekStart]);
+  }, [weekStart, searchTerm]);
 
   const filteredAppointments = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
