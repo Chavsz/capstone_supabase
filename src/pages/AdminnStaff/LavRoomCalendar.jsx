@@ -322,7 +322,7 @@ const LavRoomCalendar = () => {
         </div>
       </div>
 
-      <div className="bg-[#f8f9f0] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
+      <div className="bg-[#EBEDEF] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1 pb-2">
@@ -453,7 +453,7 @@ const LavRoomCalendar = () => {
         </div>
 
         {/* Mobile single-day list */}
-        <div className="lg:hidden border border-[#1433a5] bg-[#f8f9f0] rounded-2xl p-2">
+        <div className="lg:hidden border border-[#1433a5] bg-[#EBEDEF] rounded-2xl p-2">
           <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
             {activeDayBookings.length === 0 ? (
               <div className="text-xs text-[#7b8bb8] py-10 text-center">
@@ -561,7 +561,7 @@ const LavRoomCalendar = () => {
         {/* Desktop grid */}
         <div
           ref={gridRef}
-          className="relative border border-[#1433a5] bg-[#f8f9f0] overflow-visible hidden lg:grid grid-cols-5"
+          className="relative border border-[#1433a5] bg-[#EBEDEF] overflow-visible hidden lg:grid grid-cols-5"
         >
             {bookingsByDay.map((items, dayIndex) => (
               <div
