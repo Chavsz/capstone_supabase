@@ -232,7 +232,7 @@ const LavRoomCalendar = () => {
                       <div className={`absolute bottom-2 right-2 ${getTextColor(booking.status)}`}>
                         <AiOutlineEye className="h-4 w-4" />
                       </div>
-                      <div className="pointer-events-none absolute left-2 top-2 hidden w-[220px] rounded-lg border border-gray-200 bg-white p-3 text-[11px] text-gray-700 shadow-lg group-hover:block">
+                      <div className="pointer-events-none absolute left-full top-0 ml-3 hidden w-[320px] rounded-xl border border-gray-200 bg-white p-4 text-[12px] text-gray-700 shadow-xl group-hover:block">
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-semibold text-gray-800">
                             Appointment Details
