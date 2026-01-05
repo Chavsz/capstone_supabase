@@ -236,52 +236,70 @@ const LavRoomCalendar = () => {
                           <AiOutlineEye className="h-4 w-4" />
                         </div>
                         <div
-                          className={`pointer-events-none absolute top-0 hidden w-[320px] rounded-xl border border-gray-200 bg-white p-4 text-[12px] text-gray-700 shadow-xl group-hover:block ${
-                            dayIndex >= 3 ? "right-full mr-3" : "left-full ml-3"
+                          className={`pointer-events-none absolute top-0 hidden w-[360px] rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl group-hover:block ${
+                            dayIndex >= 3 ? "right-full mr-4" : "left-full ml-4"
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="font-semibold text-gray-800">
-                              Appointment Details
+                          <div className="flex items-center justify-between">
+                            <span className="text-[18px] font-bold text-[#8a5328]">
+                              {booking.subject || "Appointment"}
                             </span>
-                            <span
-                              className="rounded-full px-2 py-0.5 text-[11px] text-white"
-                              style={{ backgroundColor: getStatusColor(booking.status) }}
-                            >
-                              {STATUS_LABELS[booking.status] || booking.status}
+                            <span className="text-[16px] font-semibold text-[#0d2c8c]">
+                              {booking.date
+                                ? new Date(`${booking.date}T00:00:00`).toLocaleDateString(
+                                    "en-US",
+                                    { month: "2-digit", day: "2-digit", year: "2-digit" }
+                                  )
+                                : ""}
                             </span>
                           </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Subject:</span>
-                              <span>{booking.subject || "N/A"}</span>
+
+                          <div className="mt-3 rounded-2xl border border-[#caa37b] bg-[#fffdf7] p-3">
+                            <div className="grid grid-cols-2 gap-3 text-[12px]">
+                              <div>
+                                <div className="font-semibold text-[#1f3b94]">Start Time</div>
+                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                                  {formatTime(booking.start_time) || "--"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-[#1f3b94]">End Time</div>
+                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                                  {formatTime(booking.end_time) || "--"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-[#1f3b94]">Tutor</div>
+                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                                  {booking.tutor?.name || "N/A"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-semibold text-[#1f3b94]">Tutee</div>
+                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                                  {booking.tutee?.name || "N/A"}
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Specialization:</span>
-                              <span>{booking.topic || "N/A"}</span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Tutor:</span>
-                              <span>{booking.tutor?.name || "N/A"}</span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Date:</span>
-                              <span>{formatLongDate(booking.date)}</span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Time:</span>
-                              <span>
-                                {formatTime(booking.start_time)} -{" "}
-                                {formatTime(booking.end_time)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Mode:</span>
-                              <span>{booking.mode_of_session || "N/A"}</span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="font-medium text-gray-600">Tutees:</span>
-                              <span>{booking.number_of_tutees || 1}</span>
+
+                            <div className="mt-3 grid grid-cols-2 gap-3 text-[12px]">
+                              <div>
+                                <div className="font-semibold text-[#1f3b94]">Topic</div>
+                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                                  {booking.topic || "N/A"}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <div className="font-semibold text-[#1f3b94]">Status</div>
+                                </div>
+                                <span
+                                  className="rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+                                  style={{ backgroundColor: getStatusColor(booking.status) }}
+                                >
+                                  {(STATUS_LABELS[booking.status] || booking.status).toUpperCase()}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
