@@ -210,8 +210,10 @@ const LavRoomCalendar = () => {
                     items.map((booking) => (
                       <div
                         key={booking.appointment_id}
-                        className="relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs group"
+                        className="relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs"
                         style={{ backgroundColor: getStatusColor(booking.status) }}
+                        onMouseEnter={() => setHoveredAppointment({ ...booking, dayIndex })}
+                        onMouseLeave={() => setHoveredAppointment(null)}
                       >
                         <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
                           <span>start</span>
@@ -235,76 +237,90 @@ const LavRoomCalendar = () => {
                         >
                           <AiOutlineEye className="h-4 w-4" />
                         </div>
-                        <div
-                          className="pointer-events-none absolute left-1/2 top-1/2 hidden w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl group-hover:block z-20"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[18px] font-bold text-[#8a5328]">
-                              {booking.subject || "Appointment"}
-                            </span>
-                            <span className="text-[16px] font-semibold text-[#0d2c8c]">
-                              {booking.date
-                                ? new Date(`${booking.date}T00:00:00`).toLocaleDateString(
-                                    "en-US",
-                                    { month: "2-digit", day: "2-digit", year: "2-digit" }
-                                  )
-                                : ""}
-                            </span>
-                          </div>
-
-                          <div className="mt-3 rounded-2xl border border-[#caa37b] bg-[#fffdf7] p-3">
-                            <div className="grid grid-cols-2 gap-3 text-[12px]">
-                              <div>
-                                <div className="font-semibold text-[#1f3b94]">Start Time</div>
-                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                                  {formatTime(booking.start_time) || "--"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="font-semibold text-[#1f3b94]">End Time</div>
-                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                                  {formatTime(booking.end_time) || "--"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="font-semibold text-[#1f3b94]">Tutor</div>
-                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                                  {booking.tutor?.name || "N/A"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="font-semibold text-[#1f3b94]">Tutee</div>
-                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                                  {booking.tutee?.name || "N/A"}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 grid grid-cols-2 gap-3 text-[12px]">
-                              <div>
-                                <div className="font-semibold text-[#1f3b94]">Topic</div>
-                                <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                                  {booking.topic || "N/A"}
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between gap-2">
-                                <div>
-                                  <div className="font-semibold text-[#1f3b94]">Status</div>
-                                </div>
-                                <span
-                                  className="rounded-full px-3 py-1 text-[11px] font-semibold text-white"
-                                  style={{ backgroundColor: getStatusColor(booking.status) }}
-                                >
-                                  {(STATUS_LABELS[booking.status] || booking.status).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     ))
                   )}
                 </div>
+                {hoveredAppointment?.dayIndex === dayIndex && (
+                  <div className="pointer-events-none absolute left-1/2 top-8 z-20 w-[380px] -translate-x-1/2 rounded-[18px] border border-[#d6c6b0] bg-[#fff8ed] p-4 text-[12px] text-[#2d3a6d] shadow-2xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[18px] font-bold text-[#8a5328]">
+                        {hoveredAppointment.subject || "Appointment"}
+                      </span>
+                      <span className="text-[16px] font-semibold text-[#0d2c8c]">
+                        {hoveredAppointment.date
+                          ? new Date(`${hoveredAppointment.date}T00:00:00`).toLocaleDateString(
+                              "en-US",
+                              { month: "2-digit", day: "2-digit", year: "2-digit" }
+                            )
+                          : ""}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 rounded-2xl border border-[#caa37b] bg-[#fffdf7] p-3">
+                      <div className="grid grid-cols-2 gap-3 text-[12px]">
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Subject</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.subject || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Specialization</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.topic || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Date</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {formatLongDate(hoveredAppointment.date) || "--"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Time</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {formatTime(hoveredAppointment.start_time)} -{" "}
+                            {formatTime(hoveredAppointment.end_time)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Tutor</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.tutor?.name || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Tutee</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.tutee?.name || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Mode</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.mode_of_session || "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1f3b94]">Number of Tutees</div>
+                          <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                            {hoveredAppointment.number_of_tutees || 1}
+                          </div>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-between gap-2">
+                          <div className="font-semibold text-[#1f3b94]">Status</div>
+                          <span
+                            className="rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+                            style={{ backgroundColor: getStatusColor(hoveredAppointment.status) }}
+                          >
+                            {(STATUS_LABELS[hoveredAppointment.status] || hoveredAppointment.status).toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
         </div>
