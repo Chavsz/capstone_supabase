@@ -196,93 +196,101 @@ const LavRoomCalendar = () => {
         </div>
 
         <div className="grid grid-cols-5 border border-[#1433a5] bg-[#f7efe6]">
-          {bookingsByDay.map((items, dayIndex) => (
-            <div
-              key={dayLabels[dayIndex]}
-              className="border border-[#1433a5] p-2"
-            >
-              <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
-                {items.length === 0 ? (
-                  <div className="text-xs text-[#7b8bb8] py-8 text-center">
-                    No bookings
-                  </div>
-                ) : (
-                  items.map((booking) => (
-                    <div
-                      key={booking.appointment_id}
-                      className={`relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs group`}
-                      style={{ backgroundColor: getStatusColor(booking.status) }}
-                    >
-                      <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
-                        <span>start</span>
-                        <span>{booking.start_time?.slice(0, 5) || "--:--"}</span>
-                      </div>
-                      <div className={`flex justify-between font-semibold mb-1 ${getTextColor(booking.status)}`}>
-                        <span>end</span>
-                        <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
-                      </div>
-                      <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
-                      <div className={getTextColor(booking.status)}>
-                        {booking.tutor?.name || "N/A"}
-                      </div>
-                      <div className={`font-semibold mt-1 ${getTextColor(booking.status)}`}>tutee</div>
-                      <div className={getTextColor(booking.status)}>
-                        {booking.tutee?.name || "N/A"}
-                      </div>
-                      <div className={`absolute bottom-2 right-2 ${getTextColor(booking.status)}`}>
-                        <AiOutlineEye className="h-4 w-4" />
-                      </div>
-                      <div className="pointer-events-none absolute left-full top-0 ml-3 hidden w-[320px] rounded-xl border border-gray-200 bg-white p-4 text-[12px] text-gray-700 shadow-xl group-hover:block">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-gray-800">
-                            Appointment Details
-                          </span>
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] text-white"
-                            style={{ backgroundColor: getStatusColor(booking.status) }}
-                          >
-                            {STATUS_LABELS[booking.status] || booking.status}
-                          </span>
+            {bookingsByDay.map((items, dayIndex) => (
+              <div
+                key={dayLabels[dayIndex]}
+                className="border border-[#1433a5] p-2"
+              >
+                <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+                  {items.length === 0 ? (
+                    <div className="text-xs text-[#7b8bb8] py-8 text-center">
+                      No bookings
+                    </div>
+                  ) : (
+                    items.map((booking) => (
+                      <div
+                        key={booking.appointment_id}
+                        className="relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs group"
+                        style={{ backgroundColor: getStatusColor(booking.status) }}
+                      >
+                        <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
+                          <span>start</span>
+                          <span>{booking.start_time?.slice(0, 5) || "--:--"}</span>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Subject:</span>
-                            <span>{booking.subject || "N/A"}</span>
-                          </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Specialization:</span>
-                            <span>{booking.topic || "N/A"}</span>
-                          </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Tutor:</span>
-                            <span>{booking.tutor?.name || "N/A"}</span>
-                          </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Date:</span>
-                            <span>{formatLongDate(booking.date)}</span>
-                          </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Time:</span>
-                            <span>
-                              {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                        <div className={`flex justify-between font-semibold mb-1 ${getTextColor(booking.status)}`}>
+                          <span>end</span>
+                          <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
+                        </div>
+                        <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
+                        <div className={getTextColor(booking.status)}>
+                          {booking.tutor?.name || "N/A"}
+                        </div>
+                        <div className={`font-semibold mt-1 ${getTextColor(booking.status)}`}>tutee</div>
+                        <div className={getTextColor(booking.status)}>
+                          {booking.tutee?.name || "N/A"}
+                        </div>
+                        <div
+                          className={`absolute bottom-2 right-2 ${getTextColor(booking.status)}`}
+                          aria-hidden="true"
+                        >
+                          <AiOutlineEye className="h-4 w-4" />
+                        </div>
+                        <div
+                          className={`pointer-events-none absolute top-0 hidden w-[320px] rounded-xl border border-gray-200 bg-white p-4 text-[12px] text-gray-700 shadow-xl group-hover:block ${
+                            dayIndex >= 3 ? "right-full mr-3" : "left-full ml-3"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-semibold text-gray-800">
+                              Appointment Details
+                            </span>
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[11px] text-white"
+                              style={{ backgroundColor: getStatusColor(booking.status) }}
+                            >
+                              {STATUS_LABELS[booking.status] || booking.status}
                             </span>
                           </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Mode:</span>
-                            <span>{booking.mode_of_session || "N/A"}</span>
-                          </div>
-                          <div className="flex justify-between gap-2">
-                            <span className="font-medium text-gray-600">Tutees:</span>
-                            <span>{booking.number_of_tutees || 1}</span>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Subject:</span>
+                              <span>{booking.subject || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Specialization:</span>
+                              <span>{booking.topic || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Tutor:</span>
+                              <span>{booking.tutor?.name || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Date:</span>
+                              <span>{formatLongDate(booking.date)}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Time:</span>
+                              <span>
+                                {formatTime(booking.start_time)} -{" "}
+                                {formatTime(booking.end_time)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Mode:</span>
+                              <span>{booking.mode_of_session || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="font-medium text-gray-600">Tutees:</span>
+                              <span>{booking.number_of_tutees || 1}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         <div className="flex items-center justify-between mt-4">
