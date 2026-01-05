@@ -221,13 +221,13 @@ const LavRoomCalendar = () => {
       <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search tutor, student, or subject"
-                className="w-full max-w-xs rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm"
+                className="w-full max-w-xs rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm lg:w-64"
               />
               {[
                 "all",
@@ -258,7 +258,7 @@ const LavRoomCalendar = () => {
               <button
                 type="button"
                 onClick={() => setShowWeekPicker((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm"
+                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm whitespace-nowrap"
               >
                 <FiCalendar />
                 Choose Week
@@ -324,16 +324,16 @@ const LavRoomCalendar = () => {
                             ? column.getBoundingClientRect()
                             : rect;
                           const overlayWidth = 380;
-                          const centerX =
-                            columnRect.left -
-                            containerRect.left +
-                            columnRect.width / 2;
+                          const baseLeft =
+                            dayIndex >= 3
+                              ? columnRect.left - containerRect.left - overlayWidth - 16
+                              : columnRect.left -
+                                containerRect.left +
+                                columnRect.width +
+                                16;
                           const left = Math.max(
-                            -20,
-                            Math.min(
-                              centerX - overlayWidth / 2,
-                              containerRect.width - overlayWidth + 20
-                            )
+                            8,
+                            Math.min(baseLeft, containerRect.width - overlayWidth - 8)
                           );
                           setHoveredAppointment({
                             ...booking,
