@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiOutlineEye } from "react-icons/ai";
+import { supabase } from "../../supabase-client";
 
 const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -21,53 +22,25 @@ const formatRange = (start) => {
   return `${formatDate(start)} - ${formatDate(end)}`;
 };
 
-const sampleBookings = [
-  {
-    id: "b1",
-    dayIndex: 0,
-    color: "bg-[#cfeccf]",
-    start: "10:00",
-    end: "11:30",
-    tutor: "Brent Manalo",
-    tutee: "Danaya Pirena E.",
-  },
-  {
-    id: "b2",
-    dayIndex: 1,
-    color: "bg-[#f6b4b6]",
-    start: "10:00",
-    end: "11:30",
-    tutor: "Brent Manalo",
-    tutee: "Danaya Pirena E.",
-  },
-  {
-    id: "b3",
-    dayIndex: 2,
-    color: "bg-[#cfeccf]",
-    start: "10:00",
-    end: "11:30",
-    tutor: "Brent Manalo",
-    tutee: "Danaya Pirena E.",
-  },
-  {
-    id: "b4",
-    dayIndex: 4,
-    color: "bg-[#d9e6ff]",
-    start: "10:00",
-    end: "11:30",
-    tutor: "Brent Manalo",
-    tutee: "Danaya Pirena E.",
-  },
-  {
-    id: "b5",
-    dayIndex: 1,
-    color: "bg-[#f6b4b6]",
-    start: "10:00",
-    end: "11:30",
-    tutor: "Brent Manalo",
-    tutee: "Danaya Pirena E.",
-  },
-];
+const STATUS_COLORS = {
+  pending: "#c9c7c9",
+  confirmed: "#4766fe",
+  started: "#76acf5",
+  awaiting_feedback: "#935226",
+  completed: "#00a65a",
+  declined: "#323335",
+  cancelled: "#ff4b4b",
+};
+
+const STATUS_LABELS = {
+  pending: "Pending",
+  confirmed: "Confirmed",
+  started: "Started",
+  awaiting_feedback: "Awaiting Feedback",
+  completed: "Completed",
+  declined: "Declined",
+  cancelled: "Cancelled",
+};
 
 const toMinutes = (timeValue) => {
   if (!timeValue) return 0;
@@ -76,8 +49,39 @@ const toMinutes = (timeValue) => {
   return hours * 60 + minutes;
 };
 
+const formatTime = (timeValue) => {
+  if (!timeValue) return "";
+  return new Date(`2000-01-01T${timeValue}`).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const formatLongDate = (dateValue) => {
+  if (!dateValue) return "";
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getStatusColor = (status) => STATUS_COLORS[status] || "#c9c7c9";
+
+const getTextColor = (status) => {
+  const darkStatuses = new Set([
+    "confirmed",
+    "awaiting_feedback",
+    "declined",
+    "cancelled",
+  ]);
+  return darkStatuses.has(status) ? "text-white" : "text-[#1433a5]";
+};
+
 const LavRoomCalendar = () => {
   const [weekStart, setWeekStart] = useState(getMonday(new Date()));
+  const [appointments, setAppointments] = useState([]);
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -99,17 +103,74 @@ const LavRoomCalendar = () => {
     setWeekStart(next);
   };
 
+  const fetchAppointments = async (startDate) => {
+    const start = new Date(startDate);
+    const end = new Date(startDate);
+    end.setDate(start.getDate() + 4);
+    const startKey = start.toISOString().slice(0, 10);
+    const endKey = end.toISOString().slice(0, 10);
+
+    try {
+      const { data, error } = await supabase
+        .from("appointment")
+        .select(
+          `appointment_id,
+          subject,
+          topic,
+          date,
+          start_time,
+          end_time,
+          mode_of_session,
+          number_of_tutees,
+          status,
+          tutor:users!appointment_tutor_id_fkey(name),
+          tutee:users!appointment_user_id_fkey(name)`
+        )
+        .gte("date", startKey)
+        .lte("date", endKey)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      setAppointments(data || []);
+    } catch (err) {
+      console.error("Error loading LAV room appointments:", err.message);
+      setAppointments([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments(weekStart);
+  }, [weekStart]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("lav-room-calendar")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointment" },
+        () => fetchAppointments(weekStart)
+      );
+
+    channel.subscribe();
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [weekStart]);
+
   const bookingsByDay = useMemo(() => {
     const grouped = dayLabels.map(() => []);
-    sampleBookings.forEach((booking) => {
-      if (grouped[booking.dayIndex]) {
-        grouped[booking.dayIndex].push(booking);
-      }
+    appointments.forEach((appointment) => {
+      if (!appointment.date) return;
+      const dateValue = new Date(`${appointment.date}T00:00:00`);
+      const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
+      if (dayIndex < 0 || dayIndex > 4) return;
+      grouped[dayIndex].push(appointment);
     });
     return grouped.map((items) =>
-      items.sort((a, b) => toMinutes(a.start) - toMinutes(b.start))
+      items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
     );
-  }, []);
+  }, [appointments]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -148,26 +209,73 @@ const LavRoomCalendar = () => {
                 ) : (
                   items.map((booking) => (
                     <div
-                      key={booking.id}
-                      className={`relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs ${booking.color} group`}
+                      key={booking.appointment_id}
+                      className={`relative rounded-md border border-[#1433a5] p-2 text-[10px] md:text-xs group`}
+                      style={{ backgroundColor: getStatusColor(booking.status) }}
                     >
-                      <div className="flex justify-between text-[#1433a5] font-semibold">
+                      <div className={`flex justify-between font-semibold ${getTextColor(booking.status)}`}>
                         <span>start</span>
-                        <span>{booking.start}</span>
+                        <span>{booking.start_time?.slice(0, 5) || "--:--"}</span>
                       </div>
-                      <div className="flex justify-between text-[#1433a5] font-semibold mb-1">
+                      <div className={`flex justify-between font-semibold mb-1 ${getTextColor(booking.status)}`}>
                         <span>end</span>
-                        <span>{booking.end}</span>
+                        <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
                       </div>
-                      <div className="text-[#1433a5] font-semibold">tutor</div>
-                      <div className="text-[#1433a5]">{booking.tutor}</div>
-                      <div className="text-[#1433a5] font-semibold mt-1">tutee</div>
-                      <div className="text-[#1433a5]">{booking.tutee}</div>
-                      <div className="absolute bottom-2 right-2 text-[#1433a5]">
+                      <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
+                      <div className={getTextColor(booking.status)}>
+                        {booking.tutor?.name || "N/A"}
+                      </div>
+                      <div className={`font-semibold mt-1 ${getTextColor(booking.status)}`}>tutee</div>
+                      <div className={getTextColor(booking.status)}>
+                        {booking.tutee?.name || "N/A"}
+                      </div>
+                      <div className={`absolute bottom-2 right-2 ${getTextColor(booking.status)}`}>
                         <AiOutlineEye className="h-4 w-4" />
                       </div>
-                      <div className="pointer-events-none absolute right-2 -top-8 hidden rounded-md border border-[#1433a5] bg-white px-2 py-1 text-[10px] text-[#1433a5] shadow group-hover:block">
-                        View appointment details
+                      <div className="pointer-events-none absolute left-2 top-2 hidden w-[220px] rounded-lg border border-gray-200 bg-white p-3 text-[11px] text-gray-700 shadow-lg group-hover:block">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-gray-800">
+                            Appointment Details
+                          </span>
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] text-white"
+                            style={{ backgroundColor: getStatusColor(booking.status) }}
+                          >
+                            {STATUS_LABELS[booking.status] || booking.status}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Subject:</span>
+                            <span>{booking.subject || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Specialization:</span>
+                            <span>{booking.topic || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Tutor:</span>
+                            <span>{booking.tutor?.name || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Date:</span>
+                            <span>{formatLongDate(booking.date)}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Time:</span>
+                            <span>
+                              {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Mode:</span>
+                            <span>{booking.mode_of_session || "N/A"}</span>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium text-gray-600">Tutees:</span>
+                            <span>{booking.number_of_tutees || 1}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))
