@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabase-client";
 import LAVLogo from "../assets/LAV_image.png";
@@ -12,6 +12,7 @@ const Register = ({ setAuth }) => {
   });
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
+  const [loginPhoto, setLoginPhoto] = useState(null);
 
   const { name, email, password, role } = inputs;
 
@@ -79,6 +80,33 @@ const Register = ({ setAuth }) => {
     }
   };
 
+  useEffect(() => {
+    const fetchLoginPhoto = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("login_photo")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        if (data?.login_photo) {
+          setLoginPhoto(data.login_photo);
+        }
+      } catch (err) {
+        console.error("Unable to load login photo:", err.message);
+      }
+    };
+
+    fetchLoginPhoto();
+  }, []);
+
+  const heroLogoSrc = loginPhoto || LAVLogo;
+
   return (
     <div className="min-h-screen bg-[#eeeeee] flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-[1fr_1.2fr]">
@@ -92,7 +120,7 @@ const Register = ({ setAuth }) => {
           <div className="flex flex-col items-center gap-4 text-center w-full">
             <div className="w-full max-w-xs rounded-2xl border border-blue-100 bg-white/70 shadow-md p-3">
               <img
-                src={LAVLogo}
+                src={heroLogoSrc}
                 alt="LAV"
                 className="w-full h-56 object-contain"
               />

@@ -60,21 +60,15 @@ const Sidebar = ({ setAuth, onClose }) => {
     <div className="flex flex-col p-4 text-white sticky top-0 bg-white h-screen w-[240px]">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
-        <button
-          onClick={handleLogoClick}
-          className="flex items-center gap-2 text-left"
-          aria-label="Go to dashboard"
-        >
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="LAV logo"
-              className="h-12 w-auto object-contain"
-            />
-          ) : (
-            <span className="text-xl font-bold text-blue-600">LAV</span>
-          )}
-        </button>
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="LAV logo"
+            className="h-12 w-auto object-contain"
+          />
+        ) : (
+          <span className="text-xl font-bold text-blue-600">LAV</span>
+        )}
         <button
           onClick={onClose}
           className="p-2 text-gray-600 hover:bg-gray-200 rounded"
@@ -109,7 +103,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       </div>
 
       {/* Logout Button - Always Visible at Bottom */}
-      <div className="flex-shrink-0 mt-auto pt-4">
+      <div className="flex-shrink-0 mt-auto pt-4 mb-6">
         <button
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
           onClick={(e) => logout(e)}
