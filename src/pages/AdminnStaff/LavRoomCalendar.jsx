@@ -243,6 +243,9 @@ const LavRoomCalendar = () => {
     const grouped = dayLabels.map(() => []);
     filteredAppointments.forEach((appointment) => {
       if (!appointment.date) return;
+      if (isSearchMode && activeSearchDate && appointment.date !== activeSearchDate) {
+        return;
+      }
       const dateValue = new Date(`${appointment.date}T00:00:00`);
       const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
       if (dayIndex < 0 || dayIndex > 4) return;
@@ -251,7 +254,7 @@ const LavRoomCalendar = () => {
     return grouped.map((items) =>
       items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
     );
-  }, [filteredAppointments]);
+  }, [filteredAppointments, isSearchMode, activeSearchDate]);
 
   const activeSearchAppointment = searchResults[searchIndex] || null;
   const activeSearchDate = activeSearchAppointment?.date || null;
@@ -286,7 +289,11 @@ const LavRoomCalendar = () => {
           </h1>
           <p className="text-sm text-gray-500">Weekly schedule (Mon - Fri)</p>
         </div>
-        <div className="text-sm text-gray-500">{formatRange(weekStart)}</div>
+        <div className="text-sm text-gray-500">
+          {isSearchMode && activeSearchDate
+            ? formatLongDate(activeSearchDate)
+            : formatRange(weekStart)}
+        </div>
       </div>
 
       <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-3 shadow-sm">
