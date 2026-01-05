@@ -221,7 +221,7 @@ const LavRoomCalendar = () => {
       <div className="bg-[#f7efe6] rounded-3xl border border-[#d9d2c8] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1">
               <input
                 type="text"
                 value={searchTerm}
