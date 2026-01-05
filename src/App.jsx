@@ -29,6 +29,7 @@ import TutorSwitch from "./pages/Tutor/Switch";
 import AdminDashboard from "./pages/AdminnStaff/Dashboard";
 import AdminLanding from "./pages/AdminnStaff/Landing";
 import AdminLavroom from "./pages/AdminnStaff/Lavroom";
+import AdminLavRoomCalendar from "./pages/AdminnStaff/LavRoomCalendar";
 import AdminReports from "./pages/AdminnStaff/Reports";
 import AdminEvent from "./pages/AdminnStaff/Event";
 import AdminAnnouncments from "./pages/AdminnStaff/Announcments";
@@ -218,6 +219,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<AdminLavroom />}
+            />
+          }
+        />
+        <Route
+          path="lav-room"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminLavRoomCalendar />}
             />
           }
         />

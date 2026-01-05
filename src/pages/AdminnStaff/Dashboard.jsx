@@ -138,7 +138,7 @@ function Dashboard() {
     (a) => formatDate(a.date) === dateToday
   );
   const tuteeRequestsToday = tuteeRequests.filter((a) =>
-    isSameDay(a.created_at || a.date)
+    isSameDay(a.created_at)
   );
   const cancelledSessionsToday = cancelledAppointments.filter(
     (a) => formatDate(a.date) === dateToday
