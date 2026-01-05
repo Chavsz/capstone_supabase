@@ -239,23 +239,6 @@ const LavRoomCalendar = () => {
     setSearchIndex(0);
   }, [searchTerm, statusFilter]);
 
-  const bookingsByDay = useMemo(() => {
-    const grouped = dayLabels.map(() => []);
-    filteredAppointments.forEach((appointment) => {
-      if (!appointment.date) return;
-      if (isSearchMode && activeSearchDate && appointment.date !== activeSearchDate) {
-        return;
-      }
-      const dateValue = new Date(`${appointment.date}T00:00:00`);
-      const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
-      if (dayIndex < 0 || dayIndex > 4) return;
-      grouped[dayIndex].push(appointment);
-    });
-    return grouped.map((items) =>
-      items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
-    );
-  }, [filteredAppointments, isSearchMode, activeSearchDate]);
-
   const activeSearchAppointment = searchResults[searchIndex] || null;
   const activeSearchDate = activeSearchAppointment?.date || null;
   const activeSearchDayIndex = useMemo(() => {
@@ -277,6 +260,23 @@ const LavRoomCalendar = () => {
       setWeekStart(nextWeekStart);
     }
   }, [activeSearchDate, isSearchMode, weekStart]);
+
+  const bookingsByDay = useMemo(() => {
+    const grouped = dayLabels.map(() => []);
+    filteredAppointments.forEach((appointment) => {
+      if (!appointment.date) return;
+      if (isSearchMode && activeSearchDate && appointment.date !== activeSearchDate) {
+        return;
+      }
+      const dateValue = new Date(`${appointment.date}T00:00:00`);
+      const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
+      if (dayIndex < 0 || dayIndex > 4) return;
+      grouped[dayIndex].push(appointment);
+    });
+    return grouped.map((items) =>
+      items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
+    );
+  }, [filteredAppointments, isSearchMode, activeSearchDate]);
 
   const activeDayBookings = bookingsByDay[selectedDayIndex] || [];
 
