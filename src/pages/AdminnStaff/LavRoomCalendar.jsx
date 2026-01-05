@@ -91,6 +91,7 @@ const LavRoomCalendar = () => {
   const [weekPickerValue, setWeekPickerValue] = useState("");
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
+  const [searchIndex, setSearchIndex] = useState(0);
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -101,12 +102,22 @@ const LavRoomCalendar = () => {
   }, [weekStart]);
 
   const handlePrevWeek = () => {
+    if (searchTerm.trim()) {
+      setSearchIndex((prev) => Math.max(prev - 1, 0));
+      return;
+    }
     const next = new Date(weekStart);
     next.setDate(weekStart.getDate() - 7);
     setWeekStart(next);
   };
 
   const handleNextWeek = () => {
+    if (searchTerm.trim()) {
+      setSearchIndex((prev) =>
+        Math.min(prev + 1, Math.max(searchResults.length - 1, 0))
+      );
+      return;
+    }
     const next = new Date(weekStart);
     next.setDate(weekStart.getDate() + 7);
     setWeekStart(next);
@@ -194,6 +205,18 @@ const LavRoomCalendar = () => {
     });
   }, [appointments, searchTerm, statusFilter]);
 
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    return [...filteredAppointments].sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return toMinutes(a.start_time) - toMinutes(b.start_time);
+    });
+  }, [filteredAppointments, searchTerm]);
+
+  useEffect(() => {
+    setSearchIndex(0);
+  }, [searchTerm, statusFilter]);
+
   const bookingsByDay = useMemo(() => {
     const grouped = dayLabels.map(() => []);
     filteredAppointments.forEach((appointment) => {
@@ -207,6 +230,20 @@ const LavRoomCalendar = () => {
       items.sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
     );
   }, [filteredAppointments]);
+
+  const activeSearchAppointment = searchResults[searchIndex] || null;
+  const activeSearchDate = activeSearchAppointment?.date || null;
+  const activeSearchDayIndex = useMemo(() => {
+    if (!activeSearchDate) return null;
+    const dateValue = new Date(`${activeSearchDate}T00:00:00`);
+    const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
+    return dayIndex >= 0 && dayIndex <= 4 ? dayIndex : null;
+  }, [activeSearchDate]);
+  const displayDayIndices = useMemo(() => {
+    if (!searchTerm.trim()) return dayLabels.map((_, index) => index);
+    if (activeSearchDayIndex === null) return [];
+    return [activeSearchDayIndex];
+  }, [searchTerm, activeSearchDayIndex]);
 
   const activeDayBookings = bookingsByDay[selectedDayIndex] || [];
 
@@ -297,8 +334,16 @@ const LavRoomCalendar = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-5 text-center text-[#1f3b94] font-semibold hidden lg:grid">
-          {weekDates.map((day) => (
+        <div
+          className="text-center text-[#1f3b94] font-semibold hidden lg:grid"
+          style={{
+            gridTemplateColumns: `repeat(${displayDayIndices.length || 1}, minmax(0, 1fr))`,
+          }}
+        >
+          {(searchTerm.trim()
+            ? displayDayIndices.map((index) => weekDates[index])
+            : weekDates
+          ).map((day) => (
             <div key={day.label} className="pb-2">
               <div className="text-base md:text-lg tracking-wide">
                 {day.label.toUpperCase()}
@@ -446,9 +491,18 @@ const LavRoomCalendar = () => {
         {/* Desktop grid */}
         <div
           ref={gridRef}
-          className="relative grid grid-cols-5 border border-[#1433a5] bg-[#f7efe6] overflow-visible hidden lg:grid"
+          className="relative border border-[#1433a5] bg-[#f7efe6] overflow-visible hidden lg:grid"
+          style={{
+            gridTemplateColumns: `repeat(${displayDayIndices.length || 1}, minmax(0, 1fr))`,
+          }}
         >
-            {bookingsByDay.map((items, dayIndex) => (
+            {(searchTerm.trim()
+              ? displayDayIndices.map((index) => ({
+                  items: bookingsByDay[index] || [],
+                  dayIndex: index,
+                }))
+              : bookingsByDay.map((items, dayIndex) => ({ items, dayIndex }))
+            ).map(({ items, dayIndex }) => (
               <div
                 key={dayLabels[dayIndex]}
                 data-day-col

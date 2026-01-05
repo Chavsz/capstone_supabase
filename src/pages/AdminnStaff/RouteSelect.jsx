@@ -16,12 +16,6 @@ const RouteSelect = ({ onClose }) => {
       />
      
       <Route
-        to="/dashboard/lav-room"
-        Icon={mdIcons.MdViewWeek}
-        title="LAV Room"
-        onClose={onClose}
-      />
-      <Route
         to="/dashboard/reports"
         Icon={fiIcons.FiBarChart2}
         title="Reports"
