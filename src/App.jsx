@@ -275,6 +275,7 @@ function App() {
   const [currentRole, setCurrentRole] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [adminAccess, setAdminAccess] = useState(false);
   const [roleOverride, setRoleOverride] = useState(() => {
     try {
       return localStorage.getItem("lav.roleOverride") || null;
@@ -314,20 +315,13 @@ function App() {
     }
   };
 
-  const effectiveRole = roleOverride || currentRole;
+  const safeOverride = roleOverride === "admin" && !adminAccess ? null : roleOverride;
+  const effectiveRole = safeOverride || currentRole;
 
   // Single function to fetch role
   const fetchUserRole = async (userId) => {
     // Don't fetch if already fetching
     if (isFetching.current) {
-      return;
-    }
-
-    const storedRole = getStoredRoleOverride();
-    if (storedRole) {
-      setCurrentRole(storedRole);
-      setLoading(false);
-      hasRole.current = true;
       return;
     }
 
@@ -343,7 +337,7 @@ function App() {
     try {
       const { data, error } = await supabase
         .from("users")
-        .select("role")
+        .select("role, is_admin, is_superadmin")
         .eq("user_id", userId)
         .single();
 
@@ -355,6 +349,10 @@ function App() {
         setLoading(false);
         isFetching.current = false;
         return;
+      }
+
+      if (data) {
+        setAdminAccess(Boolean(data.is_admin || data.is_superadmin));
       }
 
       if (data && data.role) {
@@ -388,6 +386,7 @@ function App() {
           console.error("Session error:", error);
           setIsAuthenticated(false);
           setLoading(false);
+          setAdminAccess(false);
           initialized = true;
           return;
         }
@@ -395,17 +394,11 @@ function App() {
         if (session) {
           setSession(session);
           setIsAuthenticated(true);
-          const storedRole = getStoredRoleOverride();
-          if (storedRole) {
-            setCurrentRole(storedRole);
-            hasRole.current = true;
-            setLoading(false);
-          } else {
-            await fetchUserRole(session.user.id);
-          }
+          await fetchUserRole(session.user.id);
         } else {
           setIsAuthenticated(false);
           setLoading(false);
+          setAdminAccess(false);
         }
         initialized = true;
       } catch (err) {
@@ -413,6 +406,7 @@ function App() {
         if (mounted) {
           setIsAuthenticated(false);
           setLoading(false);
+          setAdminAccess(false);
           initialized = true;
         }
       }
@@ -461,6 +455,7 @@ function App() {
         setIsAuthenticated(false);
         setCurrentRole(null);
         setLoading(false);
+        setAdminAccess(false);
         isFetching.current = false;
         hasRole.current = false; // Reset role flag on logout
         setStoredRoleOverride(null);
@@ -491,6 +486,13 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!loading && roleOverride === "admin" && !adminAccess) {
+      setStoredRoleOverride(null);
+      setRoleOverride(null);
+    }
+  }, [adminAccess, loading, roleOverride]);
 
   // Listen for role changes from external events
   useEffect(() => {

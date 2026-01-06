@@ -5,10 +5,14 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 
 const Switch = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-   const [loginPhoto, setLoginPhoto] = useState(null);
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
+  const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
 
   useEffect(() => {
     const fetchLoginPhoto = async () => {
@@ -35,8 +39,37 @@ const Switch = () => {
     fetchLoginPhoto();
   }, []);
 
+  useEffect(() => {
+    const fetchAdminPermissions = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data, error } = await supabase
+          .from("users")
+          .select("is_admin, is_superadmin")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        setCanSwitchAdmin(Boolean(data?.is_admin || data?.is_superadmin));
+      } catch (err) {
+        console.error("Error checking admin permissions:", err.message);
+        setCanSwitchAdmin(false);
+      }
+    };
+
+    fetchAdminPermissions();
+  }, []);
+
   const handleSwitchClick = () => {
     setIsModalOpen(true);
+  };
+
+  const handleAdminSwitchClick = () => {
+    setIsAdminModalOpen(true);
   };
 
   const syncStudentProfile = async (userId) => {
@@ -143,6 +176,31 @@ const Switch = () => {
     setIsModalOpen(false);
   };
 
+  const handleConfirmAdminSwitch = async () => {
+    setIsAdminLoading(true);
+    try {
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "tutor");
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "admin");
+      } catch (err) {
+        // Ignore storage errors
+      }
+
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "admin" } }));
+      setIsAdminModalOpen(false);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error switching to admin:", error);
+      alert("Failed to switch to admin. Please try again.");
+    } finally {
+      setIsAdminLoading(false);
+    }
+  };
+
+  const handleCancelAdminSwitch = () => {
+    setIsAdminModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
       <div className="w-full max-w-3xl">
@@ -198,6 +256,28 @@ const Switch = () => {
             </div>
           </div>
         </div>
+        {canSwitchAdmin && (
+          <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-8 mt-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">
+                  Admin Access
+                </p>
+                <h2 className="text-xl font-bold text-gray-800">Switch to Admin</h2>
+                <p className="text-gray-600">
+                  Open the admin dashboard without changing your tutor role.
+                </p>
+              </div>
+              <button
+                onClick={handleAdminSwitchClick}
+                disabled={isAdminLoading}
+                className="bg-gray-800 text-white px-5 py-2.5 rounded-md hover:bg-gray-900 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isAdminLoading ? "Switching..." : "Switch to Admin"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <ConfirmationModal
@@ -208,6 +288,16 @@ const Switch = () => {
         message="You are about to switch to the Student interface. This updates your role in the database and will log you into the student dashboard. Continue?"
         confirmText="Yes, switch me"
         cancelText="Stay as Tutor"
+      />
+
+      <ConfirmationModal
+        isOpen={isAdminModalOpen}
+        onClose={handleCancelAdminSwitch}
+        onConfirm={handleConfirmAdminSwitch}
+        title="Switch to Admin Role"
+        message="Switch to the Admin interface? This does not change your main role, but will open the admin dashboard until you switch back."
+        confirmText="Switch to Admin"
+        cancelText="Cancel"
       />
     </div>
   );

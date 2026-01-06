@@ -8,6 +8,10 @@ import * as fiIcons from "react-icons/fi";
 const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState(null);
+  const [roleOverridePrev, setRoleOverridePrev] = useState(null);
+  const [roleOverride, setRoleOverride] = useState(null);
+  const ROLE_OVERRIDE_KEY = "lav.roleOverride";
+  const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
 
   const handleLogoClick = () => {
     navigate("/dashboard");
@@ -34,6 +38,31 @@ const Sidebar = ({ setAuth, onClose }) => {
     }
   };
 
+  const syncRoleOverrideState = () => {
+    try {
+      setRoleOverridePrev(localStorage.getItem(ROLE_OVERRIDE_PREV_KEY));
+      setRoleOverride(localStorage.getItem(ROLE_OVERRIDE_KEY));
+    } catch (err) {
+      setRoleOverridePrev(null);
+      setRoleOverride(null);
+    }
+  };
+
+  const handleSwitchBack = () => {
+    if (!roleOverridePrev) return;
+    try {
+      localStorage.setItem(ROLE_OVERRIDE_KEY, roleOverridePrev);
+      localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
+    } catch (err) {
+      // Ignore storage errors
+    }
+    window.dispatchEvent(
+      new CustomEvent("roleChanged", { detail: { newRole: roleOverridePrev } })
+    );
+    navigate("/dashboard");
+    if (onClose) onClose();
+  };
+
   //logout
   const logout = async (e) => {
     e.preventDefault();
@@ -54,6 +83,20 @@ const Sidebar = ({ setAuth, onClose }) => {
 
   useEffect(() => {
     fetchLogo();
+    syncRoleOverrideState();
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === ROLE_OVERRIDE_KEY || event.key === ROLE_OVERRIDE_PREV_KEY) {
+        syncRoleOverrideState();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   return (
@@ -104,6 +147,17 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-4 mb-10">
+        {roleOverride === "admin" && roleOverridePrev && (
+          <button
+            className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none mb-2"
+            onClick={handleSwitchBack}
+          >
+            <fiIcons.FiRepeat />
+            <p className="text-md font-semibold hidden md:block">
+              Switch back to {roleOverridePrev.charAt(0).toUpperCase() + roleOverridePrev.slice(1)}
+            </p>
+          </button>
+        )}
         <button
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
           onClick={(e) => logout(e)}
