@@ -33,6 +33,7 @@ import AdminReports from "./pages/AdminnStaff/Reports";
 import AdminEvent from "./pages/AdminnStaff/Event";
 import AdminAnnouncments from "./pages/AdminnStaff/Announcments";
 import AdminUsers from "./pages/AdminnStaff/Users";
+import AdminSwitch from "./pages/AdminnStaff/Switch";
 
 // Role-based dashboard component
 function RoleBasedLayout({ setAuth, currentRole, loading }) {
@@ -240,6 +241,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<AdminEvent />}
+            />
+          }
+        />
+        <Route
+          path="switch-admin"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminSwitch />}
             />
           }
         />

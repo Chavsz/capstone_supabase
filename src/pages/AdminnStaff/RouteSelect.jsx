@@ -51,6 +51,12 @@ const RouteSelect = ({ onClose }) => {
         title="Events"
         onClose={onClose}
       />
+      <Route
+        to="/dashboard/switch-admin"
+        Icon={mdIcons.MdSwapHoriz}
+        title="Switch"
+        onClose={onClose}
+      />
     </div>
   );
 };
