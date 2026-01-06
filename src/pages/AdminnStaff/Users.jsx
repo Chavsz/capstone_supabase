@@ -164,6 +164,7 @@ const Users = () => {
 
       await getAllUsers();
       alert("User deleted successfully.");
+      closeUserDetails();
     } catch (err) {
       console.error(err);
       alert("Error deleting user. Please remove related records first or contact support.");
@@ -391,6 +392,48 @@ const Users = () => {
     }
   };
 
+  const bulkPromoteToTutor = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!window.confirm(`Promote ${ids.length} user(s) to tutor?`)) return;
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ role: "tutor" })
+        .in("user_id", ids);
+      if (error) throw error;
+      await getAllUsers();
+      setSelectedIds(new Set());
+      closeUserDetails();
+    } catch (err) {
+      console.error(err.message);
+      alert(`Error promoting users to tutor: ${err.message}`);
+    }
+  };
+
+  const bulkAddAdmin = async () => {
+    if (!isSuperAdmin) {
+      alert("Only the superadmin can add admin access.");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!window.confirm(`Add admin access for ${ids.length} user(s)?`)) return;
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ is_admin: true })
+        .in("user_id", ids);
+      if (error) throw error;
+      await getAllUsers();
+      setSelectedIds(new Set());
+      closeUserDetails();
+    } catch (err) {
+      console.error(err.message);
+      alert(`Error updating admin access: ${err.message}`);
+    }
+  };
+
   const bulkDeleteUsers = async () => {
     if (!isSuperAdmin) {
       alert("Only the superadmin can delete users.");
@@ -485,27 +528,6 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <button
-                  type="button"
-                  onClick={bulkMoveToStudent}
-                  className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
-                  disabled={selectedIds.size === 0}
-                >
-                  Move selected to Student
-                </button>
-                {isSuperAdmin && (
-                  <button
-                    type="button"
-                    onClick={bulkDeleteUsers}
-                    className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
-                    disabled={selectedIds.size === 0}
-                  >
-                    Delete selected
-                  </button>
-                )}
-              </div>
-
               <div className="max-h-[520px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
@@ -554,16 +576,59 @@ const Users = () => {
                       >
                         <MdMoreHoriz className="text-2xl" />
                       </button>
-                    </div>
-                  );
-                }) : (
-                  <div className="py-10 text-center text-sm text-gray-500">
-                    No users found
                   </div>
+                );
+              }) : (
+                <div className="py-10 text-center text-sm text-gray-500">
+                  No users found
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-4 mt-4 border-t border-blue-100">
+              <div className="text-xs text-gray-500">
+                Selected: {selectedIds.size}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={bulkPromoteToTutor}
+                  className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  disabled={selectedIds.size === 0}
+                >
+                  Promote to Tutor
+                </button>
+                <button
+                  type="button"
+                  onClick={bulkMoveToStudent}
+                  className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
+                  disabled={selectedIds.size === 0}
+                >
+                  Move to Student
+                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={bulkAddAdmin}
+                    className="px-3 py-1.5 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    disabled={selectedIds.size === 0}
+                  >
+                    Add as Admin
+                  </button>
+                )}
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={bulkDeleteUsers}
+                    className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                    disabled={selectedIds.size === 0}
+                  >
+                    Delete
+                  </button>
                 )}
               </div>
             </div>
           </div>
+        </div>
 
           <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
             <button
