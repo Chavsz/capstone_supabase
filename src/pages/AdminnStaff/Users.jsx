@@ -92,75 +92,19 @@ const Users = () => {
     }
   };
 
-  // Delete a user (and related records) from the database
+  // Delete only the user row (superadmin only)
   const deleteUser = async (id) => {
     if (!isSuperAdmin) {
       alert("Only the superadmin can delete users.");
       return;
     }
-    if (!window.confirm("Delete this user and all of their records? This cannot be undone.")) {
+    if (!window.confirm("Delete this user account? Related records will be kept.")) {
       return;
     }
 
     try {
-      // Remove schedules tied to the tutor's profile first
-      const { data: tutorProfiles, error: tutorProfileError } = await supabase
-        .from("profile")
-        .select("profile_id")
-        .eq("user_id", id);
-      if (tutorProfileError && tutorProfileError.code !== "PGRST116") throw tutorProfileError;
-
-      const profileIds = (tutorProfiles || [])
-        .map((profile) => profile.profile_id)
-        .filter(Boolean);
-
-      if (profileIds.length > 0) {
-        const { error: scheduleError } = await supabase
-          .from("schedule")
-          .delete()
-          .in("profile_id", profileIds);
-        if (scheduleError && scheduleError.code !== "PGRST116") throw scheduleError;
-      }
-
-      // Remove tutor/student profile entries
-      const profileTables = ["profile", "student_profile"];
-      for (const table of profileTables) {
-        const { error } = await supabase.from(table).delete().eq("user_id", id);
-        if (error && error.code !== "PGRST116") throw error;
-      }
-
-      // Remove appointments and evaluations referencing the user
-      // Delete evaluations first to avoid foreign key violations on appointment_id
-      const relationalDeletes = [
-        {
-          table: "evaluation",
-          filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
-        },
-        {
-          table: "appointment",
-          filter: (query) => query.or(`tutor_id.eq.${id},user_id.eq.${id}`),
-        },
-      ];
-
-      for (const { table, filter } of relationalDeletes) {
-        const query = supabase.from(table).delete();
-        const { error } = await filter(query);
-        if (error && error.code !== "PGRST116") throw error;
-      }
-
-      // Finally delete the user row
       const { error: userError } = await supabase.from("users").delete().eq("user_id", id);
       if (userError) throw userError;
-
-      // Attempt to remove from Supabase Auth (requires service role key)
-      try {
-        const { error: authError } = await supabase.auth.admin.deleteUser(id);
-        if (authError) {
-          console.warn("Unable to delete auth user:", authError.message);
-        }
-      } catch (authAdminError) {
-        console.warn("Auth admin unavailable:", authAdminError.message);
-      }
 
       await getAllUsers();
       alert("User deleted successfully.");
@@ -239,6 +183,22 @@ const Users = () => {
     }
   };
 
+  const verifyUserUpdate = async (userId, message) => {
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("role, is_admin, is_superadmin")
+        .eq("user_id", userId)
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error(err.message);
+      alert(message || "Unable to verify changes. Check your RLS policies.");
+      return null;
+    }
+  };
+
   const openUserDetails = (user) => {
     setSelectedUser(user);
     setIsDetailsOpen(true);
@@ -289,6 +249,10 @@ const Users = () => {
 
       await getAllUsers();
       closeUserDetails();
+      const verify = await verifyUserUpdate(user.user_id, "Unable to verify tutor update.");
+      if (verify && normalizeRole(verify.role) !== "tutor") {
+        alert("Update did not apply. Check your users table RLS policies.");
+      }
     } catch (err) {
       console.error(err.message);
       alert(`Error promoting user to tutor: ${err.message}`);
@@ -316,6 +280,10 @@ const Users = () => {
 
       await getAllUsers();
       closeUserDetails();
+      const verify = await verifyUserUpdate(user.user_id, "Unable to verify student update.");
+      if (verify && normalizeRole(verify.role) !== "student") {
+        alert("Update did not apply. Check your users table RLS policies.");
+      }
     } catch (err) {
       console.error(err.message);
       alert(`Error moving user back to student: ${err.message}`);
@@ -805,17 +773,14 @@ const Users = () => {
                   Move to Student
                 </button>
               )}
-              {isSuperAdmin && (
+              {isSuperAdmin && !selectedUser.is_admin && !selectedUser.is_superadmin && (
                 <button
                   className={`px-3 py-1.5 text-sm rounded-md ${
-                    selectedUser.is_admin
-                      ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => updateAdminStatus(selectedUser, !selectedUser.is_admin)}
-                  disabled={selectedUser.is_superadmin}
+                  onClick={() => updateAdminStatus(selectedUser, true)}
                 >
-                  {selectedUser.is_admin ? "Remove Admin" : "Add as Admin"}
+                  Add as Admin
                 </button>
               )}
               {isSuperAdmin && (
