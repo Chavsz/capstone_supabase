@@ -34,7 +34,14 @@ const RouteSelect = ({ onClose }) => {
 
         if (userError) throw userError;
 
-        const studentRole = (userData?.role || "").toLowerCase() === "student";
+        let storedRole = null;
+        try {
+          storedRole = localStorage.getItem("lav.roleOverride");
+        } catch (err) {
+          storedRole = null;
+        }
+        const effectiveRole = storedRole || userData?.role || "";
+        const studentRole = effectiveRole.toLowerCase() === "student";
         setIsStudent(studentRole);
         setCanSwitchToTutor(!!tutorProfile);
         setCanSwitchToAdmin(Boolean(userData?.is_admin || userData?.is_superadmin));
