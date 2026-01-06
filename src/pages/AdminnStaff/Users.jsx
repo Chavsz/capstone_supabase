@@ -375,14 +375,22 @@ const Users = () => {
 
   const bulkMoveToStudent = async () => {
     const ids = Array.from(selectedIds);
-    if (!ids.length) return;
+    if (!ids.length) {
+      alert("Select at least one user.");
+      return;
+    }
     if (!window.confirm(`Move ${ids.length} user(s) to student?`)) return;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role: "student" })
-        .in("user_id", ids);
+        .in("user_id", ids)
+        .select("user_id, role");
       if (error) throw error;
+      if (!data?.length) {
+        alert("No users were updated.");
+        return;
+      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
@@ -394,14 +402,22 @@ const Users = () => {
 
   const bulkPromoteToTutor = async () => {
     const ids = Array.from(selectedIds);
-    if (!ids.length) return;
+    if (!ids.length) {
+      alert("Select at least one user.");
+      return;
+    }
     if (!window.confirm(`Promote ${ids.length} user(s) to tutor?`)) return;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role: "tutor" })
-        .in("user_id", ids);
+        .in("user_id", ids)
+        .select("user_id, role");
       if (error) throw error;
+      if (!data?.length) {
+        alert("No users were updated.");
+        return;
+      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
@@ -417,14 +433,22 @@ const Users = () => {
       return;
     }
     const ids = Array.from(selectedIds);
-    if (!ids.length) return;
+    if (!ids.length) {
+      alert("Select at least one user.");
+      return;
+    }
     if (!window.confirm(`Add admin access for ${ids.length} user(s)?`)) return;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ is_admin: true })
-        .in("user_id", ids);
+        .in("user_id", ids)
+        .select("user_id, is_admin");
       if (error) throw error;
+      if (!data?.length) {
+        alert("No users were updated.");
+        return;
+      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
