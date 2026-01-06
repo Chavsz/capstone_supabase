@@ -15,6 +15,7 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
 
   const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
   const isAdminUser = (user) => Boolean(user?.is_admin || user?.is_superadmin);
@@ -37,7 +38,7 @@ const Users = () => {
       if (userIds.length) {
         const { data: tutorProfiles, error: tutorProfileError } = await supabase
           .from("profile")
-          .select("user_id, program, college, year_level, profile_image")
+          .select("user_id, program, college, year_level, profile_image, subject, specialization")
           .in("user_id", userIds);
         if (tutorProfileError && tutorProfileError.code !== "PGRST116") {
           throw tutorProfileError;
@@ -251,8 +252,19 @@ const Users = () => {
   const searchfilteredUsers = filteredUsers.filter((user) => {
     const name = (user.name || "").toLowerCase();
     const email = (user.email || "").toLowerCase();
+    const yearLevel = (user.profile?.year_level || "").toLowerCase();
+    const program = (user.profile?.program || "").toLowerCase();
+    const subject = (user.profile?.subject || "").toLowerCase();
+    const specialization = (user.profile?.specialization || "").toLowerCase();
     const term = searchTerm.toLowerCase();
-    return name.includes(term) || email.includes(term);
+    return (
+      name.includes(term)
+      || email.includes(term)
+      || yearLevel.includes(term)
+      || program.includes(term)
+      || subject.includes(term)
+      || specialization.includes(term)
+    );
   });
 
   const promoteToTutor = async (user) => {
@@ -314,6 +326,8 @@ const Users = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentUsers = searchfilteredUsers.slice(startIndex, endIndex);
+  const allSelectedOnPage =
+    currentUsers.length > 0 && currentUsers.every((user) => selectedIds.has(user.user_id));
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -331,6 +345,69 @@ const Users = () => {
     setSelectedFilter("All");
     setSearchTerm("");
     setCurrentPage(1);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelectedOnPage) {
+        currentUsers.forEach((user) => next.delete(user.user_id));
+      } else {
+        currentUsers.forEach((user) => next.add(user.user_id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectUser = (userId) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+
+  const bulkMoveToStudent = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!window.confirm(`Move ${ids.length} user(s) to student?`)) return;
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ role: "student" })
+        .in("user_id", ids);
+      if (error) throw error;
+      await getAllUsers();
+      setSelectedIds(new Set());
+      closeUserDetails();
+    } catch (err) {
+      console.error(err.message);
+      alert(`Error moving users to student: ${err.message}`);
+    }
+  };
+
+  const bulkDeleteUsers = async () => {
+    if (!isSuperAdmin) {
+      alert("Only the superadmin can delete users.");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!window.confirm(`Delete ${ids.length} user(s) and all of their records?`)) return;
+    try {
+      for (const id of ids) {
+        await deleteUser(id);
+      }
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error(err.message);
+      alert("Error deleting users.");
+    }
   };
 
   return (
@@ -386,12 +463,20 @@ const Users = () => {
                   <FiSearch className="text-[#4766fe]" />
                   <input
                     type="text"
-                    placeholder="Search by name..."
+                    placeholder="Search name, year, program..."
                     className="w-full outline-none text-sm text-gray-600 placeholder-gray-400"
                     value={searchTerm}
                     onChange={handleSearch}
                   />
                 </div>
+                <label className="flex items-center gap-2 text-xs text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={allSelectedOnPage}
+                    onChange={toggleSelectAll}
+                  />
+                  Select all
+                </label>
                 <button
                   type="button"
                   onClick={handleShowLanding}
@@ -400,18 +485,45 @@ const Users = () => {
                   Back
                 </button>
               </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={bulkMoveToStudent}
+                  className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
+                  disabled={selectedIds.size === 0}
+                >
+                  Move selected to Student
+                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={bulkDeleteUsers}
+                    className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                    disabled={selectedIds.size === 0}
+                  >
+                    Delete selected
+                  </button>
+                )}
+              </div>
 
               <div className="max-h-[520px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
+                  const subjectLabel = profile.subject || profile.specialization || "";
                   const initials = (user.name || "U").charAt(0).toUpperCase();
+                  const isChecked = selectedIds.has(user.user_id);
 
                   return (
                     <div
                       key={user.user_id}
                       className="flex items-center justify-between gap-4 py-4 border-b border-blue-200 last:border-b-0"
                     >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleSelectUser(user.user_id)}
+                      />
                       <div className="flex items-center gap-4">
                         {profile.profile_image ? (
                           <img
@@ -427,6 +539,11 @@ const Users = () => {
                         <div>
                           <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
                           <p className="text-xs text-gray-500">{yearLabel}</p>
+                          {normalizeRole(user.role) === "tutor" && (
+                            <p className="text-xs text-gray-500">
+                              {subjectLabel || "No subject"}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <button
@@ -569,6 +686,18 @@ const Users = () => {
                 <span className="font-medium">College</span>
                 <span>{selectedUser.profile?.college || "Not set"}</span>
               </div>
+              {normalizeRole(selectedUser.role) === "tutor" && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Subject</span>
+                    <span>{selectedUser.profile?.subject || "Not set"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Specialization</span>
+                    <span>{selectedUser.profile?.specialization || "Not set"}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-4 border-t border-gray-100 flex flex-wrap gap-2 justify-end">

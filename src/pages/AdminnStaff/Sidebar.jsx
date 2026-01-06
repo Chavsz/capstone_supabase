@@ -159,35 +159,7 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-4 mb-10">
-        {roleOverride === "admin" && roleOverridePrev && (
-          <button
-            className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none mb-2"
-            onClick={handleSwitchBack}
-          >
-            <fiIcons.FiRepeat />
-            <p className="text-md font-semibold hidden md:block">
-              Switch back to {roleOverridePrev.charAt(0).toUpperCase() + roleOverridePrev.slice(1)}
-            </p>
-          </button>
-        )}
-        {roleOverride === "admin" && (
-          <div className="flex flex-col gap-2 mb-3">
-            <button
-              className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
-              onClick={() => handleSwitchToRole("student")}
-            >
-              <fiIcons.FiUser />
-              <p className="text-md font-semibold hidden md:block">Switch to Student</p>
-            </button>
-            <button
-              className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
-              onClick={() => handleSwitchToRole("tutor")}
-            >
-              <fiIcons.FiUsers />
-              <p className="text-md font-semibold hidden md:block">Switch to Tutor</p>
-            </button>
-          </div>
-        )}
+        
         <button
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
           onClick={(e) => logout(e)}
