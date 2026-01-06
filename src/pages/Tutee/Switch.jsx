@@ -9,6 +9,7 @@ const Switch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -35,7 +36,29 @@ const Switch = () => {
       }
     };
 
+    const fetchLoginPhoto = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("login_photo")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        if (data?.login_photo) {
+          setLoginPhoto(data.login_photo);
+        }
+      } catch (err) {
+        console.error("Unable to load login photo:", err.message);
+      }
+    };
+
     fetchAdminPermissions();
+    fetchLoginPhoto();
   }, []);
 
   const handleSwitchClick = () => {
@@ -55,7 +78,6 @@ const Switch = () => {
         return;
       }
 
-      // Update role in users table
       const { error } = await supabase
         .from("users")
         .update({ role: "tutor" })
@@ -63,11 +85,8 @@ const Switch = () => {
 
       if (error) throw error;
 
-      // Role will be updated in App.jsx when it detects the change
       setIsModalOpen(false);
-      
-      // Dispatch custom event to notify App component of role change
-      window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: 'tutor' } }));
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
 
       try {
         localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
@@ -75,7 +94,6 @@ const Switch = () => {
         // Ignore storage errors
       }
       
-      // Navigate to dashboard to trigger role-based routing
       navigate("/dashboard");
     } catch (error) {
       console.error("Error switching role:", error);
@@ -115,27 +133,68 @@ const Switch = () => {
   };
 
   return (
-    <div className="py-3 px-6">
-      <h1 className="text-gray-600 font-bold text-2xl mb-6">Switch</h1>
-      <div>
-        <h1 className="text-sm font-medium text-gray-600 mb-2">Switch role</h1>
-        <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={handleSwitchClick}
-            disabled={isLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Switching..." : "Switch to Tutor"}
-          </button>
-          {canSwitchAdmin && (
-            <button
-              onClick={handleAdminSwitchClick}
-              disabled={isAdminLoading}
-              className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-gray-800 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAdminLoading ? "Switching..." : "Switch to Admin"}
-            </button>
-          )}
+    <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
+        <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">
+                Role Switch
+              </p>
+              <h1 className="text-3xl font-bold text-gray-800">Switch to Tutor</h1>
+              <p className="text-gray-600">
+                Move to the tutor experience to host sessions, manage your availability,
+                and support your tutees. You can switch back if your account permits.
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-blue-700">
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Requires confirmation</span>
+                <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Instant redirect</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl p-6 w-full md:w-80 shadow-lg">
+              {loginPhoto && (
+                <div className="mb-4 rounded-xl overflow-hidden border border-white/30 shadow-md">
+                  <img
+                    src={loginPhoto}
+                    alt="Login visual"
+                    className="w-full h-36 object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-blue-100">Current role</p>
+                  <p className="text-lg font-semibold">Student</p>
+                </div>
+                <div className="text-3xl">⇄</div>
+              </div>
+              <div className="space-y-2 text-sm text-blue-50">
+                <p>Switch to tutor to:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Accept tutoring sessions</li>
+                  <li>Manage availability</li>
+                  <li>Support more learners</li>
+                </ul>
+              </div>
+              <button
+                onClick={handleSwitchClick}
+                disabled={isLoading}
+                className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Switching..." : "Switch to Tutor"}
+              </button>
+              {canSwitchAdmin && (
+                <button
+                  onClick={handleAdminSwitchClick}
+                  disabled={isAdminLoading}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isAdminLoading ? "Switching..." : "Switch to Admin"}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
