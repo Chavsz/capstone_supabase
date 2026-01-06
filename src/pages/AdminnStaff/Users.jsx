@@ -515,7 +515,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[520px] overflow-y-auto pr-2">
+              <div className="max-h-[560px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -526,34 +526,35 @@ const Users = () => {
                   return (
                     <div
                       key={user.user_id}
-                      className="flex items-center justify-between gap-4 py-4 border-b border-blue-200 last:border-b-0"
+                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-4 border-b border-blue-200 last:border-b-0"
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleSelectUser(user.user_id)}
+                        className="justify-self-start"
                       />
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center">
                         {profile.profile_image ? (
                           <img
                             src={profile.profile_image}
                             alt={user.name}
-                            className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                            className="w-14 h-14 rounded-full object-cover border border-blue-200"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                          <div className="w-14 h-14 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
                             {initials}
                           </div>
                         )}
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
-                          <p className="text-xs text-gray-500">{yearLabel}</p>
-                          {normalizeRole(user.role) === "tutor" && (
-                            <p className="text-xs text-gray-500">
-                              {subjectLabel || "No subject"}
-                            </p>
-                          )}
-                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
+                        <p className="text-xs text-gray-500">{yearLabel}</p>
+                        {normalizeRole(user.role) === "tutor" && (
+                          <p className="text-xs text-gray-500">
+                            {subjectLabel || "No subject"}
+                          </p>
+                        )}
                       </div>
                       <button
                         type="button"
