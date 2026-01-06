@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 // icons
@@ -19,6 +20,7 @@ function Dashboard() {
   const [appointments, setAppointments] = useState([]);
   const [collegeData, setCollegeData] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const navigate = useNavigate();
 
   async function getAppointments() {
     try {
@@ -149,6 +151,19 @@ function Dashboard() {
   const evaluationRate = evaluationTotal
     ? (evaluationDone / evaluationTotal) * 100
     : 0;
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  const openLavRoomFocus = (status) => {
+    navigate("/dashboard/lav-room", {
+      state: {
+        lavRoomFocus: {
+          date: todayKey,
+          status,
+          openFirst: true,
+        },
+      },
+    });
+  };
 
   return (
     <div className="flex">
@@ -177,12 +192,16 @@ function Dashboard() {
                 {completedAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
-              <div className="mt-2 flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => openLavRoomFocus("finished")}
+                className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+              >
                 <span className="font-bold text-[#1f9e2c]">
                   {completedSessionsToday.length || 0}
                 </span>
-                <span className="text-[#7b8bb8]">New Sessions Today!</span>
-              </div>
+                <span>New Sessions Today!</span>
+              </button>
             </div>
 
             {/* Evaluations */}
@@ -197,12 +216,16 @@ function Dashboard() {
                 {evaluationDone} / {evaluationTotal}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
-              <div className="mt-2 flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => openLavRoomFocus("completed")}
+                className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+              >
                 <span className="font-bold text-[#1f9e2c]">
                   {evaluationTotal ? evaluationRate.toFixed(2) : "0.00"}%
                 </span>
-                <span className="text-[#7b8bb8]">Evaluated!</span>
-              </div>
+                <span>Evaluated!</span>
+              </button>
             </div>
 
             {/* Tutee Request */}
@@ -217,12 +240,16 @@ function Dashboard() {
                 {tuteeRequests.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
-              <div className="mt-2 flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => openLavRoomFocus("pending")}
+                className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+              >
                 <span className="font-bold text-[#1f9e2c]">
                   {tuteeRequestsToday.length || 0}
                 </span>
-                <span className="text-[#7b8bb8]">New Booked Today!</span>
-              </div>
+                <span>New Booked Today!</span>
+              </button>
             </div>
 
             {/* Cancellations */}
@@ -237,12 +264,16 @@ function Dashboard() {
                 {cancelledAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
-              <div className="mt-2 flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => openLavRoomFocus("cancelled")}
+                className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+              >
                 <span className="font-bold text-[#b10f0f]">
                   {cancelledSessionsToday.length || 0}
                 </span>
-                <span className="text-[#7b8bb8]">New Cancelled Today!</span>
-              </div>
+                <span>New Cancelled Today!</span>
+              </button>
             </div>
           </div>
 

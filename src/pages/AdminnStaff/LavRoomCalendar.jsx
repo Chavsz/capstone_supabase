@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FiCalendar } from "react-icons/fi";
 import { supabase } from "../../supabase-client";
+import { useLocation } from "react-router-dom";
 
 const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -42,6 +43,8 @@ const STATUS_LABELS = {
   declined: "Declined",
   cancelled: "Cancelled",
 };
+
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
 
 const toMinutes = (timeValue) => {
   if (!timeValue) return 0;
@@ -87,6 +90,7 @@ const getMobileTextColor = (status) => {
 };
 
 const LavRoomCalendar = () => {
+  const location = useLocation();
   const [weekStart, setWeekStart] = useState(getMonday(new Date()));
   const [appointments, setAppointments] = useState([]);
   const [hoveredAppointment, setHoveredAppointment] = useState(null);
@@ -98,6 +102,7 @@ const LavRoomCalendar = () => {
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null);
   const [searchIndex, setSearchIndex] = useState(0);
+  const [pendingFocus, setPendingFocus] = useState(null);
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -216,7 +221,9 @@ const LavRoomCalendar = () => {
   const filteredAppointments = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return appointments.filter((appointment) => {
-      if (statusFilter !== "all" && appointment.status !== statusFilter) {
+      if (statusFilter === "finished") {
+        if (!FINISHED_STATUSES.has(appointment.status)) return false;
+      } else if (statusFilter !== "all" && appointment.status !== statusFilter) {
         return false;
       }
       if (!term) return true;
@@ -242,6 +249,29 @@ const LavRoomCalendar = () => {
   }, [filteredAppointments, searchTerm]);
 
   useEffect(() => {
+    const focus = location.state?.lavRoomFocus || null;
+    if (focus) {
+      setPendingFocus(focus);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!pendingFocus) return;
+    const targetDate = pendingFocus.date
+      ? new Date(`${pendingFocus.date}T00:00:00`)
+      : new Date();
+    if (Number.isNaN(targetDate.getTime())) return;
+
+    setSearchTerm("");
+    setStatusFilter(pendingFocus.status || "all");
+    setWeekStart(getMonday(targetDate));
+    const dayIndex = targetDate.getDay() === 0 ? -1 : targetDate.getDay() - 1;
+    if (dayIndex >= 0 && dayIndex <= 4) {
+      setSelectedDayIndex(dayIndex);
+    }
+  }, [pendingFocus]);
+
+  useEffect(() => {
     setSearchIndex(0);
   }, [searchTerm, statusFilter]);
 
@@ -261,6 +291,36 @@ const LavRoomCalendar = () => {
       setWeekStart(nextWeekStart);
     }
   }, [activeSearchDate, isSearchMode, weekStart]);
+
+  useEffect(() => {
+    if (!pendingFocus?.openFirst || appointments.length === 0) return;
+    const focusDate = pendingFocus.date || null;
+    const status = pendingFocus.status || "all";
+    const matches = appointments.filter((appointment) => {
+      if (focusDate && appointment.date !== focusDate) return false;
+      if (status === "finished") {
+        return FINISHED_STATUSES.has(appointment.status);
+      }
+      if (status !== "all" && appointment.status !== status) return false;
+      return true;
+    });
+    const firstMatch = matches.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return toMinutes(a.start_time) - toMinutes(b.start_time);
+    })[0];
+    if (firstMatch) {
+      const dateValue = new Date(`${firstMatch.date}T00:00:00`);
+      const dayIndex = dateValue.getDay() === 0 ? -1 : dateValue.getDay() - 1;
+      setHoveredAppointment({
+        ...firstMatch,
+        dayIndex,
+        top: 24,
+        left: 16,
+      });
+      setExpandedAppointmentId(firstMatch.appointment_id);
+    }
+    setPendingFocus(null);
+  }, [pendingFocus, appointments]);
 
   const bookingsByDay = useMemo(() => {
     const grouped = dayLabels.map(() => []);
