@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 
-import { MdDelete, MdAdd, MdPersonRemove, MdAdminPanelSettings } from "react-icons/md";
+import { MdDelete, MdAdd, MdPersonRemove, MdAdminPanelSettings, MdMoreHoriz, MdClose } from "react-icons/md";
+import { FaUserTie, FaChalkboardTeacher, FaUserAlt } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,6 +12,11 @@ const Users = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
+  const isAdminUser = (user) => Boolean(user?.is_admin || user?.is_superadmin);
 
   // Get all users
   const getAllUsers = async () => {
@@ -21,7 +28,46 @@ const Users = () => {
 
       if (error) throw error;
 
-      setAllUsers(data || []);
+      const users = data || [];
+      const userIds = users.map((user) => user.user_id).filter(Boolean);
+      let tutorProfileMap = {};
+      let studentProfileMap = {};
+
+      if (userIds.length) {
+        const { data: tutorProfiles, error: tutorProfileError } = await supabase
+          .from("profile")
+          .select("user_id, program, college, year_level, profile_image")
+          .in("user_id", userIds);
+        if (tutorProfileError && tutorProfileError.code !== "PGRST116") {
+          throw tutorProfileError;
+        }
+        tutorProfileMap = (tutorProfiles || []).reduce((acc, profile) => {
+          acc[profile.user_id] = profile;
+          return acc;
+        }, {});
+
+        const { data: studentProfiles, error: studentProfileError } = await supabase
+          .from("student_profile")
+          .select("user_id, program, college, year_level, profile_image")
+          .in("user_id", userIds);
+        if (studentProfileError && studentProfileError.code !== "PGRST116") {
+          throw studentProfileError;
+        }
+        studentProfileMap = (studentProfiles || []).reduce((acc, profile) => {
+          acc[profile.user_id] = profile;
+          return acc;
+        }, {});
+      }
+
+      const mergedUsers = users.map((user) => {
+        const role = normalizeRole(user.role);
+        const tutorProfile = tutorProfileMap[user.user_id];
+        const studentProfile = studentProfileMap[user.user_id];
+        const profile = role === "tutor" ? tutorProfile : studentProfile || tutorProfile;
+        return { ...user, profile: profile || null };
+      });
+
+      setAllUsers(mergedUsers);
     } catch (err) {
       console.error(err.message);
     }
@@ -128,21 +174,23 @@ const Users = () => {
   }, []);
 
   // Filter users based on selected filter
-  const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
-
   const getFilteredUsers = () => {
-
     switch (selectedFilter) {
       case "Tutor":
         return allUsers.filter((user) => normalizeRole(user.role) === "tutor");
       case "Student":
         return allUsers.filter((user) => normalizeRole(user.role) === "student");
+      case "Admin":
+        return allUsers.filter((user) => isAdminUser(user));
       default:
         return allUsers.filter((user) => normalizeRole(user.role) !== "admin");
     }
   };
 
   const filteredUsers = getFilteredUsers();
+  const adminCount = allUsers.filter((user) => isAdminUser(user)).length;
+  const tutorCount = allUsers.filter((user) => normalizeRole(user.role) === "tutor").length;
+  const studentCount = allUsers.filter((user) => normalizeRole(user.role) === "student").length;
 
   const getRoleLabel = (role) => {
     const normalized = normalizeRole(role);
@@ -186,12 +234,24 @@ const Users = () => {
       alert(`Error updating admin access: ${err.message}`);
     }
   };
+
+  const openUserDetails = (user) => {
+    setSelectedUser(user);
+    setIsDetailsOpen(true);
+  };
+
+  const closeUserDetails = () => {
+    setSelectedUser(null);
+    setIsDetailsOpen(false);
+  };
   
   // Apply search filter
-  const searchfilteredUsers = filteredUsers.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    || user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchfilteredUsers = filteredUsers.filter((user) => {
+    const name = (user.name || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+    const term = searchTerm.toLowerCase();
+    return name.includes(term) || email.includes(term);
+  });
 
   const promoteToTutor = async (user) => {
     if (!window.confirm(`Add ${user.name} as tutor?`)) return;
@@ -260,233 +320,120 @@ const Users = () => {
     <div className="min-h-screen p-4 md:p-6">
       <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Users</h1>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 md:mb-6">
-        {/* Filter Buttons */}
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
-          {["All", "Tutor", "Student"].map((filter) => (
-            <button
-              key={filter}
-              className={`px-3 md:px-4 py-2 font-medium transition-all duration-200 text-sm md:text-base text-gray-600 border-b-2 whitespace-nowrap ${
-                selectedFilter === filter
-                  ? "border-b-2 border-b-blue-600"
-                  : " border-b-2 border-b-transparent"
-              }`}
-              onClick={() => {
-                setSelectedFilter(filter);
-                setCurrentPage(1); // Reset to first page when filter changes
-              }}
-            >
-              {filter}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Bar */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search by name or email"
-            className="w-full sm:w-[250px] md:w-[300px] px-3 md:px-4 py-2 bg-gray-100 border-b-2 border-b-transparent outline-none focus:border-b-blue-600 focus:border-b-2 text-sm md:text-base"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </div>
-      </div>
-
-      {/* Desktop Table */}
-      <div className="hidden md:block bg-white overflow-hidden rounded-lg border border-gray-200">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {currentUsers.length > 0 ? currentUsers.map((user) => (
-              <tr key={user.user_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <div className="flex items-center gap-2">
-                    <span>{getRoleLabel(user.role)}</span>
-                    {user.is_superadmin && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
-                        Superadmin
-                      </span>
-                    )}
-                    {!user.is_superadmin && user.is_admin && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <div className="flex items-center gap-2">
-                    {normalizeRole(user.role) === "student" && (
-                      <button
-                        className="text-gray-400 hover:text-blue-500 px-2 py-1 rounded-md"
-                        onClick={() => promoteToTutor(user)}
-                        title="Add as tutor"
-                        aria-label="Add as tutor"
-                      >
-                        <MdAdd />
-                      </button>
-                    )}
-                    {normalizeRole(user.role) === "tutor" && (
-                      <button
-                        className="text-gray-400 hover:text-orange-500 px-2 py-1 rounded-md"
-                        onClick={() => demoteToStudent(user)}
-                        title="Send back to student list"
-                        aria-label="Demote to student"
-                      >
-                        <MdPersonRemove />
-                      </button>
-                    )}
-                    {isSuperAdmin && (
-                      <button
-                        className={`px-2 py-1 rounded-md ${
-                          user.is_admin
-                            ? "text-blue-600 hover:text-blue-700"
-                            : "text-gray-400 hover:text-blue-500"
-                        } ${user.is_superadmin ? "opacity-40 cursor-not-allowed" : ""}`}
-                        onClick={() => updateAdminStatus(user, !user.is_admin)}
-                        disabled={user.is_superadmin}
-                        aria-label={user.is_admin ? "Remove admin access" : "Grant admin access"}
-                        title={user.is_admin ? "Remove admin access" : "Grant admin access"}
-                      >
-                        <MdAdminPanelSettings />
-                      </button>
-                    )}
-                    {isSuperAdmin && (
-                      <button
-                        className={`px-2 py-1 rounded-md ${
-                          user.is_superadmin
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-gray-400 hover:text-red-500"
-                        }`}
-                        onClick={() => deleteUser(user.user_id)}
-                        disabled={user.is_superadmin}
-                        aria-label="Delete user"
-                      >
-                        <MdDelete />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
-                  No users found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Card Layout */}
-      <div className="md:hidden space-y-3">
-        {currentUsers.length > 0 ? currentUsers.map((user) => (
-          <div
-            key={user.user_id}
-            className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex-1">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">
-                  {user.name}
-                </h3>
-                <p className="text-sm text-gray-600 break-words mb-2">
-                  {user.email}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
-                    {getRoleLabel(user.role)}
-                  </span>
-                  {user.is_superadmin && (
-                    <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-700">
-                      Superadmin
-                    </span>
-                  )}
-                  {!user.is_superadmin && user.is_admin && (
-                    <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700">
-                      Admin
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                {normalizeRole(user.role) === "student" && (
-                  <button
-                    className="text-gray-400 hover:text-blue-500 p-2 rounded-md"
-                    onClick={() => promoteToTutor(user)}
-                    aria-label="Add as tutor"
-                  >
-                    <MdAdd className="w-5 h-5" />
-                  </button>
-                )}
-                {normalizeRole(user.role) === "tutor" && (
-                  <button
-                    className="text-gray-400 hover:text-orange-500 p-2 rounded-md"
-                    onClick={() => demoteToStudent(user)}
-                    aria-label="Demote to student"
-                  >
-                    <MdPersonRemove className="w-5 h-5" />
-                  </button>
-                )}
-                {isSuperAdmin && (
-                  <button
-                    className={`p-2 rounded-md ${
-                      user.is_admin
-                        ? "text-blue-600 hover:text-blue-700"
-                        : "text-gray-400 hover:text-blue-500"
-                    } ${user.is_superadmin ? "opacity-40 cursor-not-allowed" : ""}`}
-                    onClick={() => updateAdminStatus(user, !user.is_admin)}
-                    disabled={user.is_superadmin}
-                    aria-label={user.is_admin ? "Remove admin access" : "Grant admin access"}
-                  >
-                    <MdAdminPanelSettings className="w-5 h-5" />
-                  </button>
-                )}
-                {isSuperAdmin && (
-                  <button
-                    className={`p-2 rounded-md ${
-                      user.is_superadmin
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-400 hover:text-red-500"
-                    }`}
-                    onClick={() => deleteUser(user.user_id)}
-                    disabled={user.is_superadmin}
-                    aria-label="Delete user"
-                  >
-                    <MdDelete className="w-5 h-5" />
-                  </button>
-                )}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1">
+          <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
+                <FiSearch className="text-[#4766fe]" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email"
+                  className="w-full outline-none text-sm text-gray-600 placeholder-gray-400"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
               </div>
             </div>
+
+            <div className="max-h-[520px] overflow-y-auto pr-2">
+              {currentUsers.length > 0 ? currentUsers.map((user) => {
+                const profile = user.profile || {};
+                const yearLabel = profile.year_level ? profile.year_level : "Year not set";
+                const initials = (user.name || "U").charAt(0).toUpperCase();
+
+                return (
+                  <div
+                    key={user.user_id}
+                    className="flex items-center justify-between gap-4 py-4 border-b border-blue-200 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-4">
+                      {profile.profile_image ? (
+                        <img
+                          src={profile.profile_image}
+                          alt={user.name}
+                          className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                          {initials}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
+                        <p className="text-xs text-gray-500">{yearLabel}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-blue-700 hover:text-blue-900 p-2"
+                      onClick={() => openUserDetails(user)}
+                      aria-label="View user details"
+                    >
+                      <MdMoreHoriz className="text-2xl" />
+                    </button>
+                  </div>
+                );
+              }) : (
+                <div className="py-10 text-center text-sm text-gray-500">
+                  No users found
+                </div>
+              )}
+            </div>
           </div>
-        )) : (
-          <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-            <p className="text-sm text-gray-500">No users found</p>
-          </div>
-        )}
+        </div>
+
+        <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedFilter("Admin");
+              setCurrentPage(1);
+            }}
+            className="flex flex-col items-center gap-2"
+          >
+            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+              <FaUserTie className="text-[#4766fe] text-3xl" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Admin</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedFilter("Tutor");
+              setCurrentPage(1);
+            }}
+            className="flex flex-col items-center gap-2"
+          >
+            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+              <FaChalkboardTeacher className="text-[#4766fe] text-3xl" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Tutors</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedFilter("Student");
+              setCurrentPage(1);
+            }}
+            className="flex flex-col items-center gap-2"
+          >
+            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+              <FaUserAlt className="text-[#4766fe] text-3xl" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700">Tutees</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedFilter("All");
+              setCurrentPage(1);
+            }}
+            className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-2"
+          >
+            Show All
+          </button>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -520,6 +467,102 @@ const Users = () => {
           </button>
         </div>
       </div>
+
+      {isDetailsOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg border border-gray-200 shadow-lg">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                {selectedUser.profile?.profile_image ? (
+                  <img
+                    src={selectedUser.profile.profile_image}
+                    alt={selectedUser.name}
+                    className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                    {(selectedUser.name || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-base font-semibold text-gray-800">{selectedUser.name || "Unnamed"}</p>
+                  <p className="text-xs text-gray-500">{selectedUser.email || "No email"}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={closeUserDetails}
+                aria-label="Close details"
+              >
+                <MdClose className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 text-sm text-gray-700">
+              <div className="flex justify-between">
+                <span className="font-medium">Role</span>
+                <span>{getRoleLabel(selectedUser.role)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Year Level</span>
+                <span>{selectedUser.profile?.year_level || "Not set"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">Program</span>
+                <span>{selectedUser.profile?.program || "Not set"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium">College</span>
+                <span>{selectedUser.profile?.college || "Not set"}</span>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 flex flex-wrap gap-2 justify-end">
+              {normalizeRole(selectedUser.role) === "student" && (
+                <button
+                  className="px-3 py-1.5 text-sm rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  onClick={() => promoteToTutor(selectedUser)}
+                >
+                  Promote to Tutor
+                </button>
+              )}
+              {normalizeRole(selectedUser.role) === "tutor" && (
+                <button
+                  className="px-3 py-1.5 text-sm rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
+                  onClick={() => demoteToStudent(selectedUser)}
+                >
+                  Move to Student
+                </button>
+              )}
+              {isSuperAdmin && (
+                <button
+                  className={`px-3 py-1.5 text-sm rounded-md ${
+                    selectedUser.is_admin
+                      ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => updateAdminStatus(selectedUser, !selectedUser.is_admin)}
+                  disabled={selectedUser.is_superadmin}
+                >
+                  {selectedUser.is_admin ? "Remove Admin" : "Make Admin"}
+                </button>
+              )}
+              {isSuperAdmin && (
+                <button
+                  className={`px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 ${
+                    selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  onClick={() => deleteUser(selectedUser.user_id)}
+                  disabled={selectedUser.is_superadmin}
+                >
+                  Delete User
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
