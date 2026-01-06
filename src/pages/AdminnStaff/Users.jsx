@@ -329,6 +329,16 @@ const Users = () => {
   const currentUsers = searchfilteredUsers.slice(startIndex, endIndex);
   const allSelectedOnPage =
     currentUsers.length > 0 && currentUsers.every((user) => selectedIds.has(user.user_id));
+  const selectedUsers = allUsers.filter((user) => selectedIds.has(user.user_id));
+  const canPromoteSelected = selectedUsers.some(
+    (user) => normalizeRole(user.role) !== "tutor"
+  );
+  const canDemoteSelected = selectedUsers.some(
+    (user) => normalizeRole(user.role) !== "student"
+  );
+  const canAddAdminSelected = selectedUsers.some(
+    (user) => !user.is_admin && !user.is_superadmin
+  );
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -381,16 +391,11 @@ const Users = () => {
     }
     if (!window.confirm(`Move ${ids.length} user(s) to student?`)) return;
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("users")
         .update({ role: "student" })
-        .in("user_id", ids)
-        .select("user_id, role");
+        .in("user_id", ids);
       if (error) throw error;
-      if (!data?.length) {
-        alert("No users were updated.");
-        return;
-      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
@@ -408,16 +413,11 @@ const Users = () => {
     }
     if (!window.confirm(`Promote ${ids.length} user(s) to tutor?`)) return;
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("users")
         .update({ role: "tutor" })
-        .in("user_id", ids)
-        .select("user_id, role");
+        .in("user_id", ids);
       if (error) throw error;
-      if (!data?.length) {
-        alert("No users were updated.");
-        return;
-      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
@@ -439,16 +439,11 @@ const Users = () => {
     }
     if (!window.confirm(`Add admin access for ${ids.length} user(s)?`)) return;
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("users")
         .update({ is_admin: true })
-        .in("user_id", ids)
-        .select("user_id, is_admin");
+        .in("user_id", ids);
       if (error) throw error;
-      if (!data?.length) {
-        alert("No users were updated.");
-        return;
-      }
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
@@ -613,23 +608,27 @@ const Users = () => {
                 Selected: {selectedIds.size}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={bulkPromoteToTutor}
-                  className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  disabled={selectedIds.size === 0}
-                >
-                  Promote to Tutor
-                </button>
-                <button
-                  type="button"
-                  onClick={bulkMoveToStudent}
-                  className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
-                  disabled={selectedIds.size === 0}
-                >
-                  Move to Student
-                </button>
-                {isSuperAdmin && (
+                {canPromoteSelected && (
+                  <button
+                    type="button"
+                    onClick={bulkPromoteToTutor}
+                    className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    disabled={selectedIds.size === 0}
+                  >
+                    Promote to Tutor
+                  </button>
+                )}
+                {canDemoteSelected && (
+                  <button
+                    type="button"
+                    onClick={bulkMoveToStudent}
+                    className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
+                    disabled={selectedIds.size === 0}
+                  >
+                    Move to Student
+                  </button>
+                )}
+                {isSuperAdmin && canAddAdminSelected && (
                   <button
                     type="button"
                     onClick={bulkAddAdmin}
@@ -639,7 +638,7 @@ const Users = () => {
                     Add as Admin
                   </button>
                 )}
-                {isSuperAdmin && (
+                {isSuperAdmin && selectedIds.size > 0 && (
                   <button
                     type="button"
                     onClick={bulkDeleteUsers}
