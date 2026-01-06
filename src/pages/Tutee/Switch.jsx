@@ -118,28 +118,26 @@ const Switch = () => {
     <div className="py-3 px-6">
       <h1 className="text-gray-600 font-bold text-2xl mb-6">Switch</h1>
       <div>
-        <h1 className="text-sm font-medium text-gray-600 mb-2">Switch to Tutor</h1>
-        <button 
-          onClick={handleSwitchClick}
-          disabled={isLoading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? "Switching..." : "Switch"}
-        </button>
-      </div>
-
-      {canSwitchAdmin && (
-        <div className="mt-6">
-          <h1 className="text-sm font-medium text-gray-600 mb-2">Switch to Admin</h1>
-          <button
-            onClick={handleAdminSwitchClick}
-            disabled={isAdminLoading}
-            className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-gray-800 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        <h1 className="text-sm font-medium text-gray-600 mb-2">Switch role</h1>
+        <div className="flex flex-wrap gap-3">
+          <button 
+            onClick={handleSwitchClick}
+            disabled={isLoading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-700 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isAdminLoading ? "Switching..." : "Switch to Admin"}
+            {isLoading ? "Switching..." : "Switch to Tutor"}
           </button>
+          {canSwitchAdmin && (
+            <button
+              onClick={handleAdminSwitchClick}
+              disabled={isAdminLoading}
+              className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-gray-800 hover:translate-y-[-5px] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAdminLoading ? "Switching..." : "Switch to Admin"}
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       <ConfirmationModal
         isOpen={isModalOpen}

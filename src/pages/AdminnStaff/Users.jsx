@@ -210,8 +210,8 @@ const Users = () => {
       return;
     }
     const prompt = nextValue
-      ? `Grant admin access to ${user.name}?`
-      : `Remove admin access from ${user.name}?`;
+      ? `Add ${user.name} as admin? This will set is_admin = true.`
+      : `Remove admin access from ${user.name}? This will set is_admin = false.`;
     if (!window.confirm(prompt)) return;
     try {
       const { data, error } = await supabase
@@ -230,6 +230,7 @@ const Users = () => {
         );
       }
       await getAllUsers();
+      closeUserDetails();
     } catch (err) {
       console.error(err.message);
       alert(`Error updating admin access: ${err.message}`);
@@ -274,6 +275,7 @@ const Users = () => {
       }
 
       await getAllUsers();
+      closeUserDetails();
     } catch (err) {
       console.error(err.message);
       alert(`Error promoting user to tutor: ${err.message}`);
@@ -300,6 +302,7 @@ const Users = () => {
       }
 
       await getAllUsers();
+      closeUserDetails();
     } catch (err) {
       console.error(err.message);
       alert(`Error moving user back to student: ${err.message}`);

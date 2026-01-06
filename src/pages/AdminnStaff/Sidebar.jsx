@@ -63,6 +63,18 @@ const Sidebar = ({ setAuth, onClose }) => {
     if (onClose) onClose();
   };
 
+  const handleSwitchToRole = (role) => {
+    try {
+      localStorage.setItem(ROLE_OVERRIDE_KEY, role);
+      localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
+    } catch (err) {
+      // Ignore storage errors
+    }
+    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: role } }));
+    navigate("/dashboard");
+    if (onClose) onClose();
+  };
+
   //logout
   const logout = async (e) => {
     e.preventDefault();
@@ -157,6 +169,24 @@ const Sidebar = ({ setAuth, onClose }) => {
               Switch back to {roleOverridePrev.charAt(0).toUpperCase() + roleOverridePrev.slice(1)}
             </p>
           </button>
+        )}
+        {roleOverride === "admin" && (
+          <div className="flex flex-col gap-2 mb-3">
+            <button
+              className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
+              onClick={() => handleSwitchToRole("student")}
+            >
+              <fiIcons.FiUser />
+              <p className="text-md font-semibold hidden md:block">Switch to Student</p>
+            </button>
+            <button
+              className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
+              onClick={() => handleSwitchToRole("tutor")}
+            >
+              <fiIcons.FiUsers />
+              <p className="text-md font-semibold hidden md:block">Switch to Tutor</p>
+            </button>
+          </div>
         )}
         <button
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"

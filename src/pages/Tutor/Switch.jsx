@@ -246,38 +246,27 @@ const Switch = () => {
                   <li>Submit evaluations</li>
                 </ul>
               </div>
-              <button
-                onClick={handleSwitchClick}
-                disabled={isLoading}
-                className="lav-btn lav-btn-primary mt-6 w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Switching..." : "Switch to Student"}
-              </button>
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  onClick={handleSwitchClick}
+                  disabled={isLoading}
+                  className="lav-btn lav-btn-primary w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Switching..." : "Switch to Student"}
+                </button>
+                {canSwitchAdmin && (
+                  <button
+                    onClick={handleAdminSwitchClick}
+                    disabled={isAdminLoading}
+                    className="w-full rounded-lg border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isAdminLoading ? "Switching..." : "Switch to Admin"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        {canSwitchAdmin && (
-          <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-8 mt-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest">
-                  Admin Access
-                </p>
-                <h2 className="text-xl font-bold text-gray-800">Switch to Admin</h2>
-                <p className="text-gray-600">
-                  Open the admin dashboard without changing your tutor role.
-                </p>
-              </div>
-              <button
-                onClick={handleAdminSwitchClick}
-                disabled={isAdminLoading}
-                className="bg-gray-800 text-white px-5 py-2.5 rounded-md hover:bg-gray-900 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isAdminLoading ? "Switching..." : "Switch to Admin"}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       <ConfirmationModal
