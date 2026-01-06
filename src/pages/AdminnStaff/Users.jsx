@@ -334,119 +334,157 @@ const Users = () => {
     <div className="min-h-screen p-4 md:p-6">
       <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Users</h1>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1">
-          <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
-                <FiSearch className="text-[#4766fe]" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  className="w-full outline-none text-sm text-gray-600 placeholder-gray-400"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                />
-              </div>
-            </div>
-
-            <div className="max-h-[520px] overflow-y-auto pr-2">
-              {currentUsers.length > 0 ? currentUsers.map((user) => {
-                const profile = user.profile || {};
-                const yearLabel = profile.year_level ? profile.year_level : "Year not set";
-                const initials = (user.name || "U").charAt(0).toUpperCase();
-
-                return (
-                  <div
-                    key={user.user_id}
-                    className="flex items-center justify-between gap-4 py-4 border-b border-blue-200 last:border-b-0"
-                  >
-                    <div className="flex items-center gap-4">
-                      {profile.profile_image ? (
-                        <img
-                          src={profile.profile_image}
-                          alt={user.name}
-                          className="w-12 h-12 rounded-full object-cover border border-blue-200"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
-                          {initials}
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
-                        <p className="text-xs text-gray-500">{yearLabel}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-blue-700 hover:text-blue-900 p-2"
-                      onClick={() => openUserDetails(user)}
-                      aria-label="View user details"
-                    >
-                      <MdMoreHoriz className="text-2xl" />
-                    </button>
-                  </div>
-                );
-              }) : (
-                <div className="py-10 text-center text-sm text-gray-500">
-                  No users found
+      <div className="relative overflow-hidden">
+        <div
+          className={`flex w-[200%] transition-transform duration-500 ease-out ${
+            showLanding ? "translate-x-0" : "-translate-x-1/2"
+          }`}
+        >
+          <div className="w-1/2 flex flex-col items-center justify-center py-10">
+            <div className="flex flex-col md:flex-row items-center gap-10 md:gap-16">
+              <button
+                type="button"
+                onClick={() => handleSelectFilter("Admin")}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaUserTie className="text-[#4766fe] text-5xl" />
                 </div>
-              )}
+                <span className="text-lg font-semibold text-[#1f2b5b]">Admin</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectFilter("Tutor")}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaChalkboardTeacher className="text-[#4766fe] text-5xl" />
+                </div>
+                <span className="text-lg font-semibold text-[#1f2b5b]">Tutors</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectFilter("Student")}
+                className="flex flex-col items-center gap-4"
+              >
+                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaUserAlt className="text-[#4766fe] text-5xl" />
+                </div>
+                <span className="text-lg font-semibold text-[#1f2b5b]">Tutees</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFilter("Admin");
-              setCurrentPage(1);
-            }}
-            className="flex flex-col items-center gap-2"
-          >
-            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-              <FaUserTie className="text-[#4766fe] text-3xl" />
+          <div className="w-1/2 flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
+                  <FiSearch className="text-[#4766fe]" />
+                  <input
+                    type="text"
+                    placeholder="Search by name..."
+                    className="w-full outline-none text-sm text-gray-600 placeholder-gray-400"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleShowLanding}
+                  className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                >
+                  Back
+                </button>
+              </div>
+
+              <div className="max-h-[520px] overflow-y-auto pr-2">
+                {currentUsers.length > 0 ? currentUsers.map((user) => {
+                  const profile = user.profile || {};
+                  const yearLabel = profile.year_level ? profile.year_level : "Year not set";
+                  const initials = (user.name || "U").charAt(0).toUpperCase();
+
+                  return (
+                    <div
+                      key={user.user_id}
+                      className="flex items-center justify-between gap-4 py-4 border-b border-blue-200 last:border-b-0"
+                    >
+                      <div className="flex items-center gap-4">
+                        {profile.profile_image ? (
+                          <img
+                            src={profile.profile_image}
+                            alt={user.name}
+                            className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                            {initials}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{user.name || "Unnamed"}</p>
+                          <p className="text-xs text-gray-500">{yearLabel}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-blue-700 hover:text-blue-900 p-2"
+                        onClick={() => openUserDetails(user)}
+                        aria-label="View user details"
+                      >
+                        <MdMoreHoriz className="text-2xl" />
+                      </button>
+                    </div>
+                  );
+                }) : (
+                  <div className="py-10 text-center text-sm text-gray-500">
+                    No users found
+                  </div>
+                )}
+              </div>
             </div>
-            <span className="text-sm font-semibold text-gray-700">Admin</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFilter("Tutor");
-              setCurrentPage(1);
-            }}
-            className="flex flex-col items-center gap-2"
-          >
-            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-              <FaChalkboardTeacher className="text-[#4766fe] text-3xl" />
-            </div>
-            <span className="text-sm font-semibold text-gray-700">Tutors</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFilter("Student");
-              setCurrentPage(1);
-            }}
-            className="flex flex-col items-center gap-2"
-          >
-            <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-              <FaUserAlt className="text-[#4766fe] text-3xl" />
-            </div>
-            <span className="text-sm font-semibold text-gray-700">Tutees</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFilter("All");
-              setCurrentPage(1);
-            }}
-            className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-2"
-          >
-            Show All
-          </button>
+          </div>
+
+          <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
+            <button
+              type="button"
+              onClick={() => handleSelectFilter("Admin")}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                <FaUserTie className="text-[#4766fe] text-3xl" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Admin</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectFilter("Tutor")}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                <FaChalkboardTeacher className="text-[#4766fe] text-3xl" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Tutors</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectFilter("Student")}
+              className="flex flex-col items-center gap-2"
+            >
+              <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                <FaUserAlt className="text-[#4766fe] text-3xl" />
+              </div>
+              <span className="text-sm font-semibold text-gray-700">Tutees</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShowLanding}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-2"
+            >
+              Show All
+            </button>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -559,7 +597,7 @@ const Users = () => {
                   onClick={() => updateAdminStatus(selectedUser, !selectedUser.is_admin)}
                   disabled={selectedUser.is_superadmin}
                 >
-                  {selectedUser.is_admin ? "Remove Admin" : "Make Admin"}
+                  {selectedUser.is_admin ? "Remove Admin" : "Add as Admin"}
                 </button>
               )}
               {isSuperAdmin && (
