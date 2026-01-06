@@ -9,6 +9,7 @@ import { RiCalendarScheduleLine } from "react-icons/ri";
 const RouteSelect = ({ onClose }) => {
   const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
+  const [canSwitchToAdmin, setCanSwitchToAdmin] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -21,7 +22,7 @@ const RouteSelect = ({ onClose }) => {
           await Promise.all([
             supabase
               .from("users")
-              .select("role")
+              .select("role, is_admin, is_superadmin")
               .eq("user_id", session.user.id)
               .single(),
             supabase
@@ -35,10 +36,12 @@ const RouteSelect = ({ onClose }) => {
 
         const studentRole = (userData?.role || "").toLowerCase() === "student";
         setIsStudent(studentRole);
-        setCanSwitchToTutor(!studentRole && !!tutorProfile);
+        setCanSwitchToTutor(!!tutorProfile);
+        setCanSwitchToAdmin(Boolean(userData?.is_admin || userData?.is_superadmin));
       } catch (err) {
         console.error("Error checking tutor profile:", err);
         setCanSwitchToTutor(false);
+        setCanSwitchToAdmin(false);
       }
     };
 
@@ -79,7 +82,7 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onClose={onClose}
       />
-      {!isStudent && canSwitchToTutor && (
+      {isStudent && (canSwitchToTutor || canSwitchToAdmin) && (
         <Route
           to="/dashboard/switch"
           Icon={piIcons.PiUserSwitchBold}
