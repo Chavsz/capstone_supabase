@@ -14,6 +14,7 @@ const Users = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
 
   const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
   const isAdminUser = (user) => Boolean(user?.is_admin || user?.is_superadmin);
@@ -316,6 +317,19 @@ const Users = () => {
     setCurrentPage(1);
   };
 
+  const handleSelectFilter = (filter) => {
+    setSelectedFilter(filter);
+    setCurrentPage(1);
+    setShowLanding(false);
+  };
+
+  const handleShowLanding = () => {
+    setShowLanding(true);
+    setSelectedFilter("All");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
   return (
     <div className="min-h-screen p-4 md:p-6">
       <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Users</h1>
@@ -328,7 +342,7 @@ const Users = () => {
                 <FiSearch className="text-[#4766fe]" />
                 <input
                   type="text"
-                  placeholder="Search by name or email"
+                  placeholder="Search by name..."
                   className="w-full outline-none text-sm text-gray-600 placeholder-gray-400"
                   value={searchTerm}
                   onChange={handleSearch}
