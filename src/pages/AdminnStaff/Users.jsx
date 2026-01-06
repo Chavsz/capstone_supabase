@@ -476,18 +476,14 @@ const Users = () => {
               </div>
               <span className="text-sm font-semibold text-gray-700">Tutees</span>
             </button>
-            <button
-              type="button"
-              onClick={handleShowLanding}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-700 mt-2"
-            >
-              Show All
-            </button>
+          
           </div>
         </div>
         </div>
       </div>
 
+      {!showLanding && (
+      <div>
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
@@ -519,6 +515,8 @@ const Users = () => {
           </button>
         </div>
       </div>
+      </div>
+      )}
 
       {isDetailsOpen && selectedUser && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
