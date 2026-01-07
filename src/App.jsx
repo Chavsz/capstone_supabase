@@ -95,6 +95,12 @@ function RoleProfile({ currentRole, loading }) {
 }
 
 function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
+  const loadingScreen = (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-blue-600">Loading...</div>
+    </div>
+  );
+
   return (
     <Routes>
       <Route exact path="/" element={<LandingPage />} />
@@ -102,7 +108,9 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
         exact
         path="/login"
         element={
-          !isAuthenticated ? (
+          loading ? (
+            loadingScreen
+          ) : !isAuthenticated ? (
             <Login setAuth={setAuth} />
           ) : (
             <Navigate to="/dashboard" />
@@ -113,7 +121,9 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
         exact
         path="/register"
         element={
-          !isAuthenticated ? (
+          loading ? (
+            loadingScreen
+          ) : !isAuthenticated ? (
             <Register setAuth={setAuth} />
           ) : (
             <Navigate to="/login" />
@@ -123,7 +133,9 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
       <Route
         path="/dashboard"
         element={
-          isAuthenticated ? (
+          loading ? (
+            loadingScreen
+          ) : isAuthenticated ? (
             <RoleBasedLayout
               setAuth={setAuth}
               currentRole={currentRole}
