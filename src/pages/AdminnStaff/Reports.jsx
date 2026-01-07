@@ -44,9 +44,9 @@ const Reports = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  const fetchData = async () => {
+  const fetchData = async (shouldUpdate) => {
     try {
-      setLoading(true);
+      if (shouldUpdate()) setLoading(true);
 
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointment")
@@ -105,6 +105,7 @@ const Reports = () => {
           tutor_name: slot.profile?.user?.name || "Unknown Tutor",
         })) || [];
 
+      if (!shouldUpdate()) return;
       setAppointments(appointmentData || []);
       setEvaluations(evaluationData || []);
       setSchedules(scheduleEntries);
@@ -118,18 +119,28 @@ const Reports = () => {
       if (landingError && landingError.code !== "PGRST116") {
         throw landingError;
       }
-      setLandingImage(landingData?.[0]?.home_image || "");
+      if (shouldUpdate()) setLandingImage(landingData?.[0]?.home_image || "");
     } catch (error) {
       console.error(error);
-      toast.error("Unable to load reports data");
+      if (shouldUpdate()) toast.error("Unable to load reports data");
     } finally {
-      setLoading(false);
+      if (shouldUpdate()) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    let active = true;
+    fetchData(() => active);
+    return () => {
+      active = false;
+    };
   }, []);
+
+  const normalizeDate = (value) => {
+    const date = new Date(value);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
 
   const appointmentsById = useMemo(() => {
     const map = new Map();
@@ -271,7 +282,7 @@ const Reports = () => {
     return evaluations.filter((evaluation) => {
       const appointment = appointmentsById.get(evaluation.appointment_id);
       if (!appointment || !appointment.date) return false;
-      const date = new Date(appointment.date);
+      const date = normalizeDate(appointment.date);
       return date >= periodRange.start && date < periodRange.end;
     });
   }, [evaluations, appointmentsById, periodRange]);
@@ -281,7 +292,7 @@ const Reports = () => {
     return evaluations.filter((evaluation) => {
       const appointment = appointmentsById.get(evaluation.appointment_id);
       if (!appointment || !appointment.date) return false;
-      const date = new Date(appointment.date);
+      const date = normalizeDate(appointment.date);
       return date >= selectedYearRange.start && date < selectedYearRange.end;
     });
   }, [evaluations, appointmentsById, selectedYearRange]);
@@ -493,7 +504,7 @@ const Reports = () => {
     if (!periodRange) return [];
     return appointments.filter((appointment) => {
       if (!appointment.date) return false;
-      const date = new Date(appointment.date);
+      const date = normalizeDate(appointment.date);
       return date >= periodRange.start && date < periodRange.end;
     });
   }, [appointments, periodRange]);
@@ -507,7 +518,7 @@ const Reports = () => {
     if (!pdfRange) return [];
     return appointments.filter((appointment) => {
       if (!appointment.date) return false;
-      const date = new Date(appointment.date);
+      const date = normalizeDate(appointment.date);
       return date >= pdfRange.start && date < pdfRange.end;
     });
   }, [appointments, pdfRange]);
@@ -567,7 +578,7 @@ const Reports = () => {
     if (!comparisonRange) return null;
     return appointments.filter((appointment) => {
       if (!isFinishedStatus(appointment.status) || !appointment.date) return false;
-      const date = new Date(appointment.date);
+      const date = normalizeDate(appointment.date);
       return date >= comparisonRange.start && date < comparisonRange.end;
     }).length;
   }, [appointments, comparisonRange]);
@@ -715,6 +726,10 @@ const Reports = () => {
 
   const handleMonthlyExport = useCallback(() => {
     if (monthlyExporting) return;
+    if (loading) {
+      toast("Reports are still loading.");
+      return;
+    }
     try {
       setMonthlyExporting(true);
       if (tutorMonthlyPerformance.length === 0) {
@@ -750,15 +765,13 @@ const Reports = () => {
     const resolvedLogo =
       landingImage && !landingImage.startsWith("http")
         ? new URL(landingImage, window.location.origin).href
-        : landingImage;
+        : landingImage || "";
+    const periodOverall = lavStatsPeriod?.overallAverage ?? null;
+    const yearOverall = lavStatsYear?.overallAverage ?? null;
     const lavPeriodOverallDisplay =
-      lavStatsPeriod.overallAverage !== null
-        ? `${lavStatsPeriod.overallAverage.toFixed(2)} / 5`
-        : "- / 5";
+      periodOverall !== null ? `${periodOverall.toFixed(2)} / 5` : "- / 5";
     const lavYearOverallDisplay =
-      lavStatsYear.overallAverage !== null
-        ? `${lavStatsYear.overallAverage.toFixed(2)} / 5`
-        : "- / 5";
+      yearOverall !== null ? `${yearOverall.toFixed(2)} / 5` : "- / 5";
 
     const pdfSummaryHtml = `
       <div class="summary-grid">
@@ -1099,6 +1112,94 @@ const Reports = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
+              <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                  <tr>
+                    <th className="text-left px-4 py-3">Tutor Name</th>
+                    <th className="text-center px-4 py-3">Sessions</th>
+                    <th className="text-center px-4 py-3">Tutees</th>
+                    <th className="text-center px-4 py-3">Total Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tutorMonthlyPerformance.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center text-gray-500 py-5">
+                        No completed sessions were logged for {displayPeriodLabel}.
+                      </td>
+                    </tr>
+                  ) : (
+                    tutorMonthlyPerformance.map((entry) => (
+                      <tr key={entry.tutorId} className="border-t border-gray-100">
+                        <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
+                        <td className="px-4 py-3 text-center">{entry.sessions}</td>
+                        <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-blue-600">
+                          {entry.hours.toFixed(1)} hrs
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
+              <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
+            </div>
+            <div className="p-4">
+              {evaluations.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  No LAV feedback has been submitted yet.
+                </p>
+              ) : (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-end justify-between gap-3">
+                    {lavRatingFields.map((field) => {
+                      const avg = lavStatsPeriod.averages[field.key];
+                      const height = avg ? Math.round((avg / 5) * 120) : 0;
+                      return (
+                        <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
+                          <span className="text-xs font-semibold text-gray-600">
+                            {avg !== null ? avg.toFixed(1) : "-"}
+                          </span>
+                          <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
+                            <div
+                              className="w-full bg-[#2fb592] transition-all"
+                              style={{ height: `${height}px` }}
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-500 text-center leading-tight">
+                            {field.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-[#2fb592] bg-white px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Overall Average
+                    </p>
+                    <p className="text-xl font-bold text-[#2fb592]">
+                      {lavStatsPeriod.overallAverage !== null
+                        ? lavStatsPeriod.overallAverage.toFixed(2)
+                        : "-"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
