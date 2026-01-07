@@ -312,6 +312,7 @@ function App() {
   const isFetching = useRef(false);
   const hasRole = useRef(false); // Track if we already have a role
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
+  const sessionCheckTimer = useRef(null);
 
   const setAuth = (boolean) => {
     setIsAuthenticated(boolean);
@@ -341,6 +342,55 @@ function App() {
 
   const safeOverride = roleOverride === "admin" && !adminAccess ? null : roleOverride;
   const effectiveRole = safeOverride || currentRole;
+  const ACTIVE_SESSION_COLUMN = "active_session_id";
+
+  const clearAuthState = () => {
+    setSession(null);
+    setIsAuthenticated(false);
+    setCurrentRole(null);
+    setLoading(false);
+    setAdminAccess(false);
+    isFetching.current = false;
+    hasRole.current = false;
+    setStoredRoleOverride(null);
+    setRoleOverride(null);
+  };
+
+  const updateActiveSession = async (activeSession) => {
+    if (!activeSession?.user?.id) return;
+    try {
+      const payload = {
+        [ACTIVE_SESSION_COLUMN]: activeSession.access_token,
+      };
+      const { error } = await supabase
+        .from("users")
+        .update(payload)
+        .eq("user_id", activeSession.user.id);
+      if (error) {
+        console.warn("Active session update failed:", error.message);
+      }
+    } catch (err) {
+      console.warn("Active session update failed:", err.message);
+    }
+  };
+
+  const verifyActiveSession = async (activeSession) => {
+    if (!activeSession?.user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select(ACTIVE_SESSION_COLUMN)
+        .eq("user_id", activeSession.user.id)
+        .single();
+      if (error) throw error;
+      if (data?.[ACTIVE_SESSION_COLUMN] && data[ACTIVE_SESSION_COLUMN] !== activeSession.access_token) {
+        await supabase.auth.signOut();
+        clearAuthState();
+      }
+    } catch (err) {
+      console.warn("Active session check failed:", err.message);
+    }
+  };
 
   // Single function to fetch role
   const fetchUserRole = async (userId) => {
@@ -429,6 +479,8 @@ function App() {
           setSession(session);
           setIsAuthenticated(true);
           await fetchUserRole(session.user.id);
+          await updateActiveSession(session);
+          await verifyActiveSession(session);
         } else {
           setIsAuthenticated(false);
           setLoading(false);
@@ -480,20 +532,14 @@ function App() {
         setLoading(true);
         isFetching.current = false; // Reset fetch flag for new login
         await fetchUserRole(session.user.id);
+        await updateActiveSession(session);
+        await verifyActiveSession(session);
         return;
       }
 
       // Handle sign out
       if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setIsAuthenticated(false);
-        setCurrentRole(null);
-        setLoading(false);
-        setAdminAccess(false);
-        isFetching.current = false;
-        hasRole.current = false; // Reset role flag on logout
-        setStoredRoleOverride(null);
-        setRoleOverride(null);
+        clearAuthState();
         return;
       }
 
@@ -504,7 +550,8 @@ function App() {
         if (hasRole.current && currentRole) {
           setLoading(false);
         }
-        // Don't fetch role again, we already have it
+        await updateActiveSession(session);
+        await verifyActiveSession(session);
         return;
       }
 
@@ -520,6 +567,31 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    if (sessionCheckTimer.current) {
+      clearInterval(sessionCheckTimer.current);
+    }
+    sessionCheckTimer.current = setInterval(() => {
+      verifyActiveSession(session);
+    }, 20000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        verifyActiveSession(session);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (sessionCheckTimer.current) {
+        clearInterval(sessionCheckTimer.current);
+      }
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [session?.user?.id, session?.access_token]);
 
   useEffect(() => {
     if (!loading && roleOverride === "admin" && !adminAccess) {
