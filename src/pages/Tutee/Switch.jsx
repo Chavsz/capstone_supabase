@@ -29,7 +29,7 @@ const Switch = () => {
           throw error;
         }
 
-        setCanSwitchAdmin(Boolean(data?.is_admin || data?.is_superadmin));
+        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);

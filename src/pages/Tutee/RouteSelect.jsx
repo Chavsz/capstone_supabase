@@ -44,7 +44,7 @@ const RouteSelect = ({ onClose }) => {
         const studentRole = effectiveRole.toLowerCase() === "student";
         setIsStudent(studentRole);
         setCanSwitchToTutor(!!tutorProfile);
-        setCanSwitchToAdmin(Boolean(userData?.is_admin || userData?.is_superadmin));
+        setCanSwitchToAdmin(Boolean(userData?.is_admin && !userData?.is_superadmin));
       } catch (err) {
         console.error("Error checking tutor profile:", err);
         setCanSwitchToTutor(false);

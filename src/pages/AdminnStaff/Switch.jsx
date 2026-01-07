@@ -4,6 +4,7 @@ import { supabase } from "../../supabase-client";
 
 const Switch = () => {
   const [loginPhoto, setLoginPhoto] = useState(null);
+  const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -30,10 +31,31 @@ const Switch = () => {
       }
     };
 
+    const fetchAdminPermissions = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data, error } = await supabase
+          .from("users")
+          .select("is_admin, is_superadmin")
+          .eq("user_id", session.user.id)
+          .single();
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+      } catch (err) {
+        console.error("Error checking admin permissions:", err.message);
+        setCanSwitchAdmin(false);
+      }
+    };
+
     fetchLoginPhoto();
+    fetchAdminPermissions();
   }, []);
 
   const handleSwitchToRole = (role) => {
+    if (!canSwitchAdmin) return;
     try {
       localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "admin");
       localStorage.setItem(ROLE_OVERRIDE_KEY, role);
@@ -47,6 +69,11 @@ const Switch = () => {
   return (
     <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
       <div className="w-full max-w-4xl">
+        {!canSwitchAdmin ? (
+          <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-10 text-center text-gray-600">
+            Switch is available only for admin accounts (not superadmin).
+          </div>
+        ) : (
         <div className="bg-white/85 backdrop-blur rounded-2xl border border-[#e5e8f2] shadow-lg shadow-blue-100 p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="space-y-2 max-w-xl">
@@ -104,6 +131,7 @@ const Switch = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
