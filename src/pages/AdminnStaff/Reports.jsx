@@ -744,22 +744,41 @@ const Reports = () => {
     const pdfSummaryHtml = `
       <div class="summary-grid">
         <div class="summary-card">
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="#2563eb" stroke-width="2" />
+              <path d="M12 7v6l4 2" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
           <p class="summary-label">Total Hours Taught</p>
           <p class="summary-value">${escapeHtml(`${pdfTotalHoursTeach.toFixed(1)} hrs`)}</p>
         </div>
         <div class="summary-card">
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="#16a34a" stroke-width="2" />
+              <path d="M8 12l3 3 5-6" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
           <p class="summary-label">Sessions Completed</p>
           <p class="summary-value">${escapeHtml(`${pdfTotalSessionsCompleted}`)}</p>
         </div>
         <div class="summary-card">
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="#6366f1" stroke-width="2" />
+              <path d="M8 3v4M16 3v4M4 10h16" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
           <p class="summary-label">Sessions Booked</p>
           <p class="summary-value">${escapeHtml(`${pdfTotalSessionsBooked}`)}</p>
         </div>
         <div class="summary-card">
-          <p class="summary-label">Total Tutees Served</p>
-          <p class="summary-value">${escapeHtml(`${pdfTotalTuteesServed}`)}</p>
-        </div>
-        <div class="summary-card">
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 19V9M10 19V5M15 19V12M20 19V7" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
           <p class="summary-label">Overall Average</p>
           <p class="summary-value">${escapeHtml(averageSatisfactionDisplay)}</p>
         </div>
@@ -888,6 +907,18 @@ const Reports = () => {
               border-radius: 14px;
               padding: 12px 14px;
               box-shadow: 0 6px 12px rgba(15, 23, 42, 0.05);
+            }
+            .summary-icon {
+              width: 28px;
+              height: 28px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 6px;
+            }
+            .summary-icon svg {
+              width: 22px;
+              height: 22px;
             }
             .summary-label {
               font-size: 11px;
