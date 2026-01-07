@@ -908,8 +908,8 @@ const Reports = () => {
             }
             .summary-grid {
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-              gap: 12px;
+              grid-template-columns: repeat(5, minmax(0, 1fr));
+              gap: 10px;
               margin: 20px 0 10px;
             }
             .summary-card {
@@ -1167,7 +1167,7 @@ const Reports = () => {
           )}
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {summaryMetrics.map((metric) => (
             <div
               key={metric.label}
