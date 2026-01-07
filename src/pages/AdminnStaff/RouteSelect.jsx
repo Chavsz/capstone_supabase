@@ -68,7 +68,7 @@ const Route = ({ to, Icon, title, onClose }) => {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
+        `flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-colors duration-200 ${
           isActive
             ? "bg-gray-200 text-gray-600 shadow"
             : "hover:bg-gray-200 text-[#696969] shadow-none"

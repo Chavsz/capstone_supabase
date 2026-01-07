@@ -10,7 +10,7 @@ const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -515,7 +515,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[560px] overflow-y-auto pr-2">
+              <div className="max-h-[360px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";

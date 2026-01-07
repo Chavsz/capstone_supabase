@@ -257,225 +257,202 @@ const Landing = () => {
     <div className="min-h-screen p-4 md:p-6">
       <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-6">Landing</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto bg-white p-4 md:p-6 rounded-lg border border-gray-300"
-      >
-        <div className="mb-4">
-          <label
-            htmlFor="home_title"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            Home Title:
-          </label>
-          <input
-            type="text"
-            name="home_title"
-            value={formData.home_title}
-            onChange={handleChange}
-            placeholder="Enter Home Title"
-            required
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-          />
+      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">Home Section</h2>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Home Title</label>
+                <input
+                  type="text"
+                  name="home_title"
+                  value={formData.home_title}
+                  onChange={handleChange}
+                  placeholder="Enter Home Title"
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Learn More Text</label>
+                <input
+                  type="text"
+                  name="home_more"
+                  value={formData.home_more}
+                  onChange={handleChange}
+                  placeholder="Enter Learn More Text"
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Home Description</label>
+                <textarea
+                  name="home_description"
+                  value={formData.home_description}
+                  onChange={handleChange}
+                  placeholder="Enter Home Description"
+                  required
+                  rows={2}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">Home Image</h2>
+              {landingData?.home_image && (
+                <a
+                  href={landingData.home_image}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline"
+                >
+                  View
+                </a>
+              )}
+            </div>
+            <input
+              type="file"
+              name="home_image"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+            />
+          </div>
         </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="home_description"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            Home Description:
-          </label>
-          <textarea
-            name="home_description"
-            value={formData.home_description}
-            onChange={handleChange}
-            placeholder="Enter Home Description"
-            required
-            rows={3}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base resize-y"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">About Section</h2>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">About Title</label>
+                <input
+                  type="text"
+                  name="about_title"
+                  value={formData.about_title}
+                  onChange={handleChange}
+                  placeholder="Enter About Title"
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">About Link (URL)</label>
+                <input
+                  type="url"
+                  name="about_link"
+                  value={formData.about_link}
+                  onChange={handleChange}
+                  placeholder="Enter About Link"
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">About Description</label>
+                <textarea
+                  name="about_description"
+                  value={formData.about_description}
+                  onChange={handleChange}
+                  placeholder="Enter About Description"
+                  required
+                  rows={2}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">About Image</h2>
+              {landingData?.about_image && (
+                <a
+                  href={landingData.about_image}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline"
+                >
+                  View
+                </a>
+              )}
+            </div>
+            <input
+              type="file"
+              name="about_image"
+              accept="image/*"
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+            />
+          </div>
         </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="home_more"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            More:
-          </label>
-          <input
-            type="text"
-            name="home_more"
-            value={formData.home_more}
-            onChange={handleChange}
-            placeholder="Enter Learn More Text"
-            required
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-          />
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-700">Branding Assets</h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Login Photo</label>
+              <input
+                type="file"
+                name="login_photo"
+                accept="image/*"
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+              />
+              {landingData?.login_photo && (
+                <a
+                  href={landingData.login_photo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline inline-block mt-1"
+                >
+                  View
+                </a>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Sidebar Logo (tutee sidebar)</label>
+              <input
+                type="file"
+                name="sidebar_logo"
+                accept="image/*"
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+              />
+              {landingData?.sidebar_logo && (
+                <a
+                  href={landingData.sidebar_logo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline inline-block mt-1"
+                >
+                  View
+                </a>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="home_image"
-            className="block text-sm font-semibold text-gray-700 mb-1"
+        <div className="flex justify-center">
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="px-10 py-2.5 bg-blue-600 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Home Image Upload:
-          </label>
-          <input
-            type="file"
-            name="home_image"
-            accept="image/*"
-            onChange={handleChange}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
-          />
-          {landingData?.home_image && (
-            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
-              Current image: <a href={landingData.home_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
-            </p>
-          )}
+            {isSaving ? "Saving..." : "Save Changes"}
+          </button>
         </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="about_title"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            About Title:
-          </label>
-          <input
-            type="text"
-            name="about_title"
-            value={formData.about_title}
-            onChange={handleChange}
-            placeholder="Enter About Title"
-            required
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="about_description"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            About Description:
-          </label>
-          <textarea
-            name="about_description"
-            value={formData.about_description}
-            onChange={handleChange}
-            placeholder="Enter About Description"
-            required
-            rows={3}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base resize-y"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="about_link"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            About Link:
-          </label>
-          <input
-            type="url"
-            name="about_link"
-            value={formData.about_link}
-            onChange={handleChange}
-            placeholder="Enter About Link"
-            required
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="about_image"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            About Image Upload:
-          </label>
-          <input
-            type="file"
-            name="about_image"
-            accept="image/*"
-            onChange={handleChange}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
-          />
-          {landingData?.about_image && (
-            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
-              Current image: <a href={landingData.about_image} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View</a>
-            </p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="login_photo"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            Login Photo:
-          </label>
-          <input
-            type="file"
-            name="login_photo"
-            accept="image/*"
-            onChange={handleChange}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
-          />
-          {landingData?.login_photo && (
-            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
-              Current login photo:{" "}
-              <a
-                href={landingData.login_photo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                View
-              </a>
-            </p>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <label
-            htmlFor="sidebar_logo"
-            className="block text-sm font-semibold text-gray-700 mb-1"
-          >
-            Sidebar Logo (tutee sidebar):
-          </label>
-          <input
-            type="file"
-            name="sidebar_logo"
-            accept="image/*"
-            onChange={handleChange}
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs md:text-sm"
-          />
-          {landingData?.sidebar_logo && (
-            <p className="text-xs md:text-sm text-gray-500 mt-1 break-words">
-              Current sidebar logo:{" "}
-              <a
-                href={landingData.sidebar_logo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                View
-              </a>
-            </p>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="w-full p-2 md:p-3 bg-blue-600 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSaving ? "Saving..." : "Save Changes"}
-        </button>
       </form>
     </div>
   );

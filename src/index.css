@@ -26,6 +26,7 @@ body {
   background: var(--lav-bg-soft);
   color: var(--lav-dark);
   font-family: "Roboto", system-ui, -apple-system, sans-serif;
+  overflow-y: scroll;
 }
 
 h1,
