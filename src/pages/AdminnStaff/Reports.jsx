@@ -292,6 +292,13 @@ const Reports = () => {
       year: "numeric",
     });
 
+  const periodRangeLabel = useMemo(() => {
+    if (!periodRange) return "Select Period";
+    const endDate = new Date(periodRange.end);
+    endDate.setDate(endDate.getDate() - 1);
+    return `${formatDate(periodRange.start)} - ${formatDate(endDate)}`;
+  }, [periodRange]);
+
   const formatTime = (value) =>
     new Date(`2000-01-01T${value}`).toLocaleTimeString("en-US", {
       hour: "numeric",
@@ -610,6 +617,7 @@ const Reports = () => {
       icon: "SC",
       progress: Math.min(100, (totalSessionsCompleted / 20) * 100),
       color: "bg-blue-100 text-blue-700",
+      accent: "#3b82f6",
     },
     {
       label: "Teaching Hours",
@@ -618,6 +626,7 @@ const Reports = () => {
       icon: "HR",
       progress: Math.min(100, (totalHoursTeach / 40) * 100),
       color: "bg-emerald-100 text-emerald-700",
+      accent: "#10b981",
     },
       {
         label: "Tutees Served",
@@ -626,6 +635,7 @@ const Reports = () => {
         icon: "TS",
         progress: Math.min(100, (totalTuteesServed / 30) * 100),
         color: "bg-purple-100 text-purple-700",
+        accent: "#8b5cf6",
       },
     {
       label: "Sessions Booked",
@@ -634,6 +644,7 @@ const Reports = () => {
       icon: "SB",
       progress: Math.min(100, (totalSessionsBooked / 40) * 100),
       color: "bg-amber-100 text-amber-700",
+      accent: "#f59e0b",
     },
     {
       label: "Avg. Satisfaction",
@@ -642,6 +653,7 @@ const Reports = () => {
       icon: "AR",
       progress: overallTutorSatisfaction ? (overallTutorSatisfaction / 5) * 100 : 0,
       color: "bg-pink-100 text-pink-700",
+      accent: "#ec4899",
     },
     {
       label: "Cancellation Rate",
@@ -650,6 +662,7 @@ const Reports = () => {
       icon: "CR",
       progress: Math.min(100, cancellationRate),
       color: "bg-red-100 text-red-700",
+      accent: "#ef4444",
     },
     {
       label: "Growth vs Prev",
@@ -658,6 +671,7 @@ const Reports = () => {
       icon: "GR",
       progress: Math.min(100, Math.abs(growthRate || 0)),
       color: "bg-indigo-100 text-indigo-700",
+      accent: "#6366f1",
     },
   ];
 
@@ -1097,16 +1111,22 @@ const Reports = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleMonthlyExport}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600 transition"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition"
                 disabled={monthlyExporting}
               >
-                {monthlyExporting ? "Preparing..." : "Export CSV"}
+                {monthlyExporting ? "Preparing..." : "Export"}
               </button>
               <button
                 onClick={handlePrintMonthlyReport}
-                className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition"
               >
-                Generate PDF
+                Print
+              </button>
+              <button
+                type="button"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+              >
+                {periodRangeLabel}
               </button>
             </div>
           </div>
@@ -1146,7 +1166,7 @@ const Reports = () => {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {heroStats.map((stat) => (
             <div
               key={stat.key}
@@ -1196,11 +1216,12 @@ const Reports = () => {
             <h3 className="text-lg font-semibold text-gray-800">Key Metrics</h3>
             <p className="text-sm text-gray-500">Performance Summary</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {summaryMetrics.map((metric) => (
               <div
                 key={metric.label}
-                className="relative rounded-2xl border border-gray-200 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                className="relative rounded-2xl border border-gray-200 border-t-4 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+                style={{ borderTopColor: metric.accent }}
               >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${metric.color} text-base`}
@@ -1214,8 +1235,8 @@ const Reports = () => {
                 <p className="text-xs text-gray-500">{metric.detail}</p>
                 <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
-                    style={{ width: `${metric.progress ?? 0}%` }}
+                    className="h-full transition-all duration-500"
+                    style={{ width: `${metric.progress ?? 0}%`, backgroundColor: metric.accent }}
                   />
                 </div>
               </div>
@@ -1336,46 +1357,95 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Rating Averages (LAV)</h2>
-          <p className="text-sm text-gray-500">
-            Aggregate feedback on the tutoring venue, scheduling experience, and overall service quality for {displayPeriodLabel}.
-          </p>
-        </div>
-        <div className="p-4">
-          {evaluations.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-6">No LAV feedback has been submitted yet.</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {lavRatingFields.map((field) => (
-                <div key={field.key} className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {field.label}
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
+            <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                <tr>
+                  <th className="text-left px-4 py-3">Tutor</th>
+                  <th className="text-center px-4 py-3">Sessions</th>
+                  <th className="text-center px-4 py-3">Tutees</th>
+                  <th className="text-center px-4 py-3">Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tutorMonthlyPerformance.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-gray-500 py-5">
+                      No completed sessions were logged for {displayPeriodLabel}.
+                    </td>
+                  </tr>
+                ) : (
+                  tutorMonthlyPerformance.map((entry) => (
+                    <tr key={entry.tutorId} className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
+                      <td className="px-4 py-3 text-center">{entry.sessions}</td>
+                      <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-blue-600">
+                        {entry.hours.toFixed(1)} hrs
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
+            <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
+          </div>
+          <div className="p-4">
+            {evaluations.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-6">
+                No LAV feedback has been submitted yet.
+              </p>
+            ) : (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-end justify-between gap-3">
+                  {lavRatingFields.map((field) => {
+                    const avg = lavStatsPeriod.averages[field.key];
+                    const height = avg ? Math.round((avg / 5) * 120) : 0;
+                    return (
+                      <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
+                        <span className="text-xs font-semibold text-gray-600">
+                          {avg !== null ? avg.toFixed(1) : "-"}
+                        </span>
+                        <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
+                          <div
+                            className="w-full bg-[#2fb592] transition-all"
+                            style={{ height: `${height}px` }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-gray-500 text-center leading-tight">
+                          {field.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 flex items-center justify-between rounded-xl border border-[#2fb592] bg-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Overall Average
                   </p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {lavStatsPeriod.averages[field.key] !== null
-                      ? lavStatsPeriod.averages[field.key].toFixed(2)
+                  <p className="text-xl font-bold text-[#2fb592]">
+                    {lavStatsPeriod.overallAverage !== null
+                      ? lavStatsPeriod.overallAverage.toFixed(2)
                       : "-"}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Average rating</p>
                 </div>
-              ))}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-col justify-center">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-                  Overall Average
-                </p>
-                <p className="text-4xl font-bold text-blue-700 mt-2">
-                  {lavStatsPeriod.overallAverage !== null ? lavStatsPeriod.overallAverage.toFixed(2) : "-"}
-                </p>
-                <p className="text-xs text-blue-700 mt-1">
-                  Combined LAV score across all submissions
-                </p>
               </div>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      </div>
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
@@ -1401,7 +1471,7 @@ const Reports = () => {
                     >
                       <span className="font-medium">{slot.day}</span>
                       <span>
-                        {slot.start_time?.slice(0, 5)} – {slot.end_time?.slice(0, 5)}
+                        {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
                       </span>
                     </p>
                   ))
