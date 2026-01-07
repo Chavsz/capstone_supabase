@@ -1081,24 +1081,46 @@ const Reports = () => {
     tutorMonthlyPerformance.length > 0 ? tutorMonthlyPerformance[0] : null;
 
   return (
-    <div className="min-h-screen p-4 md:p-6 space-y-8 bg-gray-50">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-800">Reports</h1>
-        <p className="text-sm text-gray-500">
-          Overview of completed sessions, tutor schedules, and evaluation summaries.
-        </p>
-        {topTutorByHours && (
-          <p className="mt-2 text-sm text-gray-600">
-            Top tutor by teaching time:{" "}
-            <span className="font-semibold text-blue-600">
-              {capitalizeWords(topTutorByHours.name)} ({topTutorByHours.hours.toFixed(1)} hrs)
-            </span>
-          </p>
-        )}
-      </header>
+    <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
+      <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 p-6 md:p-8 space-y-8">
+        <header className="flex flex-col gap-2">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#2b8a6f] font-semibold">
+                LAV
+              </p>
+              <h1 className="text-3xl font-bold text-gray-800">Performance Reports</h1>
+              <p className="text-sm text-gray-500">
+                Overview of completed sessions, tutor schedules, and evaluation summaries.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleMonthlyExport}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600 transition"
+                disabled={monthlyExporting}
+              >
+                {monthlyExporting ? "Preparing..." : "Export CSV"}
+              </button>
+              <button
+                onClick={handlePrintMonthlyReport}
+                className="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 transition"
+              >
+                Generate PDF
+              </button>
+            </div>
+          </div>
+          {topTutorByHours && (
+            <p className="text-sm text-gray-600">
+              Top tutor by teaching time:{" "}
+              <span className="font-semibold text-blue-600">
+                {capitalizeWords(topTutorByHours.name)} ({topTutorByHours.hours.toFixed(1)} hrs)
+              </span>
+            </p>
+          )}
+        </header>
 
-
-      <div className="print:hidden space-y-4 mb-6 mt-4">
+        <div className="print:hidden space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-widest text-gray-500">Reporting Period</p>
@@ -1141,7 +1163,7 @@ const Reports = () => {
       </div>
 
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             {landingImage ? (
@@ -1202,7 +1224,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Completed Sessions</h2>
           <p className="text-sm text-gray-500">
@@ -1249,7 +1271,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
@@ -1314,7 +1336,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Rating Averages (LAV)</h2>
           <p className="text-sm text-gray-500">
@@ -1355,7 +1377,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Tutor Schedules</h2>
           <p className="text-sm text-gray-500">All published availability per tutor.</p>
@@ -1390,7 +1412,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Evaluation Records</h2>
           <p className="text-sm text-gray-500">
@@ -1440,7 +1462,7 @@ const Reports = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
             Tutor Performance — {displayPeriodLabel}
@@ -1480,6 +1502,7 @@ const Reports = () => {
           </table>
         </div>
       </section>
+      </div>
     </div>
   );
 };
