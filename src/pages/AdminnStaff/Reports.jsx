@@ -39,9 +39,20 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [monthlyExporting, setMonthlyExporting] = useState(false);
   const [landingImage, setLandingImage] = useState("");
-  const [selectedPeriodKey, setSelectedPeriodKey] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [showRangePicker, setShowRangePicker] = useState(false);
+  const [rangeStart, setRangeStart] = useState(() => {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  });
+  const [rangeEnd, setRangeEnd] = useState(() => {
+    const end = new Date();
+    end.setDate(1);
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0);
+    end.setHours(0, 0, 0, 0);
+    return end;
   });
 
   const fetchData = async (shouldUpdate) => {
@@ -142,6 +153,25 @@ const Reports = () => {
     return date;
   };
 
+  const toDateInputValue = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().split("T")[0];
+  };
+
+  const resetRangeToMonth = () => {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0);
+    end.setHours(0, 0, 0, 0);
+    setRangeStart(start);
+    setRangeEnd(end);
+  };
+
   const appointmentsById = useMemo(() => {
     const map = new Map();
     appointments.forEach((appointment) => {
@@ -150,83 +180,21 @@ const Reports = () => {
     return map;
   }, [appointments]);
 
-  const periodOptions = useMemo(() => {
-    const optionMap = new Map();
-    appointments.forEach((appointment) => {
-      if (!appointment.date) return;
-      const date = new Date(appointment.date);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const key = `${year}-${String(month + 1).padStart(2, "0")}`;
-      if (!optionMap.has(key)) {
-        optionMap.set(key, {
-          key,
-          label: date.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
-          type: "month",
-          year,
-          month,
-        });
-      }
-    });
-
-    if (optionMap.size === 0) {
-      const now = new Date();
-      const fallbackKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      optionMap.set(fallbackKey, {
-        key: fallbackKey,
-        label: now.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
-        type: "month",
-        year: now.getFullYear(),
-        month: now.getMonth(),
-      });
-    }
-
-    const options = Array.from(optionMap.values()).sort(
-      (a, b) => new Date(b.year, b.month, 1) - new Date(a.year, a.month, 1)
-    );
-
-    const currentYear = new Date().getFullYear();
-    options.push({
-      key: `${currentYear - 1}-year`,
-      label: `${currentYear - 1}`,
-      type: "year",
-      year: currentYear - 1,
-    });
-
-    return options;
-  }, [appointments]);
-
-  useEffect(() => {
-    if (periodOptions.length === 0) return;
-    if (!periodOptions.some((option) => option.key === selectedPeriodKey)) {
-      setSelectedPeriodKey(periodOptions[0].key);
-    }
-  }, [periodOptions, selectedPeriodKey]);
-
-  const selectedPeriod = useMemo(() => {
-    if (periodOptions.length === 0) return null;
-    return periodOptions.find((option) => option.key === selectedPeriodKey) || periodOptions[0];
-  }, [periodOptions, selectedPeriodKey]);
-
   const periodRange = useMemo(() => {
-    if (!selectedPeriod) return null;
-    if (selectedPeriod.type === "year") {
-      return {
-        label: selectedPeriod.label,
-        start: new Date(selectedPeriod.year, 0, 1),
-        end: new Date(selectedPeriod.year + 1, 0, 1),
-        type: "year",
-      };
-    }
+    if (!rangeStart || !rangeEnd) return null;
+    const start = normalizeDate(rangeStart);
+    const endInclusive = normalizeDate(rangeEnd);
+    const endExclusive = new Date(endInclusive);
+    endExclusive.setDate(endExclusive.getDate() + 1);
     return {
-      label: selectedPeriod.label,
-      start: new Date(selectedPeriod.year, selectedPeriod.month, 1),
-      end: new Date(selectedPeriod.year, selectedPeriod.month + 1, 1),
-      type: "month",
-      year: selectedPeriod.year,
-      month: selectedPeriod.month,
+      label: `${formatDate(start)} - ${formatDate(endInclusive)}`,
+      start,
+      end: endExclusive,
+      type: "range",
+      startRaw: start,
+      endRaw: endInclusive,
     };
-  }, [selectedPeriod]);
+  }, [rangeStart, rangeEnd]);
 
   const selectedYearRange = useMemo(() => {
     if (!periodRange) return null;
@@ -263,19 +231,14 @@ const Reports = () => {
     );
   }, [comparisonRange, periodRange]);
 
-  const pdfPeriod = useMemo(() => {
-    if (selectedPeriod?.type === "month") return selectedPeriod;
-    return periodOptions.find((option) => option.type === "month") || null;
-  }, [selectedPeriod, periodOptions]);
-
   const pdfRange = useMemo(() => {
-    if (!pdfPeriod) return null;
+    if (!periodRange) return null;
     return {
-      label: pdfPeriod.label,
-      start: new Date(pdfPeriod.year, pdfPeriod.month, 1),
-      end: new Date(pdfPeriod.year, pdfPeriod.month + 1, 1),
+      label: periodRange.label,
+      start: periodRange.start,
+      end: periodRange.end,
     };
-  }, [pdfPeriod]);
+  }, [periodRange]);
 
   const evaluationsInPeriod = useMemo(() => {
     if (!periodRange) return [];
@@ -306,9 +269,14 @@ const Reports = () => {
 
   const periodRangeLabel = useMemo(() => {
     if (!periodRange) return "Select Period";
-    const endDate = new Date(periodRange.end);
-    endDate.setDate(endDate.getDate() - 1);
-    return `${formatDate(periodRange.start)} - ${formatDate(endDate)}`;
+    return periodRange.label;
+  }, [periodRange]);
+
+  const rangeKey = useMemo(() => {
+    if (!periodRange) return "custom-range";
+    const startKey = toDateInputValue(periodRange.startRaw || periodRange.start);
+    const endKey = toDateInputValue(periodRange.endRaw || periodRange.end);
+    return `${startKey}_to_${endKey}`;
   }, [periodRange]);
 
   const formatTime = (value) =>
@@ -748,7 +716,7 @@ const Reports = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `tutor-report-${selectedPeriodKey}.csv`);
+      link.setAttribute("download", `tutor-report-${rangeKey}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -759,7 +727,7 @@ const Reports = () => {
     } finally {
       setMonthlyExporting(false);
     }
-  }, [monthlyExporting, tutorMonthlyPerformance, selectedPeriodKey]);
+  }, [loading, monthlyExporting, rangeKey, tutorMonthlyPerformance]);
 
   const handlePrintMonthlyReport = useCallback(() => {
     const resolvedLogo =
@@ -1068,6 +1036,7 @@ const Reports = () => {
               <button
                 type="button"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 flex items-center gap-2"
+                onClick={() => setShowRangePicker((prev) => !prev)}
               >
                 <FaRegCalendarAlt className="text-sm" />
                 {periodRangeLabel}
@@ -1081,6 +1050,53 @@ const Reports = () => {
                 {capitalizeWords(topTutorByHours.name)} ({topTutorByHours.hours.toFixed(1)} hrs)
               </span>
             </p>
+          )}
+          {showRangePicker && (
+            <div className="mt-3 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-3">
+              <label className="text-xs font-semibold text-gray-600">
+                Start
+                <input
+                  type="date"
+                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                  value={toDateInputValue(rangeStart)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (!value) return;
+                    const next = new Date(`${value}T00:00:00`);
+                    if (Number.isNaN(next.getTime())) return;
+                    setRangeStart(next);
+                    if (rangeEnd && next > rangeEnd) {
+                      setRangeEnd(next);
+                    }
+                  }}
+                />
+              </label>
+              <label className="text-xs font-semibold text-gray-600">
+                End
+                <input
+                  type="date"
+                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                  value={toDateInputValue(rangeEnd)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (!value) return;
+                    const next = new Date(`${value}T00:00:00`);
+                    if (Number.isNaN(next.getTime())) return;
+                    setRangeEnd(next);
+                    if (rangeStart && next < rangeStart) {
+                      setRangeStart(next);
+                    }
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition"
+                onClick={resetRangeToMonth}
+              >
+                Reset Month
+              </button>
+            </div>
           )}
         </header>
 

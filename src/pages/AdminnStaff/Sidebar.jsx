@@ -133,7 +133,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   }, []);
 
   return (
-    <div className="flex flex-col p-4 text-white sticky top-0 bg-[#a7a9ac] h-screen w-[240px]">
+    <div className="flex flex-col p-4 text-white sticky top-0 bg-[#fdf4ff] h-screen w-[240px]">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
         {logoUrl ? (
