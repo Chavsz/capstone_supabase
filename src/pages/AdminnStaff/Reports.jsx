@@ -153,6 +153,13 @@ const Reports = () => {
     return date;
   };
 
+  const formatDate = (value) =>
+    new Date(value).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
   const toDateInputValue = (value) => {
     if (!value) return "";
     const date = new Date(value);
@@ -259,13 +266,6 @@ const Reports = () => {
       return date >= selectedYearRange.start && date < selectedYearRange.end;
     });
   }, [evaluations, appointmentsById, selectedYearRange]);
-
-  const formatDate = (value) =>
-    new Date(value).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
 
   const periodRangeLabel = useMemo(() => {
     if (!periodRange) return "Select Period";
