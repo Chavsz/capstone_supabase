@@ -288,18 +288,6 @@ const Landing = () => {
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Home Description</label>
-                <textarea
-                  name="home_description"
-                  value={formData.home_description}
-                  onChange={handleChange}
-                  placeholder="Enter Home Description"
-                  required
-                  rows={2}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                />
-              </div>
             </div>
           </div>
 
@@ -324,6 +312,18 @@ const Landing = () => {
               onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
             />
+            <div className="mt-3">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Home Description</label>
+              <textarea
+                name="home_description"
+                value={formData.home_description}
+                onChange={handleChange}
+                placeholder="Enter Home Description"
+                required
+                rows={2}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+              />
+            </div>
           </div>
         </div>
 
@@ -357,18 +357,6 @@ const Landing = () => {
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">About Description</label>
-                <textarea
-                  name="about_description"
-                  value={formData.about_description}
-                  onChange={handleChange}
-                  placeholder="Enter About Description"
-                  required
-                  rows={2}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
-                />
-              </div>
             </div>
           </div>
 
@@ -393,6 +381,18 @@ const Landing = () => {
               onChange={handleChange}
               className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
             />
+            <div className="mt-3">
+              <label className="block text-xs font-semibold text-gray-600 mb-1">About Description</label>
+              <textarea
+                name="about_description"
+                value={formData.about_description}
+                onChange={handleChange}
+                placeholder="Enter About Description"
+                required
+                rows={2}
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+              />
+            </div>
           </div>
         </div>
 
