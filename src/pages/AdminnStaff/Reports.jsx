@@ -40,6 +40,7 @@ const Reports = () => {
   const [monthlyExporting, setMonthlyExporting] = useState(false);
   const [landingImage, setLandingImage] = useState("");
   const [showRangePicker, setShowRangePicker] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
@@ -1035,14 +1036,44 @@ const Reports = () => {
               <p className="text-sm text-gray-500">Overview of completed sessions and feedback.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleMonthlyExport}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
-                disabled={monthlyExporting}
+              <div
+                className="relative"
+                onMouseLeave={() => setShowExportMenu(false)}
               >
-                <FaDownload className="text-sm" />
-                {monthlyExporting ? "Preparing..." : "Export"}
-              </button>
+                <button
+                  onClick={() => setShowExportMenu((prev) => !prev)}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
+                  disabled={monthlyExporting}
+                  type="button"
+                >
+                  <FaDownload className="text-sm" />
+                  {monthlyExporting ? "Preparing..." : "Export"}
+                </button>
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10">
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        handleMonthlyExport();
+                      }}
+                    >
+                      Export to CSV
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        handlePrintMonthlyReport();
+                      }}
+                    >
+                      Export to PDF
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handlePrintMonthlyReport}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
