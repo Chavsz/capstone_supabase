@@ -922,24 +922,10 @@ const Reports = () => {
             <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
           </div>
 
-            <h2 class="section-title" style="margin-bottom:8px;">Monthly Summary (${escapeHtml(
+            <h2 class="section-title" style="margin-bottom:8px;">Summary (${escapeHtml(
               pdfRange?.label || displayPeriodLabel
             )})</h2>
             ${pdfSummaryHtml}
-
-            <h2 class="section-title" style="margin-bottom:8px;">LAV Evaluation</h2>
-            <div class="summary-grid">
-              <div class="summary-card">
-                <p class="summary-label">Monthly LAV Overall</p>
-                <p class="summary-value">${escapeHtml(lavPeriodOverallDisplay)}</p>
-                <p class="summary-label" style="margin-top:6px;">${escapeHtml(displayPeriodLabel)}</p>
-              </div>
-              <div class="summary-card">
-                <p class="summary-label">Yearly LAV Overall</p>
-                <p class="summary-value">${escapeHtml(lavYearOverallDisplay)}</p>
-                <p class="summary-label" style="margin-top:6px;">${escapeHtml(selectedYearRange ? selectedYearRange.start.getFullYear().toString() : "")}</p>
-              </div>
-            </div>
 
             <h2 class="section-title" style="margin-bottom:8px;">Tutor Performance (${escapeHtml(
               pdfRange?.label || displayPeriodLabel
@@ -1020,7 +1006,7 @@ const Reports = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleMonthlyExport}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition flex items-center gap-2"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
                 disabled={monthlyExporting}
               >
                 <FaDownload className="text-sm" />
@@ -1028,7 +1014,7 @@ const Reports = () => {
               </button>
               <button
                 onClick={handlePrintMonthlyReport}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition flex items-center gap-2"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
               >
                 <FaPrint className="text-sm" />
                 Print
@@ -1057,7 +1043,7 @@ const Reports = () => {
                 Start
                 <input
                   type="date"
-                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-blue-400"
                   value={toDateInputValue(rangeStart)}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -1075,7 +1061,7 @@ const Reports = () => {
                 End
                 <input
                   type="date"
-                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                  className="mt-1 block rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-200 hover:border-blue-400"
                   value={toDateInputValue(rangeEnd)}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -1180,9 +1166,17 @@ const Reports = () => {
               ) : (
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-end justify-between gap-3">
-                    {lavRatingFields.map((field) => {
+                    {lavRatingFields.map((field, index) => {
                       const avg = lavStatsPeriod.averages[field.key];
                       const height = avg ? Math.round((avg / 5) * 120) : 0;
+                      const barColors = [
+                        "#f6d110",
+                        "#ed5f1e",
+                        "#e7b0f8",
+                        "#bad381",
+                        "#ffe5b6",
+                      ];
+                      const barColor = barColors[index % barColors.length];
                       return (
                         <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
                           <span className="text-xs font-semibold text-gray-600">
@@ -1190,8 +1184,8 @@ const Reports = () => {
                           </span>
                           <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
                             <div
-                              className="w-full bg-[#2fb592] transition-all"
-                              style={{ height: `${height}px` }}
+                              className="w-full transition-all"
+                              style={{ height: `${height}px`, backgroundColor: barColor }}
                             />
                           </div>
                           <span className="text-[11px] text-gray-500 text-center leading-tight">
