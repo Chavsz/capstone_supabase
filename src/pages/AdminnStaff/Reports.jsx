@@ -1046,11 +1046,7 @@ const Reports = () => {
               <p className="text-sm text-gray-500">Overview of completed sessions and feedback.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <div
-                className="relative"
-                onMouseEnter={() => setShowExportMenu(true)}
-                onMouseLeave={() => setShowExportMenu(false)}
-              >
+              <div className="relative">
                 <button
                   onClick={() => setShowExportMenu((prev) => !prev)}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
@@ -1060,7 +1056,10 @@ const Reports = () => {
                   {monthlyExporting ? "Preparing..." : "Export"}
                 </button>
                 {showExportMenu && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10">
+                  <div
+                    className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10"
+                    onMouseLeave={() => setShowExportMenu(false)}
+                  >
                     <button
                       type="button"
                       className={`w-full text-left px-4 py-2 text-sm ${
@@ -1168,7 +1167,7 @@ const Reports = () => {
           )}
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {summaryMetrics.map((metric) => (
             <div
               key={metric.label}
