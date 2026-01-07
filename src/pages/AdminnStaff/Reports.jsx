@@ -1030,8 +1030,11 @@ const Reports = () => {
     );
   }
 
-  const topTutorByHours =
-    tutorMonthlyPerformance.length > 0 ? tutorMonthlyPerformance[0] : null;
+  const topTutorsByHours = useMemo(() => {
+    if (tutorMonthlyPerformance.length === 0) return [];
+    const maxHours = Math.max(...tutorMonthlyPerformance.map((entry) => entry.hours));
+    return tutorMonthlyPerformance.filter((entry) => entry.hours === maxHours);
+  }, [tutorMonthlyPerformance]);
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
@@ -1110,11 +1113,14 @@ const Reports = () => {
               </button>
             </div>
           </div>
-          {topTutorByHours && (
+          {topTutorsByHours.length > 0 && (
             <p className="text-sm text-gray-600">
               Top tutor by teaching time:{" "}
               <span className="font-semibold text-blue-600">
-                {capitalizeWords(topTutorByHours.name)} ({topTutorByHours.hours.toFixed(1)} hrs)
+                {topTutorsByHours
+                  .map((entry) => capitalizeWords(entry.name))
+                  .join(", ")}{" "}
+                ({topTutorsByHours[0].hours.toFixed(1)} hrs)
               </span>
             </p>
           )}
