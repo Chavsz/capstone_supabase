@@ -446,7 +446,7 @@ const Users = () => {
 
       <div className="relative overflow-hidden">
         <div
-          className={`flex w-[200%] transition-transform duration-500 ease-out ${
+          className={`flex w-[200%] ${
             showLanding ? "translate-x-0" : "-translate-x-1/2"
           }`}
         >
@@ -455,7 +455,7 @@ const Users = () => {
               <button
                 type="button"
                 onClick={() => handleSelectFilter("Admin")}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 transition-none focus:outline-none"
               >
                 <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
                   <FaUserTie className="text-[#4766fe] text-5xl md:text-6xl" />
@@ -465,7 +465,7 @@ const Users = () => {
               <button
                 type="button"
                 onClick={() => handleSelectFilter("Tutor")}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 transition-none focus:outline-none"
               >
                 <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
                   <FaChalkboardTeacher className="text-[#4766fe] text-5xl md:text-6xl" />
@@ -475,7 +475,7 @@ const Users = () => {
               <button
                 type="button"
                 onClick={() => handleSelectFilter("Student")}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-4 transition-none focus:outline-none"
               >
                 <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
                   <FaUserAlt className="text-[#4766fe] text-5xl md:text-6xl" />
