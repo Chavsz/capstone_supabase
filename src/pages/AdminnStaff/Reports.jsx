@@ -1021,6 +1021,12 @@ const Reports = () => {
     pdfTotalTuteesServed,
   ]);
 
+  const topTutorsByHours = useMemo(() => {
+    if (tutorMonthlyPerformance.length === 0) return [];
+    const maxHours = Math.max(...tutorMonthlyPerformance.map((entry) => entry.hours));
+    return tutorMonthlyPerformance.filter((entry) => entry.hours === maxHours);
+  }, [tutorMonthlyPerformance]);
+
   if (loading) {
     return (
       <div className="min-h-screen p-6">
@@ -1029,12 +1035,6 @@ const Reports = () => {
       </div>
     );
   }
-
-  const topTutorsByHours = useMemo(() => {
-    if (tutorMonthlyPerformance.length === 0) return [];
-    const maxHours = Math.max(...tutorMonthlyPerformance.map((entry) => entry.hours));
-    return tutorMonthlyPerformance.filter((entry) => entry.hours === maxHours);
-  }, [tutorMonthlyPerformance]);
 
   return (
     <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
