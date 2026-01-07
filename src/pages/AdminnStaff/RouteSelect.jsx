@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import * as mdIcons from "react-icons/md";
 import * as fiIcons from "react-icons/fi";
 
-const RouteSelect = ({ onClose }) => {
+const RouteSelect = ({ onClose, canSwitchAdmin }) => {
   return (
     <div className="space-y-1">
       <p className="text-[13px] font-extralight text-[#696969] hidden md:block">MENU</p>
@@ -51,12 +51,14 @@ const RouteSelect = ({ onClose }) => {
         title="Events"
         onClose={onClose}
       />
-      <Route
-        to="/dashboard/switch-admin"
-        Icon={mdIcons.MdSwapHoriz}
-        title="Switch"
-        onClose={onClose}
-      />
+      {canSwitchAdmin && (
+        <Route
+          to="/dashboard/switch-admin"
+          Icon={mdIcons.MdSwapHoriz}
+          title="Switch"
+          onClose={onClose}
+        />
+      )}
     </div>
   );
 };

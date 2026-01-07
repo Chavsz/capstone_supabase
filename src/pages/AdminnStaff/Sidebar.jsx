@@ -8,6 +8,7 @@ import * as fiIcons from "react-icons/fi";
 const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState(null);
+  const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [roleOverridePrev, setRoleOverridePrev] = useState(null);
   const [roleOverride, setRoleOverride] = useState(null);
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -35,6 +36,25 @@ const Sidebar = ({ setAuth, onClose }) => {
     } catch (err) {
       console.error("Error loading logo:", err.message);
       setLogoUrl(null);
+    }
+  };
+
+  const fetchAdminPermissions = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("is_admin, is_superadmin")
+        .eq("user_id", session.user.id)
+        .single();
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+      setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+    } catch (err) {
+      console.error("Error checking admin permissions:", err.message);
+      setCanSwitchAdmin(false);
     }
   };
 
@@ -96,6 +116,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   useEffect(() => {
     fetchLogo();
     syncRoleOverrideState();
+    fetchAdminPermissions();
   }, []);
 
   useEffect(() => {
@@ -154,7 +175,7 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Menu Items - Scrollable */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <RouteSelect onClose={onClose} />
+        <RouteSelect onClose={onClose} canSwitchAdmin={canSwitchAdmin} />
       </div>
 
       {/* Logout Button - Always Visible at Bottom */}
