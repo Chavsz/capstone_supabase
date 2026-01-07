@@ -1104,9 +1104,7 @@ const Reports = () => {
                 LAV
               </p>
               <h1 className="text-3xl font-bold text-gray-800">Performance Reports</h1>
-              <p className="text-sm text-gray-500">
-                Overview of completed sessions, tutor schedules, and evaluation summaries.
-              </p>
+              <p className="text-sm text-gray-500">Overview of completed sessions and feedback.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -1140,110 +1138,122 @@ const Reports = () => {
           )}
         </header>
 
-        <div className="print:hidden space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-gray-500">Reporting Period</p>
-            <p className="text-xl font-semibold text-gray-900">{displayPeriodLabel}</p>
-           
-          </div>
-          <div className="flex justify-end">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {periodOptions.map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => setSelectedPeriodKey(option.key)}
-                  className={`px-4 py-2 rounded-full border text-sm whitespace-nowrap transition-colors ${
-                    selectedPeriodKey === option.key
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {heroStats.map((stat) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {summaryMetrics.map((metric) => (
             <div
-              key={stat.key}
-              className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm flex flex-col gap-1"
+              key={metric.label}
+              className="relative rounded-2xl border border-gray-200 border-t-4 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+              style={{ borderTopColor: metric.accent }}
             >
-              <p className="text-xs uppercase tracking-widest text-gray-500">
-                {stat.label}
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${metric.color} text-base`}
+              >
+                {metric.icon}
+              </div>
+              <p className="mt-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                {metric.label}
               </p>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-xs text-gray-500">{stat.helper}</p>
+              <p className="text-2xl font-bold text-gray-800">{metric.value}</p>
+              <p className="text-xs text-gray-500">{metric.detail}</p>
+              <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full transition-all duration-500"
+                  style={{ width: `${metric.progress ?? 0}%`, backgroundColor: metric.accent }}
+                />
+              </div>
             </div>
           ))}
         </div>
-      </div>
 
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {landingImage ? (
-              <img
-                src={landingImage}
-                alt="Learning Assistance Volunteer"
-                className="w-16 h-16 object-contain rounded-lg border border-gray-200"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-400">
-                Logo
-              </div>
-            )}
-            <div>
-              <p className="text-xs uppercase tracking-widest text-gray-500">
-                Learning Assistance Volunteer
-              </p>
-              <h2 className="text-2xl font-bold text-gray-800">
-                Learning Assistance Volunteer Monthly Report
-              </h2>
-              <p className="text-sm text-gray-500">Period: {displayPeriodLabel}</p>
+        <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
+              <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
             </div>
-          </div>
-          <div className="text-sm text-gray-500">
-            Prepared on <span className="font-semibold text-gray-700">{preparedDateLabel}</span>
-          </div>
-        </div>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Key Metrics</h3>
-            <p className="text-sm text-gray-500">Performance Summary</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {summaryMetrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="relative rounded-2xl border border-gray-200 border-t-4 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
-                style={{ borderTopColor: metric.accent }}
-              >
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${metric.color} text-base`}
-                >
-                  {metric.icon}
-                </div>
-                <p className="mt-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  {metric.label}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                  <tr>
+                    <th className="text-left px-4 py-3">Tutor Name</th>
+                    <th className="text-center px-4 py-3">Sessions</th>
+                    <th className="text-center px-4 py-3">Tutees</th>
+                    <th className="text-center px-4 py-3">Total Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tutorMonthlyPerformance.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center text-gray-500 py-5">
+                        No completed sessions were logged for {displayPeriodLabel}.
+                      </td>
+                    </tr>
+                  ) : (
+                    tutorMonthlyPerformance.map((entry) => (
+                      <tr key={entry.tutorId} className="border-t border-gray-100">
+                        <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
+                        <td className="px-4 py-3 text-center">{entry.sessions}</td>
+                        <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-blue-600">
+                          {entry.hours.toFixed(1)} hrs
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+            <div className="p-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
+              <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
+            </div>
+            <div className="p-4">
+              {evaluations.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">
+                  No LAV feedback has been submitted yet.
                 </p>
-                <p className="text-2xl font-bold text-gray-800">{metric.value}</p>
-                <p className="text-xs text-gray-500">{metric.detail}</p>
-                <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-500"
-                    style={{ width: `${metric.progress ?? 0}%`, backgroundColor: metric.accent }}
-                  />
+              ) : (
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="flex items-end justify-between gap-3">
+                    {lavRatingFields.map((field) => {
+                      const avg = lavStatsPeriod.averages[field.key];
+                      const height = avg ? Math.round((avg / 5) * 120) : 0;
+                      return (
+                        <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
+                          <span className="text-xs font-semibold text-gray-600">
+                            {avg !== null ? avg.toFixed(1) : "-"}
+                          </span>
+                          <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
+                            <div
+                              className="w-full bg-[#2fb592] transition-all"
+                              style={{ height: `${height}px` }}
+                            />
+                          </div>
+                          <span className="text-[11px] text-gray-500 text-center leading-tight">
+                            {field.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between rounded-xl border border-[#2fb592] bg-white px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Overall Average
+                    </p>
+                    <p className="text-xl font-bold text-[#2fb592]">
+                      {lavStatsPeriod.overallAverage !== null
+                        ? lavStatsPeriod.overallAverage.toFixed(2)
+                        : "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          </section>
         </div>
-      </section>
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
@@ -1356,96 +1366,6 @@ const Reports = () => {
           )}
         </div>
       </section>
-
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
-            <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="text-left px-4 py-3">Tutor</th>
-                  <th className="text-center px-4 py-3">Sessions</th>
-                  <th className="text-center px-4 py-3">Tutees</th>
-                  <th className="text-center px-4 py-3">Total Hours</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tutorMonthlyPerformance.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center text-gray-500 py-5">
-                      No completed sessions were logged for {displayPeriodLabel}.
-                    </td>
-                  </tr>
-                ) : (
-                  tutorMonthlyPerformance.map((entry) => (
-                    <tr key={entry.tutorId} className="border-t border-gray-100">
-                      <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                      <td className="px-4 py-3 text-center">{entry.sessions}</td>
-                      <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
-                      <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                        {entry.hours.toFixed(1)} hrs
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
-            <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
-          </div>
-          <div className="p-4">
-            {evaluations.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-6">
-                No LAV feedback has been submitted yet.
-              </p>
-            ) : (
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <div className="flex items-end justify-between gap-3">
-                  {lavRatingFields.map((field) => {
-                    const avg = lavStatsPeriod.averages[field.key];
-                    const height = avg ? Math.round((avg / 5) * 120) : 0;
-                    return (
-                      <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
-                        <span className="text-xs font-semibold text-gray-600">
-                          {avg !== null ? avg.toFixed(1) : "-"}
-                        </span>
-                        <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
-                          <div
-                            className="w-full bg-[#2fb592] transition-all"
-                            style={{ height: `${height}px` }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-gray-500 text-center leading-tight">
-                          {field.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 flex items-center justify-between rounded-xl border border-[#2fb592] bg-white px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Overall Average
-                  </p>
-                  <p className="text-xl font-bold text-[#2fb592]">
-                    {lavStatsPeriod.overallAverage !== null
-                      ? lavStatsPeriod.overallAverage.toFixed(2)
-                      : "-"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
 
       <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
         <div className="p-4 border-b border-gray-100">
