@@ -376,7 +376,17 @@ function App() {
       }
 
       if (data) {
-        setAdminAccess(Boolean(data.is_admin || data.is_superadmin));
+        const isSuperAdmin = Boolean(data.is_superadmin);
+        setAdminAccess(Boolean(data.is_admin || isSuperAdmin));
+        if (isSuperAdmin) {
+          setStoredRoleOverride(null);
+          setRoleOverride(null);
+          setCurrentRole("admin");
+          hasRole.current = true;
+          setLoading(false);
+          isFetching.current = false;
+          return;
+        }
       }
 
       if (data && data.role) {
