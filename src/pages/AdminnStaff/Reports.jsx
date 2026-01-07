@@ -1048,12 +1048,12 @@ const Reports = () => {
             <div className="flex flex-wrap gap-2">
               <div
                 className="relative"
+                onMouseEnter={() => setShowExportMenu(true)}
                 onMouseLeave={() => setShowExportMenu(false)}
               >
                 <button
                   onClick={() => setShowExportMenu((prev) => !prev)}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition flex items-center gap-2"
-                  disabled={monthlyExporting}
                   type="button"
                 >
                   <FaDownload className="text-sm" />
@@ -1063,7 +1063,12 @@ const Reports = () => {
                   <div className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10">
                     <button
                       type="button"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className={`w-full text-left px-4 py-2 text-sm ${
+                        monthlyExporting
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                      disabled={monthlyExporting}
                       onClick={() => {
                         setShowExportMenu(false);
                         handleMonthlyExport();
@@ -1073,7 +1078,12 @@ const Reports = () => {
                     </button>
                     <button
                       type="button"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className={`w-full text-left px-4 py-2 text-sm ${
+                        monthlyExporting
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                      disabled={monthlyExporting}
                       onClick={() => {
                         setShowExportMenu(false);
                         handlePrintMonthlyReport();
