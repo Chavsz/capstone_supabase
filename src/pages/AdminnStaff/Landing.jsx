@@ -422,7 +422,7 @@ const Landing = () => {
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Sidebar Logo (tutee sidebar)</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Sidebar Logo</label>
               <input
                 type="file"
                 name="sidebar_logo"

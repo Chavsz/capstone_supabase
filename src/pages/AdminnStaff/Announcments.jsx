@@ -110,18 +110,18 @@ const Announcments = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans p-4 md:p-6">
       {/* Announcement Section */}
-      <aside className="flex flex-col">
+      <aside className="flex flex-col items-center">
         <h1 className="text-[20px] md:text-[24px] font-bold text-gray-600 mb-4 md:mb-0">Announcements</h1>
 
         {announcement ? (
-          <div className="bg-white p-4 md:p-6 rounded-md border border-gray-300 mb-4 md:mb-6 mt-4">
+          <div className="bg-white p-4 md:p-6 rounded-md border border-gray-300 mb-4 md:mb-6 mt-4 w-full max-w-3xl text-center">
             <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
               Current Announcement
             </h2>
             <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
               {announcement.announcement_content}
             </p>
-            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
               <button
                 onClick={() => setIsEditingAnnouncement(true)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 focus:ring-offset-2 text-sm md:text-base"
@@ -137,14 +137,14 @@ const Announcments = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-white p-4 rounded-md mb-4 md:mb-6 text-center mt-4">
+          <div className="bg-white p-4 rounded-md mb-4 md:mb-6 text-center mt-4 w-full max-w-3xl">
             <p className="text-sm md:text-base text-gray-600 italic">No announcement found.</p>
           </div>
         )}
 
         <form
           onSubmit={handleAnnouncementSubmit}
-          className="bg-white p-4 md:p-6 rounded-md border border-gray-300 flex flex-col"
+          className="bg-white p-4 md:p-6 rounded-md border border-gray-300 flex flex-col w-full max-w-3xl text-center"
         >
           <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">
             {isEditingAnnouncement
@@ -156,11 +156,11 @@ const Announcments = () => {
             value={announcementContent}
             onChange={(e) => setAnnouncementContent(e.target.value)}
             placeholder="Enter your announcement here..."
-            className="w-full p-2 md:p-3 border border-gray-300 rounded-md mb-3 text-sm md:text-base text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-2 md:p-3 border border-gray-300 rounded-md mb-3 text-sm md:text-base text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left"
             required
             maxLength={100}
           />
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
             <button
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300 text-sm md:text-base"
