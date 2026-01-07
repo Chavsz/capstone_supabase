@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FaDownload, FaPrint, FaRegCalendarAlt } from "react-icons/fa";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
@@ -604,11 +605,6 @@ const Reports = () => {
   const averageSatisfactionDisplay = overallTutorSatisfaction
     ? `${overallTutorSatisfaction.toFixed(2)} / 5`
     : "- / 5";
-  const growthDisplay =
-    growthRate === null
-      ? "-"
-      : `${growthRate >= 0 ? "+" : ""}${growthRate.toFixed(1)}%`;
-
   const summaryMetrics = [
     {
       label: "Sessions Completed",
@@ -628,23 +624,14 @@ const Reports = () => {
       color: "bg-emerald-100 text-emerald-700",
       accent: "#10b981",
     },
-      {
-        label: "Tutees Served",
-        value: `${totalTuteesServed}`,
-        detail: "Counting groups",
-        icon: "TS",
-        progress: Math.min(100, (totalTuteesServed / 30) * 100),
-        color: "bg-purple-100 text-purple-700",
-        accent: "#8b5cf6",
-      },
     {
-      label: "Sessions Booked",
-      value: `${totalSessionsBooked}`,
-      detail: "All statuses",
-      icon: "SB",
-      progress: Math.min(100, (totalSessionsBooked / 40) * 100),
-      color: "bg-amber-100 text-amber-700",
-      accent: "#f59e0b",
+      label: "Tutees Served",
+      value: `${totalTuteesServed}`,
+      detail: "Counting groups",
+      icon: "TS",
+      progress: Math.min(100, (totalTuteesServed / 30) * 100),
+      color: "bg-purple-100 text-purple-700",
+      accent: "#8b5cf6",
     },
     {
       label: "Avg. Satisfaction",
@@ -654,24 +641,6 @@ const Reports = () => {
       progress: overallTutorSatisfaction ? (overallTutorSatisfaction / 5) * 100 : 0,
       color: "bg-pink-100 text-pink-700",
       accent: "#ec4899",
-    },
-    {
-      label: "Cancellation Rate",
-      value: `${cancellationRate.toFixed(1)}%`,
-      detail: "Cancelled vs booked",
-      icon: "CR",
-      progress: Math.min(100, cancellationRate),
-      color: "bg-red-100 text-red-700",
-      accent: "#ef4444",
-    },
-    {
-      label: "Growth vs Prev",
-      value: growthDisplay,
-      detail: comparisonLabel || "Previous period",
-      icon: "GR",
-      progress: Math.min(100, Math.abs(growthRate || 0)),
-      color: "bg-indigo-100 text-indigo-700",
-      accent: "#6366f1",
     },
   ];
 
@@ -743,45 +712,6 @@ const Reports = () => {
     (max, entry) => Math.max(max, entry.hours),
     0
   );
-
-  const heroStats = [
-    {
-      key: "hours",
-      label: "Total Hours Taught",
-      value: `${totalHoursTeach.toFixed(1)} hrs`,
-      helper: displayPeriodLabel,
-    },
-    {
-      key: "completed",
-      label: "Sessions Completed",
-      value: `${totalSessionsCompleted}`,
-      helper: "Confirmed sessions",
-    },
-    {
-      key: "booked",
-      label: "Sessions Booked",
-      value: `${totalSessionsBooked}`,
-      helper: "All booking statuses",
-    },
-    {
-      key: "rating",
-      label: "Avg. Satisfaction",
-      value: averageSatisfactionDisplay,
-      helper: "Tutor evaluations",
-    },
-    {
-      key: "cancellation",
-      label: "Cancellation Rate",
-      value: `${cancellationRate.toFixed(1)}%`,
-      helper: "Cancelled vs booked",
-    },
-    {
-      key: "growth",
-      label: "Growth vs Last Period",
-      value: growthDisplay,
-      helper: comparisonLabel || "Previous period",
-    },
-  ];
 
   const handleMonthlyExport = useCallback(() => {
     if (monthlyExporting) return;
@@ -1109,21 +1039,24 @@ const Reports = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleMonthlyExport}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition flex items-center gap-2"
                 disabled={monthlyExporting}
               >
+                <FaDownload className="text-sm" />
                 {monthlyExporting ? "Preparing..." : "Export"}
               </button>
               <button
                 onClick={handlePrintMonthlyReport}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition flex items-center gap-2"
               >
+                <FaPrint className="text-sm" />
                 Print
               </button>
               <button
                 type="button"
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 flex items-center gap-2"
               >
+                <FaRegCalendarAlt className="text-sm" />
                 {periodRangeLabel}
               </button>
             </div>
@@ -1166,332 +1099,6 @@ const Reports = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
-              <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                  <tr>
-                    <th className="text-left px-4 py-3">Tutor Name</th>
-                    <th className="text-center px-4 py-3">Sessions</th>
-                    <th className="text-center px-4 py-3">Tutees</th>
-                    <th className="text-center px-4 py-3">Total Hours</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tutorMonthlyPerformance.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-center text-gray-500 py-5">
-                        No completed sessions were logged for {displayPeriodLabel}.
-                      </td>
-                    </tr>
-                  ) : (
-                    tutorMonthlyPerformance.map((entry) => (
-                      <tr key={entry.tutorId} className="border-t border-gray-100">
-                        <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                        <td className="px-4 py-3 text-center">{entry.sessions}</td>
-                        <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
-                        <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                          {entry.hours.toFixed(1)} hrs
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-            <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
-              <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
-            </div>
-            <div className="p-4">
-              {evaluations.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">
-                  No LAV feedback has been submitted yet.
-                </p>
-              ) : (
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                  <div className="flex items-end justify-between gap-3">
-                    {lavRatingFields.map((field) => {
-                      const avg = lavStatsPeriod.averages[field.key];
-                      const height = avg ? Math.round((avg / 5) * 120) : 0;
-                      return (
-                        <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
-                          <span className="text-xs font-semibold text-gray-600">
-                            {avg !== null ? avg.toFixed(1) : "-"}
-                          </span>
-                          <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
-                            <div
-                              className="w-full bg-[#2fb592] transition-all"
-                              style={{ height: `${height}px` }}
-                            />
-                          </div>
-                          <span className="text-[11px] text-gray-500 text-center leading-tight">
-                            {field.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 flex items-center justify-between rounded-xl border border-[#2fb592] bg-white px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Overall Average
-                    </p>
-                    <p className="text-xl font-bold text-[#2fb592]">
-                      {lavStatsPeriod.overallAverage !== null
-                        ? lavStatsPeriod.overallAverage.toFixed(2)
-                        : "-"}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Completed Sessions</h2>
-          <p className="text-sm text-gray-500">
-            Daily, weekly, and monthly counts per tutor (status = completed).
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
-                <th className="text-left px-4 py-3">Tutor</th>
-                <th className="text-center px-4 py-3">Today</th>
-                <th className="text-center px-4 py-3">This Week</th>
-                <th className="text-center px-4 py-3">This Month</th>
-                <th className="text-center px-4 py-3">Total</th>
-                <th className="text-center px-4 py-3">Tutees Served</th>
-                <th className="text-center px-4 py-3">Total Hours</th>
-                </tr>
-              </thead>
-              <tbody>
-              {tutorEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center text-gray-500 py-5">
-                    No completed sessions recorded.
-                  </td>
-                </tr>
-              ) : (
-                tutorEntries.map((entry) => (
-                  <tr key={entry.tutorId} className="border-t border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                <td className="px-4 py-3 text-center">{entry.today}</td>
-                <td className="px-4 py-3 text-center">{entry.thisWeek}</td>
-                <td className="px-4 py-3 text-center">{entry.thisMonth}</td>
-                <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.total}</td>
-                <td className="px-4 py-3 text-center font-semibold text-gray-900">{entry.totalTutees}</td>
-                <td className="px-4 py-3 text-center">
-                  {entry.totalHours ? entry.totalHours.toFixed(1) : "-"}
-                </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800">Performance Breakdown</h2>
-              <p className="text-sm text-gray-500">
-                Confirmed sessions recorded for {displayPeriodLabel}. Switch periods above to explore trends.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handlePrintMonthlyReport}
-                className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:border-blue-500 transition"
-              >
-                Download PDF
-              </button>
-              <button
-                onClick={handleMonthlyExport}
-                className="rounded-lg border border-blue-500 text-blue-600 px-3 py-1 text-xs font-semibold hover:bg-blue-50 transition"
-                disabled={monthlyExporting}
-              >
-                {monthlyExporting ? "Preparing..." : "Download CSV"}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="p-4">
-          {tutorMonthlyPerformance.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              <p>No confirmed sessions recorded for {displayPeriodLabel}.</p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {tutorMonthlyPerformance.map((entry, index) => {
-                const progress = maxTutorHours
-                  ? Math.round((entry.hours / maxTutorHours) * 100)
-                  : 0;
-                return (
-                  <div
-                    key={entry.tutorId}
-                    className="rounded-2xl border border-gray-200 p-4 bg-gray-50 flex flex-col gap-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-800">{entry.name}</h3>
-                      <span className="text-xs font-semibold text-blue-600">#{index + 1}</span>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-gray-900">{entry.hours.toFixed(1)} hrs</p>
-                      <p className="text-sm text-gray-500">Sessions: {entry.sessions}</p>
-                      <p className="text-sm text-gray-500">Tutees served: {entry.totalTutees}</p>
-                    </div>
-                    <div className="h-1.5 bg-white rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Tutor Schedules</h2>
-          <p className="text-sm text-gray-500">All published availability per tutor.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 p-4">
-          {Object.keys(schedulesByTutor).length === 0 ? (
-            <div className="col-span-full text-center text-gray-500 py-5">
-              No schedules recorded.
-            </div>
-          ) : (
-            Object.entries(schedulesByTutor).map(([tutorId, group]) => (
-              <div key={tutorId} className="rounded-xl border border-gray-200 p-4 bg-gray-50 space-y-2">
-                <h3 className="text-lg font-semibold text-gray-800">{group.name}</h3>
-                {group.slots.length === 0 ? (
-                  <p className="text-sm text-gray-400">No slots published.</p>
-                ) : (
-                  group.slots.map((slot) => (
-                    <p
-                      key={slot.id}
-                      className="flex justify-between text-sm text-gray-700 bg-white border border-gray-100 rounded-lg px-3 py-2"
-                    >
-                      <span className="font-medium">{slot.day}</span>
-                      <span>
-                        {slot.start_time?.slice(0, 5)} - {slot.end_time?.slice(0, 5)}
-                      </span>
-                    </p>
-                  ))
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">Evaluation Records</h2>
-          <p className="text-sm text-gray-500">
-            Per-tutor averages for each evaluation question during {displayPeriodLabel} (anonymous comments remain hidden).
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
-                <th className="text-left px-4 py-3">Tutor</th>
-                <th className="text-center px-4 py-3">Overall</th>
-                {tutorRatingFields.map((field) => (
-                  <th key={field.key} className="text-center px-4 py-3">
-                    {field.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tutorSummaryEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={tutorRatingFields.length + 2} className="text-center text-gray-500 py-5">
-                    No tutor evaluations submitted.
-                  </td>
-                </tr>
-              ) : (
-                tutorSummaryEntries.map((entry) => (
-                  <tr key={entry.tutorId} className="border-t border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                      {entry.overallCount ? (entry.overallSum / entry.overallCount).toFixed(2) : "-"}
-                    </td>
-                    {tutorRatingFields.map((field) => {
-                      const stat = entry.fields[field.key];
-                      return (
-                        <td key={field.key} className="px-4 py-3 text-center">
-                          {stat.count ? (stat.sum / stat.count).toFixed(1) : "-"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Tutor Performance — {displayPeriodLabel}
-          </h2>
-          <p className="text-sm text-gray-500">
-            Total hours and completed sessions recorded per tutor for {displayPeriodLabel}.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-              <tr>
-                <th className="text-left px-4 py-3">Tutor</th>
-                <th className="text-center px-4 py-3">Sessions</th>
-                <th className="text-center px-4 py-3">Total Hours</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tutorMonthlyPerformance.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="text-center text-gray-500 py-5">
-                    No completed sessions were logged for {displayPeriodLabel}.
-                  </td>
-                </tr>
-              ) : (
-                tutorMonthlyPerformance.map((entry) => (
-                  <tr key={entry.tutorId} className="border-t border-gray-100">
-                    <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
-                    <td className="px-4 py-3 text-center">{entry.sessions}</td>
-                    <td className="px-4 py-3 text-center font-semibold text-blue-600">
-                      {entry.hours.toFixed(1)} hrs
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
       </div>
     </div>
   );
