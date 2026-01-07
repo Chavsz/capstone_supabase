@@ -457,30 +457,30 @@ const Users = () => {
                 onClick={() => handleSelectFilter("Admin")}
                 className="flex flex-col items-center gap-4"
               >
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-                  <FaUserTie className="text-[#4766fe] text-5xl" />
+                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaUserTie className="text-[#4766fe] text-5xl md:text-6xl" />
                 </div>
-                <span className="text-lg font-semibold text-[#1f2b5b]">Admin</span>
+                <span className="text-lg md:text-xl font-semibold text-[#1f2b5b]">Admin</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectFilter("Tutor")}
                 className="flex flex-col items-center gap-4"
               >
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-                  <FaChalkboardTeacher className="text-[#4766fe] text-5xl" />
+                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaChalkboardTeacher className="text-[#4766fe] text-5xl md:text-6xl" />
                 </div>
-                <span className="text-lg font-semibold text-[#1f2b5b]">Tutors</span>
+                <span className="text-lg md:text-xl font-semibold text-[#1f2b5b]">Tutors</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectFilter("Student")}
                 className="flex flex-col items-center gap-4"
               >
-                <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-[#f2f7ff] flex items-center justify-center">
-                  <FaUserAlt className="text-[#4766fe] text-5xl" />
+                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <FaUserAlt className="text-[#4766fe] text-5xl md:text-6xl" />
                 </div>
-                <span className="text-lg font-semibold text-[#1f2b5b]">Tutees</span>
+                <span className="text-lg md:text-xl font-semibold text-[#1f2b5b]">Tutees</span>
               </button>
             </div>
           </div>
