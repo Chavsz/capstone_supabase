@@ -777,6 +777,16 @@ const Reports = () => {
         <div class="summary-card">
           <div class="summary-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="3" fill="none" stroke="#8b5cf6" stroke-width="2" />
+              <path d="M5 20c1.6-3.6 11.4-3.6 14 0" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+          <p class="summary-label">Tutees Served</p>
+          <p class="summary-value">${escapeHtml(`${pdfTotalTuteesServed}`)}</p>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 19V9M10 19V5M15 19V12M20 19V7" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" />
             </svg>
           </div>
