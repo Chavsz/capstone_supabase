@@ -399,7 +399,7 @@ const AppointmentModal = ({
                 }}
                 className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
               >
-                Decline Session
+                Cancel Session
               </button>
             </>
           )}

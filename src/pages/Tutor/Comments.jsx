@@ -11,20 +11,6 @@ const shuffle = (items) => {
   return array;
 };
 
-const formatDate = (value) =>
-  new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
-const formatTime = (timeValue) =>
-  new Date(`2000-01-01T${timeValue}`).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-
 const Comments = () => {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState([]);
@@ -62,12 +48,6 @@ const Comments = () => {
           .map((item) => ({
             id: item.evaluation_id,
             comment: item.tutor_comment.trim(),
-            createdAt: item.created_at,
-            subject: item.appointment?.subject || "Untitled",
-            topic: item.appointment?.topic || "General",
-            date: item.appointment?.date || null,
-            startTime: item.appointment?.start_time || null,
-            endTime: item.appointment?.end_time || null,
             tuteeId: item.appointment?.user_id || "anonymous",
           }));
 
@@ -110,7 +90,7 @@ const Comments = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Tutee Comments</h1>
             <p className="text-sm text-gray-500">
-              Anonymous feedback from completed sessions (names hidden).
+              Anonymous feedback from completed sessions.
             </p>
           </div>
         </header>
@@ -134,24 +114,8 @@ const Comments = () => {
                   <span className="font-semibold text-blue-600">
                     {maskedNames.get(item.tuteeId) || "Tutee"}
                   </span>
-                  {item.date ? (
-                    <span>{formatDate(item.date)}</span>
-                  ) : (
-                    <span>--</span>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {item.subject}
-                  </p>
-                  <p className="text-xs text-gray-500">{item.topic}</p>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">{item.comment}</p>
-                {item.startTime && item.endTime && (
-                  <div className="text-xs text-gray-500">
-                    {formatTime(item.startTime)} - {formatTime(item.endTime)}
-                  </div>
-                )}
               </div>
             ))}
           </div>
