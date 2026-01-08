@@ -34,6 +34,41 @@ const Sidebar = ({ setAuth, onClose }) => {
     }
   };
 
+  const clearAuthStorage = () => {
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach((key) => {
+        if (
+          key.startsWith("sb-") ||
+          key.includes("auth-token") ||
+          key.includes("supabase")
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+      localStorage.removeItem("lav.roleOverride");
+      localStorage.removeItem("lav.roleOverridePrev");
+    } catch (storageError) {
+      // Ignore storage errors
+    }
+
+    try {
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach((key) => {
+        if (
+          key.startsWith("sb-") ||
+          key.includes("auth-token") ||
+          key.includes("supabase")
+        ) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      sessionStorage.removeItem("lav.pendingNotification.tutee");
+    } catch (storageError) {
+      // Ignore storage errors
+    }
+  };
+
   //logout
   const logout = async (e) => {
     e.preventDefault();
@@ -43,22 +78,7 @@ const Sidebar = ({ setAuth, onClose }) => {
     try {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) throw error;
-      try {
-        const keys = Object.keys(localStorage);
-        keys.forEach((key) => {
-          if (key.includes("auth-token") || key.startsWith("sb-")) {
-            localStorage.removeItem(key);
-          }
-        });
-        const sessionKeys = Object.keys(sessionStorage);
-        sessionKeys.forEach((key) => {
-          if (key.includes("auth-token") || key.startsWith("sb-")) {
-            sessionStorage.removeItem(key);
-          }
-        });
-      } catch (storageError) {
-        // Ignore storage errors
-      }
+      clearAuthStorage();
       // onAuthStateChange in App.jsx will handle state updates
       // Small delay to ensure state is cleared before navigation
       setTimeout(() => {
@@ -66,6 +86,12 @@ const Sidebar = ({ setAuth, onClose }) => {
       }, 100);
     } catch (error) {
       console.error("Error signing out:", error);
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch (err) {
+        // Ignore local sign out error
+      }
+      clearAuthStorage();
       // Force navigation even if signOut fails
       navigate("/");
     }
