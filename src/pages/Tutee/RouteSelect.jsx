@@ -1,68 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
-import * as piIcons from "react-icons/pi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 
 const RouteSelect = ({ onClose }) => {
-  const [canSwitchToTutor, setCanSwitchToTutor] = useState(false);
-  const [isStudent, setIsStudent] = useState(false);
-  const [canSwitchToAdmin, setCanSwitchToAdmin] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    const checkCanSwitch = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const [{ data: userData, error: userError }, { data: tutorProfile }] =
-          await Promise.all([
-            supabase
-              .from("users")
-              .select("role, is_admin, is_superadmin")
-              .eq("user_id", session.user.id)
-              .single(),
-            supabase
-              .from("profile")
-              .select("profile_id")
-              .eq("user_id", session.user.id)
-              .single(),
-          ]);
-
-        if (userError) throw userError;
-
-        let storedRole = null;
-        try {
-          storedRole = localStorage.getItem("lav.roleOverride");
-        } catch (err) {
-          storedRole = null;
-        }
-        const effectiveRole = storedRole || userData?.role || "";
-        const studentRole = effectiveRole.toLowerCase() === "student";
-        setIsStudent(studentRole);
-        setCanSwitchToTutor(!!tutorProfile);
-        setCanSwitchToAdmin(Boolean(userData?.is_admin && !userData?.is_superadmin));
-      } catch (err) {
-        console.error("Error checking tutor profile:", err);
-        setCanSwitchToTutor(false);
-        setCanSwitchToAdmin(false);
-      }
-    };
-
-    // Check on mount and when capability flags change
-    checkCanSwitch();
-
-    const onCanSwitchUpdated = () => checkCanSwitch();
-
-    window.addEventListener("canSwitchUpdated", onCanSwitchUpdated);
-
-    return () => {
-      window.removeEventListener("canSwitchUpdated", onCanSwitchUpdated);
-    };
-  }, []);
 
   return (
     <div className="space-y-1">
@@ -89,15 +32,6 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onClose={onClose}
       />
-      {isStudent && (canSwitchToTutor || canSwitchToAdmin) && (
-        <Route
-          to="/dashboard/switch"
-          Icon={piIcons.PiUserSwitchBold}
-          title="Switch"
-          isActive={location.pathname === "/dashboard/switch"}
-          onClose={onClose}
-        />
-      )}
     </div>
   );
 };

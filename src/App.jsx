@@ -342,8 +342,6 @@ function App() {
 
   const safeOverride = roleOverride === "admin" && !adminAccess ? null : roleOverride;
   const effectiveRole = safeOverride || currentRole;
-  const ACTIVE_SESSION_COLUMN = "active_session_id";
-
   const clearAuthState = () => {
     setSession(null);
     setIsAuthenticated(false);
@@ -354,42 +352,6 @@ function App() {
     hasRole.current = false;
     setStoredRoleOverride(null);
     setRoleOverride(null);
-  };
-
-  const updateActiveSession = async (activeSession) => {
-    if (!activeSession?.user?.id) return;
-    try {
-      const payload = {
-        [ACTIVE_SESSION_COLUMN]: activeSession.access_token,
-      };
-      const { error } = await supabase
-        .from("users")
-        .update(payload)
-        .eq("user_id", activeSession.user.id);
-      if (error) {
-        console.warn("Active session update failed:", error.message);
-      }
-    } catch (err) {
-      console.warn("Active session update failed:", err.message);
-    }
-  };
-
-  const verifyActiveSession = async (activeSession) => {
-    if (!activeSession?.user?.id) return;
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select(ACTIVE_SESSION_COLUMN)
-        .eq("user_id", activeSession.user.id)
-        .single();
-      if (error) throw error;
-      if (data?.[ACTIVE_SESSION_COLUMN] && data[ACTIVE_SESSION_COLUMN] !== activeSession.access_token) {
-        await supabase.auth.signOut();
-        clearAuthState();
-      }
-    } catch (err) {
-      console.warn("Active session check failed:", err.message);
-    }
   };
 
   // Single function to fetch role
@@ -479,8 +441,6 @@ function App() {
           setSession(session);
           setIsAuthenticated(true);
           await fetchUserRole(session.user.id);
-          await updateActiveSession(session);
-          await verifyActiveSession(session);
         } else {
           setIsAuthenticated(false);
           setLoading(false);
@@ -532,8 +492,6 @@ function App() {
         setLoading(true);
         isFetching.current = false; // Reset fetch flag for new login
         await fetchUserRole(session.user.id);
-        await updateActiveSession(session);
-        await verifyActiveSession(session);
         return;
       }
 
@@ -550,8 +508,6 @@ function App() {
         if (hasRole.current && currentRole) {
           setLoading(false);
         }
-        await updateActiveSession(session);
-        await verifyActiveSession(session);
         return;
       }
 
@@ -567,31 +523,6 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    if (sessionCheckTimer.current) {
-      clearInterval(sessionCheckTimer.current);
-    }
-    sessionCheckTimer.current = setInterval(() => {
-      verifyActiveSession(session);
-    }, 20000);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        verifyActiveSession(session);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      if (sessionCheckTimer.current) {
-        clearInterval(sessionCheckTimer.current);
-      }
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [session?.user?.id, session?.access_token]);
 
   useEffect(() => {
     if (!loading && roleOverride === "admin" && !adminAccess) {
