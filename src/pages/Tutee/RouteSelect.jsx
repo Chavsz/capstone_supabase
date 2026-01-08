@@ -1,11 +1,46 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { supabase } from "../../supabase-client";
 
 import * as mdIcons from "react-icons/md";
+import { PiUserSwitchBold } from "react-icons/pi";
 import { RiCalendarScheduleLine } from "react-icons/ri";
 
 const RouteSelect = ({ onClose }) => {
   const location = useLocation();
+  const [canSwitchTutor, setCanSwitchTutor] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchSwitchAccess = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("is_admin, is_superadmin")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (userError && userError.code !== "PGRST116") {
+          throw userError;
+        }
+
+        const isAdmin = Boolean(userData?.is_admin || userData?.is_superadmin);
+        const { data: tutorProfile } = await supabase
+          .from("profile")
+          .select("profile_id")
+          .eq("user_id", session.user.id)
+          .single();
+
+        setCanSwitchTutor(Boolean(tutorProfile) && !isAdmin);
+      } catch (err) {
+        console.error("Unable to check switch access:", err.message);
+        setCanSwitchTutor(false);
+      }
+    };
+
+    fetchSwitchAccess();
+  }, []);
 
   return (
     <div className="space-y-1">
@@ -32,6 +67,15 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onClose={onClose}
       />
+      {canSwitchTutor && (
+        <Route
+          to="/dashboard/switch"
+          Icon={PiUserSwitchBold}
+          title="Switch"
+          isActive={location.pathname === "/dashboard/switch"}
+          onClose={onClose}
+        />
+      )}
     </div>
   );
 };

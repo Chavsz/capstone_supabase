@@ -10,6 +10,7 @@ const Switch = () => {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchTutor, setCanSwitchTutor] = useState(false);
+  const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -42,6 +43,8 @@ const Switch = () => {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
         setCanSwitchTutor(false);
+      } finally {
+        setSwitchChecked(true);
       }
     };
 
@@ -69,6 +72,13 @@ const Switch = () => {
     fetchAdminPermissions();
     fetchLoginPhoto();
   }, []);
+
+  useEffect(() => {
+    if (!switchChecked) return;
+    if (!canSwitchTutor && !canSwitchAdmin) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [canSwitchAdmin, canSwitchTutor, navigate, switchChecked]);
 
   const handleSwitchClick = () => {
     setIsModalOpen(true);
@@ -140,6 +150,10 @@ const Switch = () => {
   const handleCancelAdminSwitch = () => {
     setIsAdminModalOpen(false);
   };
+
+  if (switchChecked && !canSwitchTutor && !canSwitchAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
