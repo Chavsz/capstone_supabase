@@ -113,7 +113,7 @@ const Register = ({ setAuth }) => {
         {/* Left Panel - Illustration */}
         <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
           <a
-            href="https://capstone199-supabase-lav.vercel.app/"
+            href="https://capstone199-supabase-lav.vercel.app/#home"
             className="absolute top-4 left-4 flex items-center"
             aria-label="Go to LAV landing page"
           >
