@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 
 import * as mdIcons from "react-icons/md";
 import * as fiIcons from "react-icons/fi";
+import * as faIcons from "react-icons/fa";
 
 const RouteSelect = ({ onClose, canSwitchAdmin }) => {
   return (
@@ -17,7 +18,7 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
      
       <Route
         to="/dashboard/lav-room"
-        Icon={mdIcons.MdViewWeek}
+        Icon={faIcons.FaCalendarCheck}
         title="LAV Room"
         onClose={onClose}
       />
@@ -41,13 +42,13 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
       />
       <Route
         to="/dashboard/announcments"
-        Icon={mdIcons.MdOutlineAnnouncement}
+        Icon={faIcons.FaVolumeUp}
         title="Announcements"
         onClose={onClose}
       />
       <Route
         to="/dashboard/event"
-        Icon={mdIcons.MdOutlineAnnouncement}
+        Icon={faIcons.FaMegaphone}
         title="Events"
         onClose={onClose}
       />
