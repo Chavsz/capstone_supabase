@@ -189,10 +189,12 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
           path="switch"
           element={
             <RoleRoute
-              allowedRoles={["tutor"]}
+              allowedRoles={["student", "tutor"]}
               currentRole={currentRole}
               loading={loading}
-              element={<TutorSwitch />}
+              element={
+                currentRole === "tutor" ? <TutorSwitch /> : <TuteeSwitch />
+              }
             />
           }
         />

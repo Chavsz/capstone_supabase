@@ -9,6 +9,7 @@ const Switch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [canSwitchTutor, setCanSwitchTutor] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -30,9 +31,16 @@ const Switch = () => {
         }
 
         setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+        const { data: tutorProfile } = await supabase
+          .from("profile")
+          .select("profile_id")
+          .eq("user_id", session.user.id)
+          .single();
+        setCanSwitchTutor(Boolean(tutorProfile));
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
+        setCanSwitchTutor(false);
       }
     };
 
@@ -179,11 +187,16 @@ const Switch = () => {
               </div>
               <button
                 onClick={handleSwitchClick}
-                disabled={isLoading}
+                disabled={isLoading || !canSwitchTutor}
                 className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Switching..." : "Switch to Tutor"}
               </button>
+              {!canSwitchTutor && (
+                <p className="mt-3 text-xs text-blue-100">
+                  Switch back to tutor is available only if you previously had a tutor profile.
+                </p>
+              )}
               {canSwitchAdmin && (
                 <button
                   onClick={handleAdminSwitchClick}
