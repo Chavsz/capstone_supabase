@@ -112,14 +112,14 @@ const Register = ({ setAuth }) => {
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-xl overflow-hidden grid md:grid-cols-[1fr_1.2fr]">
         {/* Left Panel - Illustration */}
         <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
-          <a
-            href="https://capstone199-supabase-lav.vercel.app/#home"
+          <Link
+            to="/#home"
             className="absolute top-4 left-4 flex items-center"
             aria-label="Go to LAV landing page"
           >
             <img src={LAVLogo} alt="LAV Logo" className="w-7 h-7 object-contain" />
             <span className="ml-2 text-[#3142a6] font-semibold text-sm">LAV</span>
-          </a>
+          </Link>
 
           <div className="flex flex-col items-center gap-4 text-center w-full">
             <div className="w-full max-w-xs rounded-2xl border border-blue-100 bg-white/70 shadow-md p-3">
