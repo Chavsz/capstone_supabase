@@ -72,6 +72,17 @@ const Switch = () => {
     setIsAdminModalOpen(true);
   };
 
+  const handleStayTutor = () => {
+    try {
+      localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
+    } catch (err) {
+      // Ignore storage errors
+    }
+
+    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
+    navigate("/dashboard");
+  };
+
   const syncStudentProfile = async (userId) => {
     try {
       const { data: tutorProfile, error: tutorProfileError } = await supabase
@@ -253,6 +264,13 @@ const Switch = () => {
                   className="lav-btn lav-btn-primary w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isLoading ? "Switching..." : "Switch to Student"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStayTutor}
+                  className="w-full rounded-lg border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                >
+                  Switch back to Tutor
                 </button>
                 {canSwitchAdmin && (
                   <button
