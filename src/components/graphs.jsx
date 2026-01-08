@@ -129,6 +129,13 @@ export const SessionBarChart = ({ appointmentsData }) => {
     weekday: day,
     count: weekdayCounts[day] || 0,
   }));
+  const weekdayColors = [
+    "#ffe533",
+    "#8f7e18",
+    "#8c6542",
+    "#f7591f",
+    "#ffd88a",
+  ];
   return (
     <div>
       <div className="flex gap-4 items-center">
@@ -148,7 +155,7 @@ export const SessionBarChart = ({ appointmentsData }) => {
           <Tooltip />
           <Bar dataKey="count">
             {barChartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill="#1E88E5" />
+              <Cell key={`cell-${index}`} fill={weekdayColors[index % weekdayColors.length]} />
             ))}
           </Bar>
         </BarChart>
@@ -271,6 +278,14 @@ export const SubjectBarChart = ({ appointmentsData }) => {
     subject,
     count,
   }));
+  const subjectColors = [
+    "#df336c",
+    "#6ce8f4",
+    "#bc3fde",
+    "#00ef67",
+    "#7a5ea8",
+    "#fabd5c",
+  ];
 
   return (
     <div>
@@ -296,7 +311,11 @@ export const SubjectBarChart = ({ appointmentsData }) => {
             />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Bar dataKey="count" fill="#1E88E5" />
+            <Bar dataKey="count">
+              {barChartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={subjectColors[index % subjectColors.length]} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       ) : (
