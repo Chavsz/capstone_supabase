@@ -98,6 +98,9 @@ const Sidebar = ({ setAuth, onClose }) => {
   //logout
   const logout = async (e) => {
     e.preventDefault();
+    if (!window.confirm("Log out from all devices?")) {
+      return;
+    }
     try {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) throw error;
