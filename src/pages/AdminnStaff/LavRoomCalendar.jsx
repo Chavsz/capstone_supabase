@@ -169,6 +169,8 @@ const LavRoomCalendar = () => {
           mode_of_session,
           number_of_tutees,
           status,
+          tutor_decline_reason,
+          tutee_decline_reason,
           tutor:users!appointment_tutor_id_fkey(name),
           tutee:users!appointment_user_id_fkey(name)`
         );
@@ -783,6 +785,21 @@ const LavRoomCalendar = () => {
                         hoveredAppointment.status).toUpperCase()}
                     </span>
                   </div>
+                  {(hoveredAppointment.status === "declined" ||
+                    hoveredAppointment.status === "cancelled") && (
+                    <div className="col-span-2 space-y-2">
+                      {hoveredAppointment.tutor_decline_reason && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700">
+                          Tutor note: {hoveredAppointment.tutor_decline_reason}
+                        </div>
+                      )}
+                      {hoveredAppointment.tutee_decline_reason && (
+                        <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-[11px] text-orange-700">
+                          Tutee note: {hoveredAppointment.tutee_decline_reason}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

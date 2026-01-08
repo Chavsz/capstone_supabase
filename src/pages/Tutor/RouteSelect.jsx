@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 //icons
 import * as mdIcons from "react-icons/md";
 import * as piIcons from "react-icons/pi";
+import { FaComment } from "react-icons/fa";
 
 const RouteSelect = ({ onClose }) => {
   return (
@@ -20,6 +21,12 @@ const RouteSelect = ({ onClose }) => {
         to="/dashboard/schedule"
         Icon={mdIcons.MdCalendarMonth}
         title="Schedule"
+        onClose={onClose}
+      />
+      <Route
+        to="/dashboard/comments"
+        Icon={FaComment}
+        title="Comments"
         onClose={onClose}
       />
       <Route

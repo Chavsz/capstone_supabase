@@ -24,6 +24,7 @@ import TutorDashboard from "./pages/Tutor/TutorDashboard";
 import TutorProfile from "./pages/Tutor/Profile";
 import TutorSchedule from "./pages/Tutor/Schedule";
 import TutorSwitch from "./pages/Tutor/Switch";
+import TutorComments from "./pages/Tutor/Comments";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminnStaff/Dashboard";
@@ -208,6 +209,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<TutorSchedule />}
+            />
+          }
+        />
+        <Route
+          path="comments"
+          element={
+            <RoleRoute
+              allowedRoles={["tutor"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TutorComments />}
             />
           }
         />

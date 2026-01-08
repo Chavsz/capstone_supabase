@@ -620,6 +620,11 @@ const AppointmentModal = ({
 
   const handleResourceSave = async () => {
     if (!appointment) return;
+    if (appointment.status !== "confirmed") {
+      setResourceStatus("error");
+      setResourceMessage("Resources can only be shared while the session is confirmed.");
+      return;
+    }
     if (!resourceLink.trim()) {
       setResourceStatus("error");
       setResourceMessage("Please provide a valid resource link before sharing.");
@@ -651,8 +656,7 @@ const AppointmentModal = ({
 
   if (!isOpen || !appointment) return null;
 
-  const canShareResources =
-    ["confirmed", "started"].includes(appointment.status);
+  const canShareResources = appointment.status === "confirmed";
   const canDeleteAppointment = appointment.status === "pending";
 
   const handleDeleteClick = async () => {
@@ -809,9 +813,18 @@ const AppointmentModal = ({
               {formatStatusLabel(appointment.status)}
             </span>
           </div>
-          {appointment.status === "declined" && appointment.tutor_decline_reason && (
-            <div className="mt-3 bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
-              Tutor note: {appointment.tutor_decline_reason}
+          {(appointment.status === "declined" || appointment.status === "cancelled") && (
+            <div className="mt-3 space-y-2">
+              {appointment.tutor_decline_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+                  Tutor note: {appointment.tutor_decline_reason}
+                </div>
+              )}
+              {appointment.tutee_decline_reason && (
+                <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-700">
+                  Tutee note: {appointment.tutee_decline_reason}
+                </div>
+              )}
             </div>
           )}
         {(appointment.status === "confirmed" || appointment.status === "started") &&

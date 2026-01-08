@@ -200,6 +200,20 @@ const AppointmentModal = ({
               {formatStatusLabel(appointment.status)}
             </span>
           </div>
+          {(appointment.status === "declined" || appointment.status === "cancelled") && (
+            <div className="mt-3 space-y-2">
+              {appointment.tutor_decline_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+                  Tutor note: {appointment.tutor_decline_reason}
+                </div>
+              )}
+              {appointment.tutee_decline_reason && (
+                <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-700">
+                  Tutee note: {appointment.tutee_decline_reason}
+                </div>
+              )}
+            </div>
+          )}
           {(appointment.resource_link || appointment.resource_note) && (
             <div className="mt-4 p-3 border border-blue-200 bg-blue-50 rounded-lg space-y-2">
               <h3 className="text-sm font-semibold text-blue-900">
