@@ -38,7 +38,7 @@ const Switch = () => {
           .select("profile_id")
           .eq("user_id", session.user.id)
           .single();
-        setCanSwitchTutor(Boolean(tutorProfile) && !isAdmin);
+        setCanSwitchTutor(Boolean(tutorProfile));
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
