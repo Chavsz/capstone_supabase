@@ -48,7 +48,7 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
       />
       <Route
         to="/dashboard/event"
-        Icon={faIcons.FaMegaphone}
+        Icon={faIcons.FaBullhorn}
         title="Events"
         onClose={onClose}
       />
