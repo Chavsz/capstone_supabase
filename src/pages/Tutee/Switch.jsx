@@ -5,16 +5,13 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 
 const Switch = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchTutor, setCanSwitchTutor] = useState(false);
   const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
-  const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
 
   useEffect(() => {
     const fetchAdminPermissions = async () => {
@@ -84,10 +81,6 @@ const Switch = () => {
     setIsModalOpen(true);
   };
 
-  const handleAdminSwitchClick = () => {
-    setIsAdminModalOpen(true);
-  };
-
   const handleConfirmSwitch = async () => {
     setIsLoading(true);
     try {
@@ -122,33 +115,18 @@ const Switch = () => {
     }
   };
 
-  const handleConfirmAdminSwitch = async () => {
-    setIsAdminLoading(true);
-    try {
-      try {
-        localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
-        localStorage.setItem(ROLE_OVERRIDE_KEY, "admin");
-      } catch (err) {
-        // Ignore storage errors
-      }
-
-      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "admin" } }));
-      setIsAdminModalOpen(false);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Error switching to admin:", error);
-      alert("Failed to switch to admin. Please try again.");
-    } finally {
-      setIsAdminLoading(false);
-    }
-  };
-
   const handleCancelSwitch = () => {
     setIsModalOpen(false);
   };
 
-  const handleCancelAdminSwitch = () => {
-    setIsAdminModalOpen(false);
+  const handleStayStudent = () => {
+    try {
+      localStorage.setItem(ROLE_OVERRIDE_KEY, "student");
+    } catch (err) {
+      // Ignore storage errors
+    }
+    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "student" } }));
+    navigate("/dashboard");
   };
 
   if (switchChecked && !canSwitchTutor && !canSwitchAdmin) {
@@ -211,11 +189,10 @@ const Switch = () => {
               )}
               {canSwitchAdmin && (
                 <button
-                  onClick={handleAdminSwitchClick}
-                  disabled={isAdminLoading}
-                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  onClick={handleStayStudent}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
                 >
-                  {isAdminLoading ? "Switching..." : "Switch to Admin"}
+                  Switch to Tutee
                 </button>
               )}
             </div>
@@ -230,16 +207,6 @@ const Switch = () => {
         title="Switch to Tutor Role"
         message="Are you sure you want to switch to the Tutor interface? This will permanently change your role in the database and affect your available features."
         confirmText="Switch to Tutor"
-        cancelText="Cancel"
-      />
-
-      <ConfirmationModal
-        isOpen={isAdminModalOpen}
-        onClose={handleCancelAdminSwitch}
-        onConfirm={handleConfirmAdminSwitch}
-        title="Switch to Admin Role"
-        message="Switch to the Admin interface? This does not change your main role, but will open the admin dashboard until you switch back."
-        confirmText="Switch to Admin"
         cancelText="Cancel"
       />
     </div>

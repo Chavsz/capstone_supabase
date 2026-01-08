@@ -32,7 +32,7 @@ const RouteSelect = ({ onClose }) => {
           .eq("user_id", session.user.id)
           .single();
 
-        setCanSwitchTutor(Boolean(tutorProfile) && !isAdmin);
+        setCanSwitchTutor(Boolean(tutorProfile));
       } catch (err) {
         console.error("Unable to check switch access:", err.message);
         setCanSwitchTutor(false);
