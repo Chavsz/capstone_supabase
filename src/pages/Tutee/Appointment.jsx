@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
@@ -388,6 +388,7 @@ const Appointment = () => {
     { start: { hour: 8, minute: 0 }, end: { hour: 12, minute: 0 } },
     { start: { hour: 13, minute: 0 }, end: { hour: 17, minute: 0 } },
   ];
+  const TIME_STEP_MINUTES = 30;
 
   const classHoursMessage =
     "Class hours are 8:00 AM - 12:00 PM and 1:00 PM - 5:00 PM (no bookings during 12:00-1:00 PM).";
@@ -400,6 +401,38 @@ const Appointment = () => {
       const endMinutes = end.hour * 60 + end.minute;
       return totalMinutes >= startMinutes && totalMinutes <= endMinutes;
     });
+  };
+
+  const timeOptions = useMemo(() => {
+    const options = [];
+    CLASS_TIME_RANGES.forEach(({ start, end }) => {
+      const startMinutes = start.hour * 60 + start.minute;
+      const endMinutes = end.hour * 60 + end.minute;
+      for (let minutes = startMinutes; minutes <= endMinutes; minutes += TIME_STEP_MINUTES) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        const value = `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+        options.push({
+          value,
+          label: dayjs(`2000-01-01T${value}`).format("h:mm A"),
+        });
+      }
+    });
+    return options;
+  }, []);
+
+  const handleTimeSelect = (field, value) => {
+    if (!value) {
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+      return;
+    }
+    const timeValue = dayjs(`2000-01-01T${value}`);
+    if (!isWithinClassHours(timeValue)) {
+      toast.error(classHoursMessage);
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const minClassTime = dayjs()
@@ -1417,91 +1450,132 @@ const Appointment = () => {
                 />
                 {/* time picker */}
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  {/* start time */}
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["TimePicker"]}>
-                      <TimePicker
-                        value={
-                          formData.start_time
-                            ? dayjs(`2000-01-01T${formData.start_time}`)
-                            : null
-                        }
-                        onChange={(value) =>
-                          handleTimeChange("start_time", value)
-                        }
-                        onAccept={(value) =>
-                          handleTimeAccept("start_time", value)
-                        }
-                        label="Start Time"
-                        minTime={minClassTime}
-                        maxTime={maxClassTime}
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            fullWidth: true,
-                            sx: {
-                              "& .MuiInputBase-root": {
-                                height: 40,
-                                fontSize: 14,
+                  {isSmallScreen ? (
+                    <>
+                      <div className="w-full">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          Start Time
+                        </label>
+                        <select
+                          value={formData.start_time}
+                          onChange={(event) => handleTimeSelect("start_time", event.target.value)}
+                          className="border border-gray-300 rounded-md p-3 w-full"
+                        >
+                          <option value="">Select start time</option>
+                          {timeOptions.map((option) => (
+                            <option key={`start-${option.value}`} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-full">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          End Time
+                        </label>
+                        <select
+                          value={formData.end_time}
+                          onChange={(event) => handleTimeSelect("end_time", event.target.value)}
+                          className="border border-gray-300 rounded-md p-3 w-full"
+                        >
+                          <option value="">Select end time</option>
+                          {timeOptions.map((option) => (
+                            <option key={`end-${option.value}`} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* start time */}
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DemoContainer components={["TimePicker"]}>
+                          <TimePicker
+                            value={
+                              formData.start_time
+                                ? dayjs(`2000-01-01T${formData.start_time}`)
+                                : null
+                            }
+                            onChange={(value) =>
+                              handleTimeChange("start_time", value)
+                            }
+                            onAccept={(value) =>
+                              handleTimeAccept("start_time", value)
+                            }
+                            label="Start Time"
+                            minTime={minClassTime}
+                            maxTime={maxClassTime}
+                            slotProps={{
+                              textField: {
+                                size: "small",
+                                fullWidth: true,
+                                sx: {
+                                  "& .MuiInputBase-root": {
+                                    height: 40,
+                                    fontSize: 14,
+                                  },
+                                  "& .MuiInputBase-input": {
+                                    paddingY: "8px",
+                                  },
+                                  "& .MuiIconButton-root": {
+                                    padding: "6px",
+                                  },
+                                  "& .MuiSvgIcon-root": {
+                                    fontSize: 18,
+                                  },
+                                },
                               },
-                              "& .MuiInputBase-input": {
-                                paddingY: "8px",
-                              },
-                              "& .MuiIconButton-root": {
-                                padding: "6px",
-                              },
-                              "& .MuiSvgIcon-root": {
-                                fontSize: 18,
-                              },
-                            },
-                          },
-                        }}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
+                            }}
+                          />
+                        </DemoContainer>
+                      </LocalizationProvider>
 
-                  {/* end time */}
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <DemoContainer components={["TimePicker"]}>
-                      <TimePicker
-                        value={
-                          formData.end_time
-                            ? dayjs(`2000-01-01T${formData.end_time}`)
-                            : null
-                        }
-                        onChange={(value) =>
-                          handleTimeChange("end_time", value)
-                        }
-                        onAccept={(value) =>
-                          handleTimeAccept("end_time", value)
-                        }
-                        label="End Time"
-                        minTime={minClassTime}
-                        maxTime={maxClassTime}
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            fullWidth: true,
-                            sx: {
-                              "& .MuiInputBase-root": {
-                                height: 40,
-                                fontSize: 14,
+                      {/* end time */}
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DemoContainer components={["TimePicker"]}>
+                          <TimePicker
+                            value={
+                              formData.end_time
+                                ? dayjs(`2000-01-01T${formData.end_time}`)
+                                : null
+                            }
+                            onChange={(value) =>
+                              handleTimeChange("end_time", value)
+                            }
+                            onAccept={(value) =>
+                              handleTimeAccept("end_time", value)
+                            }
+                            label="End Time"
+                            minTime={minClassTime}
+                            maxTime={maxClassTime}
+                            slotProps={{
+                              textField: {
+                                size: "small",
+                                fullWidth: true,
+                                sx: {
+                                  "& .MuiInputBase-root": {
+                                    height: 40,
+                                    fontSize: 14,
+                                  },
+                                  "& .MuiInputBase-input": {
+                                    paddingY: "8px",
+                                  },
+                                  "& .MuiIconButton-root": {
+                                    padding: "6px",
+                                  },
+                                  "& .MuiSvgIcon-root": {
+                                    fontSize: 18,
+                                  },
+                                },
                               },
-                              "& .MuiInputBase-input": {
-                                paddingY: "8px",
-                              },
-                              "& .MuiIconButton-root": {
-                                padding: "6px",
-                              },
-                              "& .MuiSvgIcon-root": {
-                                fontSize: 18,
-                              },
-                            },
-                          },
-                        }}
-                      />
-                    </DemoContainer>
-                  </LocalizationProvider>
+                            }}
+                          />
+                        </DemoContainer>
+                      </LocalizationProvider>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
