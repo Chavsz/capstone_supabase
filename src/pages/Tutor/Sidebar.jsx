@@ -38,7 +38,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   const logout = async (e) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) throw error;
       // onAuthStateChange in App.jsx will handle state updates
       // Small delay to ensure state is cleared before navigation
