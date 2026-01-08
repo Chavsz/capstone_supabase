@@ -296,6 +296,16 @@ const Profile = () => {
   const handleAddTime = async (day) => {
     if (!newTime.start || !newTime.end) return;
     if (!validateTimePair(newTime.start, newTime.end)) return;
+    const existingSlots = schedulesByDay[day] || [];
+    const isDuplicate = existingSlots.some(
+      (slot) =>
+        slot.start_time?.slice(0, 5) === newTime.start &&
+        slot.end_time?.slice(0, 5) === newTime.end
+    );
+    if (isDuplicate) {
+      alert("This schedule already exists for that day.");
+      return;
+    }
     const confirmation = window.confirm(
       `Add availability on ${day} from ${newTime.start} to ${newTime.end}?`
     );
@@ -971,10 +981,10 @@ const Profile = () => {
                       </LocalizationProvider>
                       <button
                         onClick={() => handleAddTime(day)}
-                        className="text-green-600 hover:text-green-700"
-                        title="Add"
+                        className="text-green-600 hover:text-green-700 text-sm font-semibold"
+                        title="Confirm"
                       >
-                        <FaPlus size={14} />
+                        Enter
                       </button>
                       <button
                         onClick={() => {

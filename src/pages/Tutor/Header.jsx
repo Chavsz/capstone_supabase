@@ -133,7 +133,14 @@ const Header = () => {
     } catch (err) {
       // Ignore storage errors (private mode, full storage).
     }
-    navigate("/dashboard/schedule", { state: { notification } });
+    const targetPath = "/dashboard/schedule";
+    if (window.location.pathname === targetPath) {
+      window.dispatchEvent(
+        new CustomEvent("lav.notification.tutor", { detail: notification })
+      );
+    } else {
+      navigate(targetPath, { state: { notification } });
+    }
   };
 
   const formatNotificationContent = (content = "") =>

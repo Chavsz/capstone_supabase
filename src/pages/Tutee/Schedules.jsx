@@ -1388,83 +1388,99 @@ const Schedules = () => {
     setSelectedAppointment(null);
   };
 
+  const handleIncomingNotification = useCallback(
+    (notification) => {
+      if (!notification || !appointments.length) return;
+      if (handledNotificationId === notification.notification_id) return;
+
+      const notificationContent = notification.notification_content || "";
+      const details = parseNotificationDetails(notificationContent) || {
+        appointmentId: "",
+        subject: "",
+        topic: "",
+        dateText: "",
+        timeText: "",
+      };
+
+      const subjectMatch = (appointment) => {
+        if (details.subject && appointment.subject !== details.subject) return false;
+        if (details.topic && appointment.topic !== details.topic) return false;
+        return true;
+      };
+
+      let match = null;
+      if (details.appointmentId) {
+        match = appointments.find(
+          (appointment) => appointment.appointment_id === details.appointmentId
+        );
+      } else if (details.dateText && details.timeText) {
+        const targetDate = new Date(details.dateText);
+        const targetDateStr =
+          !Number.isNaN(targetDate.getTime())
+            ? targetDate.toISOString().split("T")[0]
+            : "";
+        const targetTime = to24Hour(details.timeText);
+
+        match = appointments.find((appointment) => {
+          if (!subjectMatch(appointment)) return false;
+          if (targetDateStr && appointment.date !== targetDateStr) return false;
+          if (targetTime && appointment.start_time?.slice(0, 5) !== targetTime) return false;
+          return true;
+        });
+      } else {
+        const candidates = appointments.filter(subjectMatch);
+        if (candidates.length) {
+          candidates.sort((a, b) => {
+            const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
+            const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
+            return bTime - aTime;
+          });
+          match = candidates[0];
+        }
+      }
+
+      if (!match) {
+        const wantsPending = /pending appointment|pending request|appointment request/i.test(
+          notificationContent
+        );
+        const candidates = wantsPending
+          ? appointments.filter((appointment) => appointment.status === "pending")
+          : appointments;
+        if (candidates.length) {
+          candidates.sort((a, b) => {
+            const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
+            const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
+            return bTime - aTime;
+          });
+          match = candidates[0];
+        }
+      }
+
+      if (match) {
+        openModal(match);
+      }
+
+      setHandledNotificationId(notification.notification_id);
+      clearStoredNotification();
+      navigate("/dashboard/schedules", { replace: true, state: {} });
+    },
+    [appointments, handledNotificationId, navigate]
+  );
+
   useEffect(() => {
     const notification =
       location.state?.notification || readStoredNotification();
-    if (!notification || !appointments.length) return;
-    if (handledNotificationId === notification.notification_id) return;
+    if (!notification) return;
+    handleIncomingNotification(notification);
+  }, [handleIncomingNotification, location.state]);
 
-    const notificationContent = notification.notification_content || "";
-    const details = parseNotificationDetails(notificationContent) || {
-      appointmentId: "",
-      subject: "",
-      topic: "",
-      dateText: "",
-      timeText: "",
+  useEffect(() => {
+    const handleEvent = (event) => {
+      handleIncomingNotification(event.detail);
     };
-
-    const subjectMatch = (appointment) => {
-      if (details.subject && appointment.subject !== details.subject) return false;
-      if (details.topic && appointment.topic !== details.topic) return false;
-      return true;
-    };
-
-    let match = null;
-    if (details.appointmentId) {
-      match = appointments.find(
-        (appointment) => appointment.appointment_id === details.appointmentId
-      );
-    } else if (details.dateText && details.timeText) {
-      const targetDate = new Date(details.dateText);
-      const targetDateStr =
-        !Number.isNaN(targetDate.getTime())
-          ? targetDate.toISOString().split("T")[0]
-          : "";
-      const targetTime = to24Hour(details.timeText);
-
-      match = appointments.find((appointment) => {
-        if (!subjectMatch(appointment)) return false;
-        if (targetDateStr && appointment.date !== targetDateStr) return false;
-        if (targetTime && appointment.start_time?.slice(0, 5) !== targetTime) return false;
-        return true;
-      });
-    } else {
-      const candidates = appointments.filter(subjectMatch);
-      if (candidates.length) {
-        candidates.sort((a, b) => {
-          const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
-          const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
-          return bTime - aTime;
-        });
-        match = candidates[0];
-      }
-    }
-
-    if (!match) {
-      const wantsPending = /pending appointment|pending request|appointment request/i.test(
-        notificationContent
-      );
-      const candidates = wantsPending
-        ? appointments.filter((appointment) => appointment.status === "pending")
-        : appointments;
-      if (candidates.length) {
-        candidates.sort((a, b) => {
-          const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
-          const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
-          return bTime - aTime;
-        });
-        match = candidates[0];
-      }
-    }
-
-    if (match) {
-      openModal(match);
-    }
-
-    setHandledNotificationId(notification.notification_id);
-    clearStoredNotification();
-    navigate("/dashboard/schedules", { replace: true, state: {} });
-  }, [appointments, handledNotificationId, location.state, navigate]);
+    window.addEventListener("lav.notification.tutee", handleEvent);
+    return () => window.removeEventListener("lav.notification.tutee", handleEvent);
+  }, [handleIncomingNotification]);
 
   const openEvaluationModal = (appointment) => {
     setSelectedEvaluationAppointment(appointment);

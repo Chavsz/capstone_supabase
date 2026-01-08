@@ -210,7 +210,14 @@ const Header = () => {
     } catch (err) {
       // Ignore storage errors (private mode, full storage).
     }
-    navigate("/dashboard/schedules", { state: { notification } });
+    const targetPath = "/dashboard/schedules";
+    if (window.location.pathname === targetPath) {
+      window.dispatchEvent(
+        new CustomEvent("lav.notification.tutee", { detail: notification })
+      );
+    } else {
+      navigate(targetPath, { state: { notification } });
+    }
   };
 
   const formatNotificationContent = (content = "") =>
