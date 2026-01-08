@@ -17,6 +17,7 @@ import TuteeDashboard from "./pages/Tutee/TuteeDashboard";
 import TuteeProfile from "./pages/Tutee/Profile";
 import TuteeSchedules from "./pages/Tutee/Schedules";
 import TuteeAppointment from "./pages/Tutee/Appointment";
+import TuteeSwitch from "./pages/Tutee/Switch";
 
 // Tutor Pages
 import TutorDashboard from "./pages/Tutor/TutorDashboard";
