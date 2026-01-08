@@ -9,6 +9,7 @@ const Switch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [canSwitchStudent, setCanSwitchStudent] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -55,9 +56,11 @@ const Switch = () => {
         }
 
         setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+        setCanSwitchStudent(!data?.is_admin && !data?.is_superadmin);
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
+        setCanSwitchStudent(false);
       }
     };
 
@@ -213,7 +216,6 @@ const Switch = () => {
               <h1 className="text-3xl font-bold text-gray-800">Switch to Student</h1>
               <p className="text-gray-600 max-w-xl">
                 Move to the student experience to book tutors, manage your sessions, and submit evaluations.
-                You can switch back to the tutor view anytime if your account permits.
               </p>
               <div className="flex flex-wrap gap-2 text-xs text-blue-700">
                 <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
@@ -247,13 +249,15 @@ const Switch = () => {
                 </ul>
               </div>
               <div className="mt-6 flex flex-col gap-3">
-                <button
-                  onClick={handleSwitchClick}
-                  disabled={isLoading}
-                  className="lav-btn lav-btn-primary w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Switching..." : "Switch to Student"}
-                </button>
+                {canSwitchStudent && (
+                  <button
+                    onClick={handleSwitchClick}
+                    disabled={isLoading}
+                    className="lav-btn lav-btn-primary w-full shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Switching..." : "Switch to Student"}
+                  </button>
+                )}
                 {canSwitchAdmin && (
                   <button
                     onClick={handleAdminSwitchClick}

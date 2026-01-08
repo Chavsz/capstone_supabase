@@ -30,13 +30,14 @@ const Switch = () => {
           throw error;
         }
 
+        const isAdmin = Boolean(data?.is_admin || data?.is_superadmin);
         setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
         const { data: tutorProfile } = await supabase
           .from("profile")
           .select("profile_id")
           .eq("user_id", session.user.id)
           .single();
-        setCanSwitchTutor(Boolean(tutorProfile));
+        setCanSwitchTutor(Boolean(tutorProfile) && !isAdmin);
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
@@ -152,7 +153,7 @@ const Switch = () => {
               <h1 className="text-3xl font-bold text-gray-800">Switch to Tutor</h1>
               <p className="text-gray-600">
                 Move to the tutor experience to host sessions, manage your availability,
-                and support your tutees. You can switch back if your account permits.
+                and support your tutees.
               </p>
               <div className="flex flex-wrap gap-2 text-xs text-blue-700">
                 <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
@@ -185,17 +186,14 @@ const Switch = () => {
                   <li>Support more learners</li>
                 </ul>
               </div>
-              <button
-                onClick={handleSwitchClick}
-                disabled={isLoading || !canSwitchTutor}
-                className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Switching..." : "Switch to Tutor"}
-              </button>
-              {!canSwitchTutor && (
-                <p className="mt-3 text-xs text-blue-100">
-                  Switch back to tutor is available only if you previously had a tutor profile.
-                </p>
+              {canSwitchTutor && (
+                <button
+                  onClick={handleSwitchClick}
+                  disabled={isLoading}
+                  className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Switching..." : "Switch to Tutor"}
+                </button>
               )}
               {canSwitchAdmin && (
                 <button
