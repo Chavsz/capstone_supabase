@@ -104,6 +104,22 @@ const Sidebar = ({ setAuth, onClose }) => {
     try {
       const { error } = await supabase.auth.signOut({ scope: "global" });
       if (error) throw error;
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach((key) => {
+          if (key.includes("auth-token") || key.startsWith("sb-")) {
+            localStorage.removeItem(key);
+          }
+        });
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach((key) => {
+          if (key.includes("auth-token") || key.startsWith("sb-")) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (storageError) {
+        // Ignore storage errors
+      }
       // onAuthStateChange in App.jsx will handle state updates
       // Small delay to ensure state is cleared before navigation
       setTimeout(() => {
