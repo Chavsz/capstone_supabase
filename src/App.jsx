@@ -17,7 +17,6 @@ import TuteeDashboard from "./pages/Tutee/TuteeDashboard";
 import TuteeProfile from "./pages/Tutee/Profile";
 import TuteeSchedules from "./pages/Tutee/Schedules";
 import TuteeAppointment from "./pages/Tutee/Appointment";
-import TuteeSwitch from "./pages/Tutee/Switch";
 
 // Tutor Pages
 import TutorDashboard from "./pages/Tutor/TutorDashboard";
@@ -190,12 +189,10 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
           path="switch"
           element={
             <RoleRoute
-              allowedRoles={["student", "tutor"]}
+              allowedRoles={["tutor"]}
               currentRole={currentRole}
               loading={loading}
-              element={
-                currentRole === "tutor" ? <TutorSwitch /> : <TuteeSwitch />
-              }
+              element={<TutorSwitch />}
             />
           }
         />

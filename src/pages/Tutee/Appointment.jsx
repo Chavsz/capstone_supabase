@@ -847,18 +847,21 @@ const Appointment = () => {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const smallQuery = window.matchMedia("(max-width: 639px)");
+    const smallQuery = window.matchMedia("(max-width: 900px)");
+    const coarseQuery = window.matchMedia("(pointer: coarse)");
     const largeQuery = window.matchMedia("(min-width: 1024px)");
     const handleChange = () => {
-      setIsSmallScreen(smallQuery.matches);
+      setIsSmallScreen(smallQuery.matches || coarseQuery.matches);
       setIsLargeScreen(largeQuery.matches);
     };
 
     handleChange();
     smallQuery.addEventListener("change", handleChange);
+    coarseQuery.addEventListener("change", handleChange);
     largeQuery.addEventListener("change", handleChange);
     return () => {
       smallQuery.removeEventListener("change", handleChange);
+      coarseQuery.removeEventListener("change", handleChange);
       largeQuery.removeEventListener("change", handleChange);
     };
   }, []);
