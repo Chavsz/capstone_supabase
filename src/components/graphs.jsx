@@ -258,3 +258,52 @@ export const AppointmentsAreaChart = ({ appointmentsData }) => {
     </div>
   );
 };
+
+// Bar chart for subjects
+export const SubjectBarChart = ({ appointmentsData }) => {
+  const subjectCounts = (appointmentsData || []).reduce((acc, appt) => {
+    const subject = appt.subject || "Unknown";
+    acc[subject] = (acc[subject] || 0) + 1;
+    return acc;
+  }, {});
+
+  const barChartData = Object.entries(subjectCounts).map(([subject, count]) => ({
+    subject,
+    count,
+  }));
+
+  return (
+    <div>
+      <div className="flex gap-4 items-center">
+        <p className="text-2xl text-blue-600">
+          <AiOutlineSchedule />
+        </p>
+        <p className="text-gray-600 font-semibold">Sessions by Subject</p>
+      </div>
+      {barChartData.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={barChartData}
+            margin={{ top: 20, right: 30, left: 0, bottom: 50 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="subject"
+              interval={0}
+              angle={-20}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" fill="#1E88E5" />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex items-center justify-center h-[300px] text-gray-500">
+          <p>No subject data available</p>
+        </div>
+      )}
+    </div>
+  );
+};

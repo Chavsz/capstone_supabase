@@ -10,6 +10,7 @@ import {
   CollegePieChart,
   SessionBarChart,
   AppointmentsAreaChart,
+  SubjectBarChart,
 } from "../../components/graphs";
 
 const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
@@ -291,9 +292,12 @@ function Dashboard() {
           </div>
 
           {/* Pie Chart for student from each college */}
-          <div className="mt-4 md:mt-6 w-full">
-            <div className="bg-[#ffffff] w-full md:w-1/2 p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+          <div className="mt-4 md:mt-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-[#ffffff] w-full p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
               <CollegePieChart collegeData={collegeData} />
+            </div>
+            <div className="bg-[#ffffff] w-full p-3 md:p-3.5 rounded-lg border border-[#EBEDEF] hover:translate-y-[-5px] transition-all duration-300">
+              <SubjectBarChart appointmentsData={appointments} />
             </div>
           </div>
         </div>
