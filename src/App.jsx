@@ -24,6 +24,7 @@ import TutorDashboard from "./pages/Tutor/TutorDashboard";
 import TutorProfile from "./pages/Tutor/Profile";
 import TutorSchedule from "./pages/Tutor/Schedule";
 import TutorSwitch from "./pages/Tutor/Switch";
+import TutorComments from "./pages/Tutor/Comments";
 import TutorReports from "./pages/Tutor/Reports";
 
 // Admin Pages
@@ -212,17 +213,28 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
             />
           }
         />
-        <Route
-          path="comments"
-          element={
-            <RoleRoute
-              allowedRoles={["tutor"]}
-              currentRole={currentRole}
-              loading={loading}
-              element={<TutorReports />}
-            />
-          }
-        />
+          <Route
+            path="comments"
+            element={
+              <RoleRoute
+                allowedRoles={["tutor"]}
+                currentRole={currentRole}
+                loading={loading}
+                element={<TutorComments />}
+              />
+            }
+          />
+          <Route
+            path="reports"
+            element={
+              <RoleRoute
+                allowedRoles={["tutor"]}
+                currentRole={currentRole}
+                loading={loading}
+                element={<TutorReports />}
+              />
+            }
+          />
         {/* Admin routes */}
         <Route
           path="landingadmin"

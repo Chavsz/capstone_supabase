@@ -30,6 +30,12 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/reports"
+        Icon={mdIcons.MdBarChart}
+        title="Reports"
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/switch"
         Icon={piIcons.PiUserSwitchBold}
         title="Switch"

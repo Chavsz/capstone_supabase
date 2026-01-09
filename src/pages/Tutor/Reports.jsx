@@ -10,6 +10,10 @@ const lavRatingFields = [
   { key: "lav_value", label: "Value for Time" },
 ];
 
+const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
+const isFinishedStatus = (status = "") =>
+  FINISHED_STATUSES.has(String(status).toLowerCase());
+
 const shuffle = (items) => {
   const array = [...items];
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -65,6 +69,7 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState([]);
   const [comments, setComments] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   const rangeStart = useMemo(() => {
     const start = new Date();
@@ -108,6 +113,7 @@ const Reports = () => {
           if (active) {
             setEvaluations([]);
             setComments([]);
+            setAppointments([]);
           }
           return;
         }
@@ -133,6 +139,14 @@ const Reports = () => {
 
         if (error) throw error;
 
+        const { data: appointmentData, error: appointmentError } = await supabase
+          .from("appointment")
+          .select("appointment_id, tutor_id, date, start_time, end_time, number_of_tutees, status")
+          .eq("tutor_id", session.user.id)
+          .order("date", { ascending: false });
+
+        if (appointmentError) throw appointmentError;
+
         const evaluationsData = data || [];
 
         const filteredComments = evaluationsData
@@ -146,11 +160,13 @@ const Reports = () => {
         if (!active) return;
         setEvaluations(evaluationsData);
         setComments(shuffle(filteredComments));
+        setAppointments(appointmentData || []);
       } catch (err) {
         console.error("Unable to load reports:", err.message);
         if (active) {
           setEvaluations([]);
           setComments([]);
+          setAppointments([]);
         }
       } finally {
         if (active) setLoading(false);
@@ -185,13 +201,46 @@ const Reports = () => {
     });
   }, [evaluations, rangeStart, rangeEnd]);
 
+  const appointmentsInPeriod = useMemo(() => {
+    return appointments.filter((appointment) => {
+      if (!appointment.date) return false;
+      const date = normalizeDate(appointment.date);
+      if (!date) return false;
+      return date >= rangeStart && date < rangeEnd;
+    });
+  }, [appointments, rangeStart, rangeEnd]);
+
+  const completedAppointmentsInPeriod = useMemo(
+    () => appointmentsInPeriod.filter((appointment) => isFinishedStatus(appointment.status)),
+    [appointmentsInPeriod]
+  );
+
+  const totalSessionsCompleted = completedAppointmentsInPeriod.length;
+  const totalHoursTeach = useMemo(() => {
+    return completedAppointmentsInPeriod.reduce((sum, appointment) => {
+      const startTime = appointment.start_time;
+      const endTime = appointment.end_time;
+      if (!startTime || !endTime) return sum;
+      const minutes =
+        (new Date(`2000-01-01T${endTime}`) - new Date(`2000-01-01T${startTime}`)) / 60000;
+      return sum + Math.max(minutes / 60, 0);
+    }, 0);
+  }, [completedAppointmentsInPeriod]);
+
+  const totalTuteesServed = useMemo(() => {
+    return completedAppointmentsInPeriod.reduce((sum, appointment) => {
+      const count = Number(appointment.number_of_tutees);
+      return sum + (Number.isNaN(count) || count <= 0 ? 1 : count);
+    }, 0);
+  }, [completedAppointmentsInPeriod]);
+
   const lavStatsPeriod = useMemo(
     () => computeLavStats(evaluationsInPeriod),
     [evaluationsInPeriod]
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
+    <div className="min-h-screen p-4 md:p-8 bg-[#feda3c]">
       <div className="max-w-5xl mx-auto space-y-6">
         <header className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -210,6 +259,59 @@ const Reports = () => {
             </div>
           </div>
         </header>
+
+        <section className="grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              label: "Sessions Completed",
+              value: totalSessionsCompleted,
+              detail: displayPeriodLabel,
+              color: "bg-blue-100 text-blue-700",
+              accent: "#3b82f6",
+            },
+            {
+              label: "Teaching Hours",
+              value: `${totalHoursTeach.toFixed(1)} hrs`,
+              detail: "Confirmed sessions only",
+              color: "bg-emerald-100 text-emerald-700",
+              accent: "#10b981",
+            },
+            {
+              label: "Tutees Served",
+              value: totalTuteesServed,
+              detail: "Counting groups",
+              color: "bg-purple-100 text-purple-700",
+              accent: "#8b5cf6",
+            },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="bg-white rounded-2xl border border-gray-200 shadow-md p-4"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-700">{card.label}</p>
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${card.accent}1a`, color: card.accent }}
+                >
+                  {card.label
+                    .split(" ")
+                    .map((word) => word[0])
+                    .join("")
+                    .slice(0, 2)}
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 mt-3">{card.value}</p>
+              <div className="mt-3 h-1 rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: "45%", backgroundColor: card.accent }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">{card.detail}</p>
+            </div>
+          ))}
+        </section>
 
         <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
           <div className="p-4 border-b border-gray-100">
