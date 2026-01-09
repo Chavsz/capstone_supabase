@@ -134,7 +134,7 @@ const Login = ({ setAuth }) => {
               alt="Logo"
               className="w-7 h-7 object-contain"
             />
-            <span className="ml-2 text-[#3142a6] font-semibold text-sm">LOGO</span>
+            <span className="ml-2 text-[#3142a6] font-semibold text-sm"></span>
           </Link>
 
           <div className="flex flex-col items-center gap-4 text-center w-full">

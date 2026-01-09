@@ -56,7 +56,7 @@ const Footer = () => {
             <div className="flex items-center space-x-3 mb-6">
               <img src={LAV_image} alt="LAV Logo" className="w-12 h-12" />
               <div>
-                <h3 className="text-2xl font-extrabold text-white/80 drop-shadow">
+                <h3 className="text-2xl font-extrabold text-white drop-shadow">
                   LAV
                 </h3>
                 <p className="text-sm text-white/80">Learning Assistance Volunteer</p>
@@ -75,7 +75,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-white/80">Organization</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Organization</h4>
             <ul className="space-y-3">
               {footerLinks.organization.map((link, index) => (
                 <li key={index}>
@@ -98,7 +98,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-white/80">Services</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Services</h4>
             <ul className="space-y-3">
               {footerLinks.services.map((link, index) => (
                 <li key={index}>
@@ -120,7 +120,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-white/80">Support</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Support</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link, index) => (
                 <li key={index}>
@@ -145,7 +145,7 @@ const Footer = () => {
           className="bg-transparent p-0 mb-12"
         >
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4 text-white/80">Stay Updated</h3>
+            <h3 className="text-2xl font-bold mb-4 text-white">Stay Updated</h3>
             <p className="text-white mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
