@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../supabase-client";
+import LAVLogo from "../assets/LAV_image.png";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -11,6 +14,30 @@ const Navbar = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("landing")
+          .select("sidebar_logo, login_photo, home_image")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        setLogoUrl(data?.sidebar_logo || data?.login_photo || data?.home_image || null);
+      } catch (err) {
+        console.error("Error loading navbar logo:", err.message);
+        setLogoUrl(null);
+      }
+    };
+
+    fetchLogo();
   }, []);
 
   const handleSectionClick = (e, sectionId) => {
@@ -48,11 +75,16 @@ const Navbar = () => {
             {/* Logo */}
             <div className="flex-shrink-0">
               <a
-                className="text-2xl lg:text-3xl font-bold bg-blue-600 bg-clip-text text-transparent hover:bg-blue-700 transition-all duration-300"
+                className="flex items-center"
                 href="#"
                 onClick={(e) => handleSectionClick(e, "home-section")}
+                aria-label="Go to home section"
               >
-                LAV
+                <img
+                  src={logoUrl || LAVLogo}
+                  alt="Logo"
+                  className="h-8 w-auto object-contain"
+                />
               </a>
             </div>
 
