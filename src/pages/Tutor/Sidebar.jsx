@@ -104,19 +104,25 @@ const Sidebar = ({ setAuth, onClose }) => {
   return (
     <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#feda3c] h-screen w-[240px] shadow-xl">
       {/* Mobile Close Button */}
-      <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt="LAV logo"
-            className="h-12 w-auto object-contain"
-          />
-        ) : (
-          <span className="text-xl font-bold text-[#181718]">LAV</span>
-        )}
+      <div className="relative mb-4 md:hidden flex-shrink-0">
+        <button
+          onClick={handleLogoClick}
+          className="w-full flex items-center justify-center"
+          aria-label="Go to dashboard"
+        >
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="LAV logo"
+              className="h-12 w-auto object-contain"
+            />
+          ) : (
+            <span className="text-xl font-bold text-[#181718]">LAV</span>
+          )}
+        </button>
         <button
           onClick={onClose}
-          className="p-2 text-[#181718] hover:bg-black/10 rounded"
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#181718] hover:bg-black/10 rounded"
           aria-label="Close menu"
         >
           <fiIcons.FiX className="w-5 h-5" />

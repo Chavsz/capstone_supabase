@@ -32,7 +32,7 @@ const RouteSelect = ({ onClose }) => {
       <Route
         to="/dashboard/switch"
         Icon={piIcons.PiUserSwitchBold}
-        
+        title="SWITCH"
         onClose={onClose}
       />
     </div>

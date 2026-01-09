@@ -11,6 +11,7 @@ const Login = ({ setAuth }) => {
   });
   const [message, setMessage] = useState("");
   const [loginPhoto, setLoginPhoto] = useState(null);
+  const [sidebarLogo, setSidebarLogo] = useState(null);
 
   const onChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
@@ -92,7 +93,7 @@ const Login = ({ setAuth }) => {
       try {
         const { data, error } = await supabase
           .from("landing")
-          .select("login_photo")
+          .select("login_photo, sidebar_logo")
           .order("updated_at", { ascending: false })
           .limit(1)
           .single();
@@ -104,6 +105,10 @@ const Login = ({ setAuth }) => {
         if (data?.login_photo) {
           setLoginPhoto(data.login_photo);
         }
+
+        if (data?.sidebar_logo) {
+          setSidebarLogo(data.sidebar_logo);
+        }
       } catch (err) {
         console.error("Unable to load login photo:", err.message);
       }
@@ -112,7 +117,7 @@ const Login = ({ setAuth }) => {
     fetchLoginPhoto();
   }, []);
 
-  const heroLogoSrc = loginPhoto || LAVLogo;
+  const heroLogoSrc = sidebarLogo || loginPhoto || LAVLogo;
 
   return (
     <div className="min-h-screen bg-[#eeeeee] flex items-center justify-center p-4 md:p-6">
@@ -124,15 +129,19 @@ const Login = ({ setAuth }) => {
             className="absolute top-4 left-4 flex items-center"
             aria-label="Go to LAV landing page"
           >
-            <img src={LAVLogo} alt="LAV Logo" className="w-7 h-7 object-contain" />
-            <span className="ml-2 text-[#3142a6] font-semibold text-sm">LAV</span>
+            <img
+              src={sidebarLogo || LAVLogo}
+              alt="Logo"
+              className="w-7 h-7 object-contain"
+            />
+            <span className="ml-2 text-[#3142a6] font-semibold text-sm">LOGO</span>
           </Link>
 
           <div className="flex flex-col items-center gap-4 text-center w-full">
             <div className="w-full max-w-xs rounded-2xl border border-blue-100 bg-white/70 shadow-md p-3">
               <img
                 src={heroLogoSrc}
-                alt="LAV"
+                alt="Logo"
                 className="w-full h-56 object-contain"
               />
             </div>

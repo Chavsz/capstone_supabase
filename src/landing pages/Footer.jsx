@@ -40,12 +40,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gradient-to-br from-blue-200 via-blue-800 to-purple-900 text-white relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      </div>
+    <footer className="bg-[#5370ff] text-white relative overflow-hidden">
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         {/* Main Footer Content */}
@@ -64,10 +59,10 @@ const Footer = () => {
                 <h3 className="text-2xl font-extrabold text-[#feda3c] drop-shadow">
                   LAV
                 </h3>
-                <p className="text-sm text-blue-100">Learning Assistance Volunteer</p>
+                <p className="text-sm text-white/80">Learning Assistance Volunteer</p>
               </div>
             </div>
-            <p className="text-blue-50 leading-relaxed mb-6 max-w-sm">
+            <p className="text-white/90 leading-relaxed mb-6 max-w-sm">
               Empowering students through quality education and personalized learning experiences.
             </p>
             
@@ -87,7 +82,7 @@ const Footer = () => {
                   <a
                     href="#"
                     onClick={(e) => handleSectionClick(e, link.id)}
-                    className="text-blue-200 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -109,7 +104,7 @@ const Footer = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-blue-200 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -131,7 +126,7 @@ const Footer = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-blue-200 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -151,7 +146,7 @@ const Footer = () => {
         >
           <div className="text-center">
             <h3 className="text-2xl font-bold mb-4 text-[#feda3c]">Stay Updated</h3>
-            <p className="text-blue-100 mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
+            <p className="text-white/85 mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
                 type="email"
@@ -171,20 +166,20 @@ const Footer = () => {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
           viewport={{ once: true }}
-          className="border-t border-white/20 pt-8"
+          className="bg-[#3853c2] text-white rounded-2xl px-6 py-4"
         >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-blue-200 text-sm">
+            <p className="text-white text-sm">
               © 2025 Learning Assistance Volunteer. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm">
-              <a href="#" className="text-blue-200 hover:text-white transition-colors duration-300">
+              <a href="#" className="text-white/90 hover:text-white transition-colors duration-300">
                 Privacy Policy
               </a>
-              <a href="#" className="text-blue-200 hover:text-white transition-colors duration-300">
+              <a href="#" className="text-white/90 hover:text-white transition-colors duration-300">
                 Terms of Service
               </a>
-              <a href="#" className="text-blue-200 hover:text-white transition-colors duration-300">
+              <a href="#" className="text-white/90 hover:text-white transition-colors duration-300">
                 Cookie Policy
               </a>
             </div>

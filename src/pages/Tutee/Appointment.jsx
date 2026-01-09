@@ -1373,11 +1373,11 @@ const Appointment = () => {
                         key={subject.name}
                         type="button"
                         onClick={() => handleSubjectSelect(subject.name)}
-                        className={`px-4 py-2 rounded-md border transition-colors ${
-                          selectedSubject === subject.name
-                            ? `bg-gradient-to-r ${subject.color} text-white border-transparent shadow-sm`
-                            : `${subject.bgColor} text-gray-700 border-gray-300 hover:border-blue-400`
-                        }`}
+                          className={`px-4 py-2 rounded-md border transition-colors bg-transparent ${
+                            selectedSubject === subject.name
+                              ? "text-[#4c4ba2] border-[#4c4ba2] shadow-sm"
+                              : "text-gray-700 border-gray-300 hover:border-[#4c4ba2]"
+                          }`}
                       >
                         {subject.name}
                       </button>
@@ -1584,13 +1584,13 @@ const Appointment = () => {
             </div>
 
             {/* Book Appointment Button */}
-            <button
-              type="submit"
-              disabled={loading || hasPendingEvaluation || !profileComplete}
-              className="bg-blue-600 text-white rounded-md p-3 w-full disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
-            >
-              {loading ? "Creating..." : "Book Appointment"}
-            </button>
+              <button
+                type="submit"
+                disabled={loading || hasPendingEvaluation || !profileComplete}
+                className="bg-blue-600 text-white rounded-md p-3 w-full md:w-auto md:min-w-[180px] md:self-end disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              >
+                {loading ? "Creating..." : "Book Appointment"}
+              </button>
           </form>
         </div>
         {/* Right Panel - Tutor Details */}

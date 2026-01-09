@@ -87,7 +87,7 @@ const Route = ({ to, Icon, title, isActive, onClose }) => {
       className={`flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-all duration-300 ${
         isActive
           ? "bg-white/20 text-white shadow"
-          : "text-white hover:bg-[#f9d31a] hover:text-[#181718]"
+          : "text-white hover:bg-white/20 hover:text-white"
       }`}
       onClick={() => {
         if (onClose) onClose();
