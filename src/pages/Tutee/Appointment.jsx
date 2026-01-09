@@ -1345,7 +1345,7 @@ const Appointment = () => {
         </p>
       )}
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-9">
+        <div className="grid grid-cols-1 gap-9">
         {/* Left Panel - Appointment Form */}
         <div className="bg-white p-8 rounded-md border border-gray-300">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -1376,7 +1376,7 @@ const Appointment = () => {
                           className={`px-4 py-2 rounded-md border transition-colors bg-transparent ${
                             selectedSubject === subject.name
                               ? "text-[#4c4ba2] border-[#4c4ba2] shadow-sm"
-                              : "text-gray-700 border-gray-300 hover:border-[#4c4ba2]"
+                              : "text-gray-700 border-gray-300 hover:border-[bg-blue-600]"
                           }`}
                       >
                         {subject.name}

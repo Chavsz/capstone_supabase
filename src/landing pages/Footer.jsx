@@ -56,7 +56,7 @@ const Footer = () => {
             <div className="flex items-center space-x-3 mb-6">
               <img src={LAV_image} alt="LAV Logo" className="w-12 h-12" />
               <div>
-                <h3 className="text-2xl font-extrabold text-[#feda3c] drop-shadow">
+                <h3 className="text-2xl font-extrabold text-white drop-shadow">
                   LAV
                 </h3>
                 <p className="text-sm text-white/80">Learning Assistance Volunteer</p>
@@ -75,7 +75,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.1 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-[#feda3c]">Organization</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Organization</h4>
             <ul className="space-y-3">
               {footerLinks.organization.map((link, index) => (
                 <li key={index}>
@@ -98,7 +98,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-[#feda3c]">Services</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Services</h4>
             <ul className="space-y-3">
               {footerLinks.services.map((link, index) => (
                 <li key={index}>
@@ -120,7 +120,7 @@ const Footer = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h4 className="text-lg font-semibold mb-6 text-[#feda3c]">Support</h4>
+            <h4 className="text-lg font-semibold mb-6 text-white">Support</h4>
             <ul className="space-y-3">
               {footerLinks.support.map((link, index) => (
                 <li key={index}>
@@ -142,18 +142,18 @@ const Footer = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
           viewport={{ once: true }}
-          className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 mb-12"
+          className="bg-transparent p-0 mb-12"
         >
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4 text-[#feda3c]">Stay Updated</h3>
-            <p className="text-white/85 mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
+            <h3 className="text-2xl font-bold mb-4 text-white">Stay Updated</h3>
+            <p className="text-white mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-xl border border-white/30 bg-white/15 text-white placeholder-blue-100 focus:outline-none focus:ring-2 focus:ring-[#feda3c]"
+                className="flex-1 px-4 py-3 rounded-xl border border-white/30 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
               />
-              <button className="bg-[#f9d31a] hover:bg-[#fff67f] text-[#181718] font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-[#132c91]/20">
+              <button className="bg-white/20 hover:bg-white/30 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-[#132c91]/20">
                 Subscribe
               </button>
             </div>
@@ -166,7 +166,7 @@ const Footer = () => {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
           viewport={{ once: true }}
-          className="bg-[#3853c2] text-white rounded-2xl px-6 py-4"
+          className="bg-[#3853c2] text-white rounded-none px-6 py-4 w-full"
         >
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-white text-sm">

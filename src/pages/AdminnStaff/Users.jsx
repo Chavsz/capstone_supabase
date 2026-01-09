@@ -477,7 +477,7 @@ const Users = () => {
                 onClick={() => handleSelectFilter("Student")}
                 className="flex flex-col items-center gap-4 transition-none focus:outline-none"
               >
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                  <div className="w-28 h-28 md:w-36 md:h-36 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
                   <FaUserAlt className="text-[#4766fe] text-5xl md:text-6xl" />
                 </div>
                 <span className="text-lg md:text-xl font-semibold text-[#1f2b5b]">Tutees</span>
@@ -648,7 +648,7 @@ const Users = () => {
               onClick={() => handleSelectFilter("Student")}
               className="flex flex-col items-center gap-2"
             >
-              <div className="w-20 h-20 rounded-full bg-[#f2f7ff] flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
                 <FaUserAlt className="text-[#4766fe] text-3xl" />
               </div>
               <span className="text-sm font-semibold text-gray-700">Tutees</span>

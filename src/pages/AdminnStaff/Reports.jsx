@@ -1038,7 +1038,7 @@ const Reports = () => {
 
   return (
       <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
-        <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 px-4 py-6 md:px-6 md:py-8 space-y-8">
+        <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 px-3 py-5 md:px-5 md:py-7 space-y-8">
         <header className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
