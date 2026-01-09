@@ -1345,7 +1345,7 @@ const Appointment = () => {
         </p>
       )}
       
-        <div className="grid grid-cols-1 gap-9">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-9">
         {/* Left Panel - Appointment Form */}
         <div className="bg-white p-8 rounded-md border border-gray-300">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -1584,13 +1584,15 @@ const Appointment = () => {
             </div>
 
             {/* Book Appointment Button */}
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={loading || hasPendingEvaluation || !profileComplete}
-                className="bg-blue-600 text-white rounded-md p-3 w-full md:w-auto md:min-w-[180px] md:self-end disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white rounded-md p-3 w-full md:w-auto md:min-w-[180px] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
               >
                 {loading ? "Creating..." : "Book Appointment"}
               </button>
+            </div>
           </form>
         </div>
         {/* Right Panel - Tutor Details */}
