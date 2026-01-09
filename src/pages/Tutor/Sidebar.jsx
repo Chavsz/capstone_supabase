@@ -103,37 +103,11 @@ const Sidebar = ({ setAuth, onClose }) => {
 
   return (
     <div className="flex flex-col p-4 text-[#181718] sticky top-0 bg-[#feda3c] h-screen w-[240px] shadow-xl">
-      {/* Mobile Close Button */}
-      <div className="relative mb-4 md:hidden flex-shrink-0">
+      {/* Logo Header */}
+      <div className="relative mb-9 flex-shrink-0">
         <button
           onClick={handleLogoClick}
           className="w-full flex items-center justify-center"
-          aria-label="Go to dashboard"
-        >
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="LAV logo"
-              className="h-12 w-auto object-contain"
-            />
-          ) : (
-            <span className="text-xl font-bold text-[#181718]">LAV</span>
-          )}
-        </button>
-        <button
-          onClick={onClose}
-          className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#181718] hover:bg-black/10 rounded"
-          aria-label="Close menu"
-        >
-          <fiIcons.FiX className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Desktop Title */}
-      <div className="flex-shrink-0 hidden md:block">
-        <button
-          onClick={handleLogoClick}
-          className="w-full flex items-center justify-center mb-9"
           aria-label="Go to dashboard"
         >
           {logoUrl ? (
@@ -146,6 +120,15 @@ const Sidebar = ({ setAuth, onClose }) => {
             <span className="text-xl md:text-2xl font-bold text-[#181718]">LAV</span>
           )}
         </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#181718] hover:bg-black/10 rounded md:hidden"
+            aria-label="Close menu"
+          >
+            <fiIcons.FiX className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Menu Items - Scrollable */}
