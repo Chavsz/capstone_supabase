@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
-import { FaComment, FaRegCalendarAlt } from "react-icons/fa";
+import { FaRegCalendarAlt } from "react-icons/fa";
 
-const lavRatingFields = [
-  { key: "lav_environment", label: "Environment" },
-  { key: "lav_scheduling", label: "Scheduling" },
-  { key: "lav_support", label: "Support" },
-  { key: "lav_book_again", label: "Book Again" },
-  { key: "lav_value", label: "Value for Time" },
+const tutorRatingFields = [
+  { key: "presentation_clarity", label: "Presentation" },
+  { key: "drills_sufficiency", label: "Drills" },
+  { key: "patience_enthusiasm", label: "Patience" },
+  { key: "study_skills_development", label: "Study Skills" },
+  { key: "positive_impact", label: "Impact" },
 ];
 
 const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
@@ -23,8 +23,8 @@ const shuffle = (items) => {
   return array;
 };
 
-const computeLavStats = (items = []) => {
-  const totals = lavRatingFields.reduce(
+const computeTutorStats = (items = []) => {
+  const totals = tutorRatingFields.reduce(
     (acc, field) => ({
       ...acc,
       [field.key]: { sum: 0, count: 0 },
@@ -33,7 +33,7 @@ const computeLavStats = (items = []) => {
   );
 
   items.forEach((evaluation) => {
-    lavRatingFields.forEach((field) => {
+    tutorRatingFields.forEach((field) => {
       const value = Number(evaluation[field.key]);
       if (!Number.isNaN(value)) {
         totals[field.key].sum += value;
@@ -46,7 +46,7 @@ const computeLavStats = (items = []) => {
   let overallCount = 0;
   const averages = {};
 
-  lavRatingFields.forEach((field) => {
+  tutorRatingFields.forEach((field) => {
     const { sum, count } = totals[field.key];
     averages[field.key] = count ? sum / count : null;
     overallSum += sum;
@@ -68,23 +68,21 @@ const normalizeDate = (value) => {
 const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState([]);
-  const [comments, setComments] = useState([]);
   const [appointments, setAppointments] = useState([]);
-
-  const rangeStart = useMemo(() => {
+  const [showRangePicker, setShowRangePicker] = useState(false);
+  const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
     return start;
-  }, []);
-
-  const rangeEnd = useMemo(() => {
+  });
+  const [rangeEnd, setRangeEnd] = useState(() => {
     const end = new Date();
     end.setDate(1);
     end.setMonth(end.getMonth() + 1);
     end.setHours(0, 0, 0, 0);
     return end;
-  }, []);
+  });
 
   const displayPeriodLabel = useMemo(() => {
     const startLabel = rangeStart.toLocaleDateString("en-US", {
@@ -102,6 +100,14 @@ const Reports = () => {
     return `${startLabel} - ${endLabel}`;
   }, [rangeStart, rangeEnd]);
 
+  const toDateInputValue = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     let active = true;
 
@@ -112,7 +118,6 @@ const Reports = () => {
         if (!session?.user?.id) {
           if (active) {
             setEvaluations([]);
-            setComments([]);
             setAppointments([]);
           }
           return;
@@ -123,15 +128,12 @@ const Reports = () => {
           .select(
             [
               "evaluation_id",
-              "tutor_comment",
               "created_at",
-              "appointment_id",
-              "lav_environment",
-              "lav_scheduling",
-              "lav_support",
-              "lav_book_again",
-              "lav_value",
-              "appointment:appointment_id(user_id)",
+              "presentation_clarity",
+              "drills_sufficiency",
+              "patience_enthusiasm",
+              "study_skills_development",
+              "positive_impact",
             ].join(", ")
           )
           .eq("tutor_id", session.user.id)
@@ -147,25 +149,13 @@ const Reports = () => {
 
         if (appointmentError) throw appointmentError;
 
-        const evaluationsData = data || [];
-
-        const filteredComments = evaluationsData
-          .filter((item) => item.tutor_comment && item.tutor_comment.trim() !== "")
-          .map((item) => ({
-            id: item.evaluation_id,
-            comment: item.tutor_comment.trim(),
-            tuteeId: item.appointment?.user_id || "anonymous",
-          }));
-
         if (!active) return;
-        setEvaluations(evaluationsData);
-        setComments(shuffle(filteredComments));
+        setEvaluations(data || []);
         setAppointments(appointmentData || []);
       } catch (err) {
         console.error("Unable to load reports:", err.message);
         if (active) {
           setEvaluations([]);
-          setComments([]);
           setAppointments([]);
         }
       } finally {
@@ -179,18 +169,6 @@ const Reports = () => {
       active = false;
     };
   }, []);
-
-  const maskedNames = useMemo(() => {
-    const map = new Map();
-    let counter = 1;
-    comments.forEach((item) => {
-      if (!map.has(item.tuteeId)) {
-        map.set(item.tuteeId, `Tutee ${counter}`);
-        counter += 1;
-      }
-    });
-    return map;
-  }, [comments]);
 
   const evaluationsInPeriod = useMemo(() => {
     return evaluations.filter((evaluation) => {
@@ -234,13 +212,13 @@ const Reports = () => {
     }, 0);
   }, [completedAppointmentsInPeriod]);
 
-  const lavStatsPeriod = useMemo(
-    () => computeLavStats(evaluationsInPeriod),
+  const tutorStatsPeriod = useMemo(
+    () => computeTutorStats(evaluationsInPeriod),
     [evaluationsInPeriod]
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-[#feda3c]">
+    <div className="min-h-screen p-4 md:p-8 bg-[#f8f9f0]">
       <div className="max-w-5xl mx-auto space-y-6">
         <header className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -253,9 +231,55 @@ const Reports = () => {
                 Overview of completed sessions and feedback.
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700">
-              <FaRegCalendarAlt className="text-sm" />
-              {displayPeriodLabel}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowRangePicker((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700"
+              >
+                <FaRegCalendarAlt className="text-sm" />
+                {displayPeriodLabel}
+              </button>
+              {showRangePicker && (
+                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white p-3 shadow-lg z-10">
+                  <div className="space-y-3">
+                    <label className="block text-xs font-semibold text-gray-500">
+                      Start date
+                      <input
+                        type="date"
+                        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                        value={toDateInputValue(rangeStart)}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (!value) return;
+                          const nextStart = new Date(value);
+                          nextStart.setHours(0, 0, 0, 0);
+                          if (nextStart < rangeEnd) {
+                            setRangeStart(nextStart);
+                          }
+                        }}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold text-gray-500">
+                      End date
+                      <input
+                        type="date"
+                        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                        value={toDateInputValue(rangeEnd)}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (!value) return;
+                          const nextEnd = new Date(value);
+                          nextEnd.setHours(0, 0, 0, 0);
+                          if (nextEnd > rangeStart) {
+                            setRangeEnd(nextEnd);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -315,7 +339,7 @@ const Reports = () => {
 
         <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
           <div className="p-4 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Tutee Satisfaction</h2>
             <p className="text-sm text-gray-500">
               Average ratings for {displayPeriodLabel}.
             </p>
@@ -325,13 +349,13 @@ const Reports = () => {
               <p className="text-sm text-gray-500 text-center py-6">Loading feedback...</p>
             ) : evaluationsInPeriod.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-6">
-                No LAV feedback has been submitted yet.
+                No tutor feedback has been submitted yet.
               </p>
             ) : (
               <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                 <div className="flex items-end justify-between gap-3">
-                  {lavRatingFields.map((field, index) => {
-                    const avg = lavStatsPeriod.averages[field.key];
+                  {tutorRatingFields.map((field, index) => {
+                    const avg = tutorStatsPeriod.averages[field.key];
                     const height = avg ? Math.round((avg / 5) * 120) : 0;
                     const barColors = [
                       "#f6d110",
@@ -364,54 +388,14 @@ const Reports = () => {
                     Overall Average
                   </p>
                   <p className="text-xl font-bold text-[#2fb592]">
-                    {lavStatsPeriod.overallAverage !== null
-                      ? lavStatsPeriod.overallAverage.toFixed(2)
+                    {tutorStatsPeriod.overallAverage !== null
+                      ? tutorStatsPeriod.overallAverage.toFixed(2)
                       : "-"}
                   </p>
                 </div>
               </div>
             )}
           </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-              <FaComment />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800">Tutee Comments</h2>
-              <p className="text-sm text-gray-500">
-                Anonymous feedback from completed sessions.
-              </p>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-500">
-              Loading comments...
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-500">
-              No comments available yet.
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {comments.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm flex flex-col gap-3"
-                >
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-semibold text-blue-600">
-                      {maskedNames.get(item.tuteeId) || "Tutee"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{item.comment}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </section>
       </div>
     </div>
