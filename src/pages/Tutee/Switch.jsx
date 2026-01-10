@@ -5,6 +5,7 @@ import { supabase } from "../../supabase-client";
 const Switch = () => {
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchStudent, setCanSwitchStudent] = useState(false);
+  const [currentViewRole, setCurrentViewRole] = useState("student");
   const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
@@ -26,13 +27,16 @@ const Switch = () => {
           throw error;
         }
 
+        const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
         const isStudent = String(data?.role || "").toLowerCase() === "student";
         setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin && isStudent));
         setCanSwitchStudent(isStudent);
+        setCurrentViewRole((storedOverride || data?.role || "student").toLowerCase());
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
         setCanSwitchStudent(false);
+        setCurrentViewRole("student");
       } finally {
         setSwitchChecked(true);
       }
@@ -148,7 +152,7 @@ const Switch = () => {
                   Switch to Admin
                 </button>
               )}
-              {canSwitchStudent && (
+              {canSwitchStudent && currentViewRole !== "student" && (
                 <button
                   onClick={handleStayStudent}
                   className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"

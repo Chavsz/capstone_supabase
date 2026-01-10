@@ -11,6 +11,7 @@ const Switch = () => {
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchStudent, setCanSwitchStudent] = useState(false);
   const [canSwitchTutor, setCanSwitchTutor] = useState(false);
+  const [currentViewRole, setCurrentViewRole] = useState("tutor");
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -56,16 +57,19 @@ const Switch = () => {
           throw error;
         }
 
+        const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
         const isAdmin = Boolean(data?.is_admin && !data?.is_superadmin);
         const isTutor = String(data?.role || "").toLowerCase() === "tutor";
         setCanSwitchAdmin(isAdmin);
         setCanSwitchStudent(isTutor);
         setCanSwitchTutor(isTutor);
+        setCurrentViewRole((storedOverride || data?.role || "tutor").toLowerCase());
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
         setCanSwitchStudent(false);
         setCanSwitchTutor(false);
+        setCurrentViewRole("tutor");
       }
     };
 
@@ -283,7 +287,7 @@ const Switch = () => {
                 </ul>
               </div>
               <div className="mt-6 flex flex-col gap-3">
-                {canSwitchTutor && (
+                {canSwitchTutor && currentViewRole !== "tutor" && (
                   <button
                     onClick={handleSwitchToTutor}
                     className="w-full rounded-lg border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
@@ -291,7 +295,7 @@ const Switch = () => {
                     Switch to Tutor
                   </button>
                 )}
-                {canSwitchStudent && (
+                {canSwitchStudent && currentViewRole !== "student" && (
                   <button
                     onClick={handleSwitchClick}
                     disabled={isLoading}
@@ -300,7 +304,7 @@ const Switch = () => {
                     {isLoading ? "Switching..." : "Switch to Student"}
                   </button>
                 )}
-                {canSwitchAdmin && (
+                {canSwitchAdmin && currentViewRole !== "admin" && (
                   <button
                     onClick={handleAdminSwitchClick}
                     disabled={isAdminLoading}

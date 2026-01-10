@@ -5,6 +5,7 @@ import { supabase } from "../../supabase-client";
 const Switch = () => {
   const [loginPhoto, setLoginPhoto] = useState(null);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [currentViewRole, setCurrentViewRole] = useState("admin");
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -37,16 +38,19 @@ const Switch = () => {
         if (!session) return;
         const { data, error } = await supabase
           .from("users")
-          .select("is_admin, is_superadmin")
+          .select("role, is_admin, is_superadmin")
           .eq("user_id", session.user.id)
           .single();
         if (error && error.code !== "PGRST116") {
           throw error;
         }
+        const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
         setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+        setCurrentViewRole((storedOverride || data?.role || "admin").toLowerCase());
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
+        setCurrentViewRole("admin");
       }
     };
 
@@ -116,18 +120,22 @@ const Switch = () => {
                   <li>Support more learners</li>
                 </ul>
               </div>
-              <button
-                onClick={() => handleSwitchToRole("tutor")}
-                className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg"
-              >
-                Switch to Tutor
-              </button>
-              <button
-                onClick={() => handleSwitchToRole("student")}
-                className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
-              >
-                Switch to Student
-              </button>
+              {currentViewRole !== "tutor" && (
+                <button
+                  onClick={() => handleSwitchToRole("tutor")}
+                  className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg"
+                >
+                  Switch to Tutor
+                </button>
+              )}
+              {currentViewRole !== "student" && (
+                <button
+                  onClick={() => handleSwitchToRole("student")}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                >
+                  Switch to Student
+                </button>
+              )}
             </div>
           </div>
         </div>
