@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
-import ConfirmationModal from "../../components/ConfirmationModal";
 
 const Switch = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
-  const [canSwitchTutor, setCanSwitchTutor] = useState(false);
+  const [canSwitchStudent, setCanSwitchStudent] = useState(false);
   const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
+  const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
 
   useEffect(() => {
     const fetchAdminPermissions = async () => {
@@ -20,7 +18,7 @@ const Switch = () => {
         if (!session) return;
         const { data, error } = await supabase
           .from("users")
-          .select("is_admin, is_superadmin")
+          .select("role, is_admin, is_superadmin")
           .eq("user_id", session.user.id)
           .single();
 
@@ -28,18 +26,13 @@ const Switch = () => {
           throw error;
         }
 
-        const isAdmin = Boolean(data?.is_admin || data?.is_superadmin);
-        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
-        const { data: tutorProfile } = await supabase
-          .from("profile")
-          .select("profile_id")
-          .eq("user_id", session.user.id)
-          .single();
-        setCanSwitchTutor(Boolean(tutorProfile));
+        const isStudent = String(data?.role || "").toLowerCase() === "student";
+        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin && isStudent));
+        setCanSwitchStudent(isStudent);
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
-        setCanSwitchTutor(false);
+        setCanSwitchStudent(false);
       } finally {
         setSwitchChecked(true);
       }
@@ -72,56 +65,26 @@ const Switch = () => {
 
   useEffect(() => {
     if (!switchChecked) return;
-    if (!canSwitchTutor && !canSwitchAdmin) {
+    if (!canSwitchAdmin) {
       navigate("/dashboard", { replace: true });
     }
-  }, [canSwitchAdmin, canSwitchTutor, navigate, switchChecked]);
+  }, [canSwitchAdmin, navigate, switchChecked]);
 
-  const handleSwitchClick = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmSwitch = async () => {
-    setIsLoading(true);
+  const handleSwitchToAdmin = () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert("You must be logged in to switch roles");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("users")
-        .update({ role: "tutor" })
-        .eq("user_id", session.user.id);
-
-      if (error) throw error;
-
-      setIsModalOpen(false);
-      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
-
-      try {
-        localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
-      } catch (err) {
-        // Ignore storage errors
-      }
-      
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Error switching role:", error);
-      alert("Failed to switch role. Please try again.");
-    } finally {
-      setIsLoading(false);
+      localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
+      localStorage.setItem(ROLE_OVERRIDE_KEY, "admin");
+    } catch (err) {
+      // Ignore storage errors
     }
-  };
-
-  const handleCancelSwitch = () => {
-    setIsModalOpen(false);
+    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "admin" } }));
+    navigate("/dashboard");
   };
 
   const handleStayStudent = () => {
     try {
       localStorage.setItem(ROLE_OVERRIDE_KEY, "student");
+      localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
     } catch (err) {
       // Ignore storage errors
     }
@@ -129,7 +92,7 @@ const Switch = () => {
     navigate("/dashboard");
   };
 
-  if (switchChecked && !canSwitchTutor && !canSwitchAdmin) {
+  if (switchChecked && !canSwitchAdmin) {
     return null;
   }
 
@@ -142,10 +105,9 @@ const Switch = () => {
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">
                 Role Switch
               </p>
-              <h1 className="text-3xl font-bold text-gray-800">Switch to Tutor</h1>
+              <h1 className="text-3xl font-bold text-gray-800">Role Switch</h1>
               <p className="text-gray-600">
-                Move to the tutor experience to host sessions, manage your availability,
-                and support your tutees.
+                Switch between student and admin views based on your access.
               </p>
               <div className="flex flex-wrap gap-2 text-xs text-blue-700">
                 <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
@@ -171,28 +133,27 @@ const Switch = () => {
                 <div className="text-3xl">⇄</div>
               </div>
               <div className="space-y-2 text-sm text-blue-50">
-                <p>Switch to tutor to:</p>
+                <p>Switch to admin to:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Accept tutoring sessions</li>
-                  <li>Manage availability</li>
-                  <li>Support more learners</li>
+                  <li>Access admin insights</li>
+                  <li>Manage reports</li>
+                  <li>Switch back anytime</li>
                 </ul>
               </div>
-              {canSwitchTutor && (
+              {canSwitchAdmin && (
                 <button
-                  onClick={handleSwitchClick}
-                  disabled={isLoading}
+                  onClick={handleSwitchToAdmin}
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Switching..." : "Switch to Tutor"}
+                  Switch to Admin
                 </button>
               )}
-              {canSwitchAdmin && (
+              {canSwitchStudent && (
                 <button
                   onClick={handleStayStudent}
                   className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
                 >
-                  Switch to Tutee
+                  Switch to Student
                 </button>
               )}
             </div>
@@ -200,15 +161,6 @@ const Switch = () => {
         </div>
       </div>
 
-      <ConfirmationModal
-        isOpen={isModalOpen}
-        onClose={handleCancelSwitch}
-        onConfirm={handleConfirmSwitch}
-        title="Switch to Tutor Role"
-        message="Are you sure you want to switch to the Tutor interface? This will permanently change your role in the database and affect your available features."
-        confirmText="Switch to Tutor"
-        cancelText="Cancel"
-      />
     </div>
   );
 };

@@ -10,6 +10,7 @@ const Switch = () => {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchStudent, setCanSwitchStudent] = useState(false);
+  const [canSwitchTutor, setCanSwitchTutor] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
@@ -47,7 +48,7 @@ const Switch = () => {
         if (!session) return;
         const { data, error } = await supabase
           .from("users")
-          .select("is_admin, is_superadmin")
+          .select("role, is_admin, is_superadmin")
           .eq("user_id", session.user.id)
           .single();
 
@@ -55,12 +56,16 @@ const Switch = () => {
           throw error;
         }
 
-        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
-        setCanSwitchStudent(!data?.is_superadmin);
+        const isAdmin = Boolean(data?.is_admin && !data?.is_superadmin);
+        const isTutor = String(data?.role || "").toLowerCase() === "tutor";
+        setCanSwitchAdmin(isAdmin);
+        setCanSwitchStudent(isTutor);
+        setCanSwitchTutor(isTutor);
       } catch (err) {
         console.error("Error checking admin permissions:", err.message);
         setCanSwitchAdmin(false);
         setCanSwitchStudent(false);
+        setCanSwitchTutor(false);
       }
     };
 
@@ -73,6 +78,35 @@ const Switch = () => {
 
   const handleAdminSwitchClick = () => {
     setIsAdminModalOpen(true);
+  };
+
+  const handleSwitchToTutor = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("You must be logged in to switch roles");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update({ role: "tutor" })
+        .eq("user_id", session.user.id);
+
+      if (error) throw error;
+
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
+        localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
+      } catch (err) {
+        // Ignore storage errors
+      }
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error switching to tutor:", error);
+      alert("Failed to switch to tutor. Please try again.");
+    }
   };
 
   const syncStudentProfile = async (userId) => {
@@ -249,6 +283,14 @@ const Switch = () => {
                 </ul>
               </div>
               <div className="mt-6 flex flex-col gap-3">
+                {canSwitchTutor && (
+                  <button
+                    onClick={handleSwitchToTutor}
+                    className="w-full rounded-lg border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                  >
+                    Switch to Tutor
+                  </button>
+                )}
                 {canSwitchStudent && (
                   <button
                     onClick={handleSwitchClick}

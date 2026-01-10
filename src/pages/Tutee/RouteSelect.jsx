@@ -8,7 +8,7 @@ import { RiCalendarScheduleLine } from "react-icons/ri";
 
 const RouteSelect = ({ onClose }) => {
   const location = useLocation();
-  const [canSwitchTutor, setCanSwitchTutor] = React.useState(false);
+  const [canShowSwitch, setCanShowSwitch] = React.useState(false);
 
   React.useEffect(() => {
     const fetchSwitchAccess = async () => {
@@ -17,7 +17,7 @@ const RouteSelect = ({ onClose }) => {
         if (!session) return;
         const { data: userData, error: userError } = await supabase
           .from("users")
-          .select("is_admin, is_superadmin")
+          .select("role, is_admin, is_superadmin")
           .eq("user_id", session.user.id)
           .single();
 
@@ -25,17 +25,12 @@ const RouteSelect = ({ onClose }) => {
           throw userError;
         }
 
-        const isAdmin = Boolean(userData?.is_admin || userData?.is_superadmin);
-        const { data: tutorProfile } = await supabase
-          .from("profile")
-          .select("profile_id")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setCanSwitchTutor(Boolean(tutorProfile));
+        const isAdmin = Boolean(userData?.is_admin && !userData?.is_superadmin);
+        const isStudent = String(userData?.role || "").toLowerCase() === "student";
+        setCanShowSwitch(Boolean(isAdmin && isStudent));
       } catch (err) {
         console.error("Unable to check switch access:", err.message);
-        setCanSwitchTutor(false);
+        setCanShowSwitch(false);
       }
     };
 
@@ -67,7 +62,7 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onClose={onClose}
       />
-      {canSwitchTutor && (
+      {canShowSwitch && (
         <Route
           to="/dashboard/switch"
           Icon={PiUserSwitchBold}
