@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import RouteSelect from "./RouteSelect";
@@ -14,7 +14,7 @@ const Sidebar = ({ setAuth, onClose }) => {
     if (onClose) onClose();
   };
 
-  const fetchLogo = async () => {
+  const fetchLogo = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("landing")
@@ -32,7 +32,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       console.error("Error loading logo:", err.message);
       setLogoUrl(null);
     }
-  };
+  }, []);
 
   const clearAuthStorage = () => {
     try {
@@ -99,7 +99,20 @@ const Sidebar = ({ setAuth, onClose }) => {
 
   useEffect(() => {
     fetchLogo();
-  }, []);
+  }, [fetchLogo]);
+
+  useEffect(() => {
+    const handleRoleChange = () => {
+      fetchLogo();
+    };
+
+    window.addEventListener("roleChanged", handleRoleChange);
+    window.addEventListener("storage", handleRoleChange);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChange);
+      window.removeEventListener("storage", handleRoleChange);
+    };
+  }, [fetchLogo]);
 
   return (
     <div className="flex flex-col p-4 text-white sticky top-0 bg-gradient-to-b from-[#4c4ba2] to-[#2f3283] h-screen w-[240px] shadow-xl">
