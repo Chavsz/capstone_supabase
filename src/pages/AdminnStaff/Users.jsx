@@ -774,16 +774,24 @@ const Users = () => {
                   Move to Student
                 </button>
               )}
-              {isSuperAdmin && !selectedUser.is_admin && !selectedUser.is_superadmin && (
-                <button
-                  className={`px-3 py-1.5 text-sm rounded-md ${
-                    "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => updateAdminStatus(selectedUser, true)}
-                >
-                  Add as Admin
-                </button>
-              )}
+                {isSuperAdmin && !selectedUser.is_admin && !selectedUser.is_superadmin && (
+                  <button
+                    className={`px-3 py-1.5 text-sm rounded-md ${
+                      "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() => updateAdminStatus(selectedUser, true)}
+                  >
+                    Add as Admin
+                  </button>
+                )}
+                {isSuperAdmin && selectedUser.is_admin && !selectedUser.is_superadmin && (
+                  <button
+                    className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    onClick={() => updateAdminStatus(selectedUser, false)}
+                  >
+                    Remove as Admin
+                  </button>
+                )}
               {isSuperAdmin && (
                 <button
                   className={`px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 ${
