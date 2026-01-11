@@ -10,32 +10,45 @@ const RouteSelect = ({ onClose }) => {
   const location = useLocation();
   const [canShowSwitch, setCanShowSwitch] = React.useState(false);
 
-  React.useEffect(() => {
-    const fetchSwitchAccess = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("role, is_admin, is_superadmin")
-          .eq("user_id", session.user.id)
-          .single();
+  const fetchSwitchAccess = React.useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("role, is_admin, is_superadmin")
+        .eq("user_id", session.user.id)
+        .single();
 
-        if (userError && userError.code !== "PGRST116") {
-          throw userError;
-        }
-
-        const isAdmin = Boolean(userData?.is_admin && !userData?.is_superadmin);
-        const isStudent = String(userData?.role || "").toLowerCase() === "student";
-        setCanShowSwitch(Boolean(isAdmin && isStudent));
-      } catch (err) {
-        console.error("Unable to check switch access:", err.message);
-        setCanShowSwitch(false);
+      if (userError && userError.code !== "PGRST116") {
+        throw userError;
       }
+
+      const isAdmin = Boolean(userData?.is_admin && !userData?.is_superadmin);
+      const isStudent = String(userData?.role || "").toLowerCase() === "student";
+      setCanShowSwitch(Boolean(isAdmin && isStudent));
+    } catch (err) {
+      console.error("Unable to check switch access:", err.message);
+      setCanShowSwitch(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchSwitchAccess();
+  }, [fetchSwitchAccess]);
+
+  React.useEffect(() => {
+    const handleRoleChange = () => {
+      fetchSwitchAccess();
     };
 
-    fetchSwitchAccess();
-  }, []);
+    window.addEventListener("roleChanged", handleRoleChange);
+    window.addEventListener("storage", handleRoleChange);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChange);
+      window.removeEventListener("storage", handleRoleChange);
+    };
+  }, [fetchSwitchAccess]);
 
   return (
     <div className="space-y-1">

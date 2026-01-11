@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
@@ -9,6 +9,28 @@ const Switch = () => {
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
+
+  const fetchAdminPermissions = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("role, is_admin, is_superadmin")
+        .eq("user_id", session.user.id)
+        .single();
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
+      const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
+      setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+      setCurrentViewRole((storedOverride || data?.role || "admin").toLowerCase());
+    } catch (err) {
+      console.error("Error checking admin permissions:", err.message);
+      setCanSwitchAdmin(false);
+      setCurrentViewRole("admin");
+    }
+  }, [ROLE_OVERRIDE_KEY]);
 
   useEffect(() => {
     const fetchLoginPhoto = async () => {
@@ -32,43 +54,23 @@ const Switch = () => {
       }
     };
 
-    const fetchAdminPermissions = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const { data, error } = await supabase
-          .from("users")
-          .select("role, is_admin, is_superadmin")
-          .eq("user_id", session.user.id)
-          .single();
-        if (error && error.code !== "PGRST116") {
-          throw error;
-        }
-        const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
-        setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
-        setCurrentViewRole((storedOverride || data?.role || "admin").toLowerCase());
-      } catch (err) {
-        console.error("Error checking admin permissions:", err.message);
-        setCanSwitchAdmin(false);
-        setCurrentViewRole("admin");
-      }
-    };
-
     fetchLoginPhoto();
     fetchAdminPermissions();
-  }, []);
+  }, [fetchAdminPermissions]);
 
   useEffect(() => {
     const handleRoleChange = (event) => {
       const nextRole = event.detail?.newRole;
       if (nextRole) {
         setCurrentViewRole(String(nextRole).toLowerCase());
+        fetchAdminPermissions();
       }
     };
 
     const handleStorage = (event) => {
       if (event.key === ROLE_OVERRIDE_KEY) {
         setCurrentViewRole((event.newValue || "admin").toLowerCase());
+        fetchAdminPermissions();
       }
     };
 
@@ -78,7 +80,7 @@ const Switch = () => {
       window.removeEventListener("roleChanged", handleRoleChange);
       window.removeEventListener("storage", handleStorage);
     };
-  }, [ROLE_OVERRIDE_KEY]);
+  }, [ROLE_OVERRIDE_KEY, fetchAdminPermissions]);
 
   const handleSwitchToRole = (role) => {
     if (!canSwitchAdmin) return;

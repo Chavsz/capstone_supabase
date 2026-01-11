@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import ConfirmationModal from "../../components/ConfirmationModal";
@@ -42,51 +42,53 @@ const Switch = () => {
     fetchLoginPhoto();
   }, []);
 
-  useEffect(() => {
-    const fetchAdminPermissions = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const { data, error } = await supabase
-          .from("users")
-          .select("role, is_admin, is_superadmin")
-          .eq("user_id", session.user.id)
-          .single();
+  const fetchAdminPermissions = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("role, is_admin, is_superadmin")
+        .eq("user_id", session.user.id)
+        .single();
 
-        if (error && error.code !== "PGRST116") {
-          throw error;
-        }
-
-        const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
-        const isAdmin = Boolean(data?.is_admin && !data?.is_superadmin);
-        const isTutor = String(data?.role || "").toLowerCase() === "tutor";
-        setCanSwitchAdmin(isAdmin);
-        setCanSwitchStudent(isTutor);
-        setCanSwitchTutor(isTutor);
-        setCurrentViewRole((storedOverride || data?.role || "tutor").toLowerCase());
-      } catch (err) {
-        console.error("Error checking admin permissions:", err.message);
-        setCanSwitchAdmin(false);
-        setCanSwitchStudent(false);
-        setCanSwitchTutor(false);
-        setCurrentViewRole("tutor");
+      if (error && error.code !== "PGRST116") {
+        throw error;
       }
-    };
 
+      const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
+      const isAdmin = Boolean(data?.is_admin && !data?.is_superadmin);
+      const isTutor = String(data?.role || "").toLowerCase() === "tutor";
+      setCanSwitchAdmin(isAdmin);
+      setCanSwitchStudent(isTutor);
+      setCanSwitchTutor(isTutor);
+      setCurrentViewRole((storedOverride || data?.role || "tutor").toLowerCase());
+    } catch (err) {
+      console.error("Error checking admin permissions:", err.message);
+      setCanSwitchAdmin(false);
+      setCanSwitchStudent(false);
+      setCanSwitchTutor(false);
+      setCurrentViewRole("tutor");
+    }
+  }, [ROLE_OVERRIDE_KEY]);
+
+  useEffect(() => {
     fetchAdminPermissions();
-  }, []);
+  }, [fetchAdminPermissions]);
 
   useEffect(() => {
     const handleRoleChange = (event) => {
       const nextRole = event.detail?.newRole;
       if (nextRole) {
         setCurrentViewRole(String(nextRole).toLowerCase());
+        fetchAdminPermissions();
       }
     };
 
     const handleStorage = (event) => {
       if (event.key === ROLE_OVERRIDE_KEY) {
         setCurrentViewRole((event.newValue || "tutor").toLowerCase());
+        fetchAdminPermissions();
       }
     };
 
@@ -96,7 +98,7 @@ const Switch = () => {
       window.removeEventListener("roleChanged", handleRoleChange);
       window.removeEventListener("storage", handleStorage);
     };
-  }, [ROLE_OVERRIDE_KEY]);
+  }, [ROLE_OVERRIDE_KEY, fetchAdminPermissions]);
 
   const handleSwitchClick = () => {
     setIsModalOpen(true);

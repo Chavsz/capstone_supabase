@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import RouteSelect from "./RouteSelect";
@@ -39,7 +39,7 @@ const Sidebar = ({ setAuth, onClose }) => {
     }
   };
 
-  const fetchAdminPermissions = async () => {
+  const fetchAdminPermissions = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -56,9 +56,9 @@ const Sidebar = ({ setAuth, onClose }) => {
       console.error("Error checking admin permissions:", err.message);
       setCanSwitchAdmin(false);
     }
-  };
+  }, []);
 
-  const syncRoleOverrideState = () => {
+  const syncRoleOverrideState = useCallback(() => {
     try {
       setRoleOverridePrev(localStorage.getItem(ROLE_OVERRIDE_PREV_KEY));
       setRoleOverride(localStorage.getItem(ROLE_OVERRIDE_KEY));
@@ -66,7 +66,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       setRoleOverridePrev(null);
       setRoleOverride(null);
     }
-  };
+  }, [ROLE_OVERRIDE_KEY, ROLE_OVERRIDE_PREV_KEY]);
 
   const handleSwitchBack = () => {
     if (!roleOverridePrev) return;
@@ -162,20 +162,27 @@ const Sidebar = ({ setAuth, onClose }) => {
     fetchLogo();
     syncRoleOverrideState();
     fetchAdminPermissions();
-  }, []);
+  }, [fetchAdminPermissions, syncRoleOverrideState]);
 
   useEffect(() => {
     const handleStorage = (event) => {
       if (event.key === ROLE_OVERRIDE_KEY || event.key === ROLE_OVERRIDE_PREV_KEY) {
         syncRoleOverrideState();
+        fetchAdminPermissions();
       }
     };
 
     window.addEventListener("storage", handleStorage);
+    const handleRoleChange = () => {
+      syncRoleOverrideState();
+      fetchAdminPermissions();
+    };
+    window.addEventListener("roleChanged", handleRoleChange);
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("roleChanged", handleRoleChange);
     };
-  }, []);
+  }, [fetchAdminPermissions, syncRoleOverrideState, ROLE_OVERRIDE_KEY, ROLE_OVERRIDE_PREV_KEY]);
 
   return (
     <div className="flex flex-col p-4 text-white sticky top-0 bg-[#fff7f7] h-screen w-[240px]">
