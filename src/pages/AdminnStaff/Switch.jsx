@@ -97,6 +97,9 @@ const Switch = () => {
     navigate("/dashboard");
   };
 
+  const canSwitchToTutor = currentUserRole === "tutor" && currentViewRole !== "tutor";
+  const canSwitchToStudent = currentViewRole !== "student";
+
   return (
     <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
       <div className="w-full max-w-4xl">
@@ -111,10 +114,13 @@ const Switch = () => {
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">
                 Role Switch
               </p>
-              <h1 className="text-3xl font-bold text-gray-800">Switch to Tutor</h1>
+              <h1 className="text-3xl font-bold text-gray-800">
+                {canSwitchToTutor ? "Switch to Tutor" : "Switch to Student"}
+              </h1>
               <p className="text-gray-600">
-                Move to the tutor experience to host sessions, manage your availability,
-                and support your tutees. You can switch to student if needed.
+                {canSwitchToTutor
+                  ? "Move to the tutor experience to host sessions, manage your availability, and support your tutees."
+                  : "Move to the student experience to book tutors and manage your sessions."}
               </p>
               <div className="flex flex-wrap gap-2 text-xs text-blue-700">
                 <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
@@ -140,14 +146,27 @@ const Switch = () => {
                 <div className="text-3xl">⇄</div>
               </div>
               <div className="space-y-2 text-sm text-blue-50">
-                <p>Switch to tutor to:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Accept tutoring sessions</li>
-                  <li>Manage availability</li>
-                  <li>Support more learners</li>
-                </ul>
+                {canSwitchToTutor ? (
+                  <>
+                    <p>Switch to tutor to:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Accept tutoring sessions</li>
+                      <li>Manage availability</li>
+                      <li>Support more learners</li>
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p>Switch to student to:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Book tutoring sessions</li>
+                      <li>Track your requests</li>
+                      <li>Submit evaluations</li>
+                    </ul>
+                  </>
+                )}
               </div>
-              {currentUserRole === "tutor" && currentViewRole !== "tutor" && (
+              {canSwitchToTutor && (
                 <button
                   onClick={() => handleSwitchToRole("tutor")}
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg"
@@ -155,7 +174,7 @@ const Switch = () => {
                   Switch to Tutor
                 </button>
               )}
-              {currentViewRole !== "student" && (
+              {canSwitchToStudent && (
                 <button
                   onClick={() => handleSwitchToRole("student")}
                   className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
