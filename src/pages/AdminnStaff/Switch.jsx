@@ -6,6 +6,7 @@ const Switch = () => {
   const [loginPhoto, setLoginPhoto] = useState(null);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [currentViewRole, setCurrentViewRole] = useState("admin");
+  const [currentUserRole, setCurrentUserRole] = useState("admin");
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -25,10 +26,12 @@ const Switch = () => {
       const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
       setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
       setCurrentViewRole((storedOverride || data?.role || "admin").toLowerCase());
+      setCurrentUserRole(String(data?.role || "admin").toLowerCase());
     } catch (err) {
       console.error("Error checking admin permissions:", err.message);
       setCanSwitchAdmin(false);
       setCurrentViewRole("admin");
+      setCurrentUserRole("admin");
     }
   }, [ROLE_OVERRIDE_KEY]);
 
@@ -144,7 +147,7 @@ const Switch = () => {
                   <li>Support more learners</li>
                 </ul>
               </div>
-              {currentViewRole !== "tutor" && (
+              {currentUserRole === "tutor" && currentViewRole !== "tutor" && (
                 <button
                   onClick={() => handleSwitchToRole("tutor")}
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg"
