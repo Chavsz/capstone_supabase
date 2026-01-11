@@ -76,6 +76,28 @@ const Switch = () => {
     fetchAdminPermissions();
   }, []);
 
+  useEffect(() => {
+    const handleRoleChange = (event) => {
+      const nextRole = event.detail?.newRole;
+      if (nextRole) {
+        setCurrentViewRole(String(nextRole).toLowerCase());
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === ROLE_OVERRIDE_KEY) {
+        setCurrentViewRole((event.newValue || "tutor").toLowerCase());
+      }
+    };
+
+    window.addEventListener("roleChanged", handleRoleChange);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChange);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [ROLE_OVERRIDE_KEY]);
+
   const handleSwitchClick = () => {
     setIsModalOpen(true);
   };

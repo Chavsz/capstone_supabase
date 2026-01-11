@@ -68,6 +68,28 @@ const Switch = () => {
   }, []);
 
   useEffect(() => {
+    const handleRoleChange = (event) => {
+      const nextRole = event.detail?.newRole;
+      if (nextRole) {
+        setCurrentViewRole(String(nextRole).toLowerCase());
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === ROLE_OVERRIDE_KEY) {
+        setCurrentViewRole((event.newValue || "student").toLowerCase());
+      }
+    };
+
+    window.addEventListener("roleChanged", handleRoleChange);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("roleChanged", handleRoleChange);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [ROLE_OVERRIDE_KEY]);
+
+  useEffect(() => {
     if (!switchChecked) return;
     if (!canSwitchAdmin) {
       navigate("/dashboard", { replace: true });
