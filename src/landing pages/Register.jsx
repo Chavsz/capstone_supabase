@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase-client";
 import LAVLogo from "../assets/LAV_image.png";
 
@@ -13,6 +13,7 @@ const Register = ({ setAuth }) => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [loginPhoto, setLoginPhoto] = useState(null);
+  const navigate = useNavigate();
 
   const { name, email, password, role } = inputs;
 
@@ -77,11 +78,13 @@ const Register = ({ setAuth }) => {
       console.error(err.message);
       const lowerMessage = (err?.message || "").toLowerCase();
       if (lowerMessage.includes("already registered") || lowerMessage.includes("already been registered")) {
-        setMessage("This email is already in use. Please log in or reset your password.");
+        setMessage("Email already exists. Redirecting you to log in...");
+        setMessageType("error");
+        setTimeout(() => navigate("/login"), 1200);
       } else {
         setMessage(err.message || "Registration failed. Please try again.");
+        setMessageType("error");
       }
-      setMessageType("error");
     }
   };
 
