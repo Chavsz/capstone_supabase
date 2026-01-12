@@ -118,6 +118,7 @@ const Appointment = () => {
         (profilesData || []).forEach((profile) => {
           profilesMap[profile.user_id] = {
             profile_id: profile.profile_id,
+            nickname: profile.nickname,
             subject: profile.subject,
             specialization: profile.specialization,
             college: profile.college,
@@ -1173,12 +1174,12 @@ const Appointment = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className={nameClass}>{capitalizeWords(tutor.name)}</p>
-                      <p className={metaClass}>
-                        {capitalizeWords(
-                          details.specialization || details.subject || "Tutor"
-                        )}
-                      </p>
+                        <p className={nameClass}>
+                          {capitalizeWords(details.nickname || tutor.name)}
+                        </p>
+                        <p className={metaClass}>
+                          {capitalizeWords(tutor.name)}
+                        </p>
                       {hasSlot && (
                         <p
                           className={`${statusClass} ${
@@ -1260,13 +1261,19 @@ const Appointment = () => {
                           )}
                         </div>
                         <div>
-                          <p className={nameClass}>
-                            {capitalizeWords(detailsTutor.name)}
-                          </p>
-                          <p className={detailsTextClass}>
-                            {tutorDetails[detailsTutor.user_id]?.college ||
-                              "College not specified"}
-                          </p>
+                            <p className={nameClass}>
+                              {capitalizeWords(
+                                tutorDetails[detailsTutor.user_id]?.nickname ||
+                                  detailsTutor.name
+                              )}
+                            </p>
+                            <p className={detailsTextClass}>
+                              {capitalizeWords(detailsTutor.name)}
+                            </p>
+                            <p className={detailsTextClass}>
+                              {tutorDetails[detailsTutor.user_id]?.college ||
+                                "College not specified"}
+                            </p>
                           <p className={detailsTextClass}>
                             {tutorDetails[detailsTutor.user_id]?.subject ||
                               "No subject"}

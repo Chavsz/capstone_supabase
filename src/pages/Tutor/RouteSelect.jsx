@@ -26,12 +26,6 @@ const RouteSelect = ({ onClose }) => {
       <Route
         to="/dashboard/comments"
         Icon={FaComment}
-        title="Comments"
-        onClose={onClose}
-      />
-      <Route
-        to="/dashboard/reports"
-        Icon={mdIcons.MdBarChart}
         title="Reports"
         onClose={onClose}
       />

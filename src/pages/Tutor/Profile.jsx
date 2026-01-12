@@ -13,6 +13,7 @@ const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const Profile = () => {
   const [name, setName] = useState("");
   const [profile, setProfile] = useState({
+    name: "",
     nickname: "",
     program: "",
     college: "",
@@ -138,7 +139,10 @@ const Profile = () => {
         .single();
 
       if (error) throw error;
-      if (data) setName(data.name);
+      if (data) {
+        setName(data.name);
+        setForm((prev) => ({ ...prev, name: data.name || "" }));
+      }
     } catch (err) {
       console.error(err.message);
     }
@@ -190,6 +194,16 @@ const Profile = () => {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) return;
+
+        if (form.name && form.name !== name) {
+          const { error: nameError } = await supabase
+            .from("users")
+            .update({ name: form.name })
+            .eq("user_id", session.user.id);
+
+          if (nameError) throw nameError;
+          setName(form.name);
+        }
 
         const { data } = await supabase
           .from("profile")
@@ -1150,13 +1164,13 @@ const Profile = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Name
                   </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={name}
-                    disabled
-                    className="block w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                  />
+                    <input
+                      type="text"
+                      name="name"
+                      value={form.name || ""}
+                      onChange={handleChange}
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
