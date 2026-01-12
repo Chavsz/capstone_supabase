@@ -496,7 +496,7 @@ const Users = () => {
 
           <div className="w-1/2 flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
+            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-3 md:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
                   <FiSearch className="text-[#4766fe]" />
@@ -524,7 +524,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[360px] overflow-y-auto pr-2">
+              <div className="max-h-[260px] sm:max-h-[360px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -535,7 +535,7 @@ const Users = () => {
                   return (
                     <div
                       key={user.user_id}
-                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-4 border-b border-blue-200 last:border-b-0"
+                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-3 sm:py-4 border-b border-blue-200 last:border-b-0"
                     >
                       <input
                         type="checkbox"

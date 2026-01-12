@@ -1061,7 +1061,7 @@ const Reports = () => {
 
   return (
       <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
-        <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 px-3 py-5 md:px-5 md:py-7 space-y-8">
+        <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 px-3 py-5 md:px-5 md:py-7 space-y-6 overflow-hidden">
         <header className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -1223,13 +1223,13 @@ const Reports = () => {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr] overflow-hidden">
           <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
             <div className="p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
               <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
                   <tr>
