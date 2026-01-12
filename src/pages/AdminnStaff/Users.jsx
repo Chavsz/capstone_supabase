@@ -631,17 +631,17 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-2 lg:gap-4 items-center justify-center -mt-4 lg:mt-0">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-2 lg:gap-4 items-center justify-center -mt-8 lg:mt-0">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
                     {adminCount}
                   </span>
-                  <FaUserTie className="text-[#4766fe] text-3xl" />
+                  <FaUserTie className="text-[#4766fe] text-2xl sm:text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Admin</span>
             </button>
@@ -650,11 +650,11 @@ const Users = () => {
               onClick={() => handleSelectFilter("Tutor")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
                     {tutorCount}
                   </span>
-                  <FaChalkboardTeacher className="text-[#4766fe] text-3xl" />
+                  <FaChalkboardTeacher className="text-[#4766fe] text-2xl sm:text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Tutors</span>
             </button>
@@ -663,11 +663,11 @@ const Users = () => {
               onClick={() => handleSelectFilter("Student")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
                     {studentCount}
                   </span>
-                  <FaUserAlt className="text-[#4766fe] text-3xl" />
+                  <FaUserAlt className="text-[#4766fe] text-2xl sm:text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Tutees</span>
             </button>
@@ -680,7 +680,7 @@ const Users = () => {
       {!showLanding && (
       <div>
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-2 md:mt-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-1 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries

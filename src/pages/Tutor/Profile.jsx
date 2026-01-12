@@ -728,6 +728,8 @@ const Profile = () => {
       } = await supabase.auth.getSession();
       if (!session) return;
 
+      const subjectValue = form.subject?.trim() ? form.subject : "Programming";
+
       // Check if profile exists
       const { data: existingProfile } = await supabase
         .from("profile")
@@ -744,7 +746,7 @@ const Profile = () => {
             program: form.program,
             college: form.college,
             year_level: form.year_level,
-            subject: form.subject,
+            subject: subjectValue,
             specialization: form.specialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
@@ -762,7 +764,7 @@ const Profile = () => {
             program: form.program,
             college: form.college,
             year_level: form.year_level,
-            subject: form.subject,
+            subject: subjectValue,
             specialization: form.specialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
