@@ -1100,9 +1100,9 @@ const Profile = () => {
 
       {/* Edit Information Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
               <h2 className="text-xl font-bold text-gray-900">
                 Edit Information
               </h2>
@@ -1114,19 +1114,19 @@ const Profile = () => {
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Profile Image Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Profile Image
                 </label>
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-500 rounded-full flex items-center justify-center">
                     {form.profile_image ? (
                       <img
                         src={form.profile_image}
                         alt="Profile"
-                        className="w-24 h-24 rounded-full object-cover"
+                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover"
                       />
                     ) : (
                       <span className="text-white text-2xl font-bold">
@@ -1140,7 +1140,7 @@ const Profile = () => {
                       name="profile_image"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
                     <div className="flex items-center gap-2 mt-2">
                       <p className="text-sm text-gray-500 ml-2">
@@ -1161,7 +1161,7 @@ const Profile = () => {
               </div>
 
               {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Name
@@ -1296,10 +1296,10 @@ const Profile = () => {
               </div>
 
               {/* Save Button */}
-              <div className="flex justify-end">
+              <div className="flex justify-end sm:justify-end">
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Save
                 </button>

@@ -67,7 +67,7 @@ const OurProcess = () => {
         <div className="mt-16 text-center">
           <Link
             to="/register"
-            className="bg-slate-900 text-white px-8 py-3 rounded-full font-semibold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 inline-flex"
+              className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Start Learning Now
           </Link>

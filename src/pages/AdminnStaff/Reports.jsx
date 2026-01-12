@@ -1229,8 +1229,8 @@ const Reports = () => {
               <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
               <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
             </div>
-            <div className="overflow-x-auto max-w-full">
-              <table className="w-full text-sm min-w-[520px]">
+            <div className="overflow-x-auto sm:overflow-visible max-w-full">
+              <table className="w-full text-sm min-w-[520px] sm:min-w-0">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="text-left px-4 py-3">Tutor Name</th>
@@ -1289,8 +1289,8 @@ const Reports = () => {
                   No LAV feedback has been submitted yet.
                 </p>
               ) : (
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 overflow-x-auto">
-                  <div className="flex items-end justify-between gap-3 min-w-[520px]">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 overflow-x-auto sm:overflow-visible">
+                  <div className="flex items-end justify-between gap-3 min-w-[520px] sm:min-w-0">
                     {lavRatingFields.map((field, index) => {
                       const avg = lavStatsPeriod.averages[field.key];
                       const height = avg ? Math.round((avg / 5) * 120) : 0;
