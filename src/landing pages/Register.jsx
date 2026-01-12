@@ -23,6 +23,25 @@ const Register = ({ setAuth }) => {
 
   const onSubmitForm = async (e) => {
     e.preventDefault();
+    
+    // Validate email domain and format
+    const allowedDomain = "@g.weru.edu.ph";
+    const emailLower = email.toLowerCase();
+    
+    if (!emailLower.endsWith(allowedDomain)) {
+      setMessage(`Only ${allowedDomain} email addresses are allowed for registration.`);
+      setMessageType("error");
+      return;
+    }
+    
+    // Extract the local part (before @) and check if it contains a dot
+    const localPart = emailLower.split("@")[0];
+    if (!localPart.includes(".")) {
+      setMessage("Email must be in the format firstname.lastname@g.msuiit.edu.ph.");
+      setMessageType("error");
+      return;
+    }
+    
     try {
       // Sign up with Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -150,7 +169,7 @@ const Register = ({ setAuth }) => {
               Create an account
             </h2>
             <p className="text-sm text-gray-500 mb-6">
-              Set up your details to start booking sessions.
+              Set up your details to start booking sessions. Only @g.msuiit.edu.ph email addresses are allowed.
             </p>
 
           {message && (
@@ -198,7 +217,7 @@ const Register = ({ setAuth }) => {
                 className="lav-input w-full"
                 type="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder="firstname.lastname@g.msuiit.edu.ph"
                 value={email}
                 onChange={(e) => onChange(e)}
                 required
