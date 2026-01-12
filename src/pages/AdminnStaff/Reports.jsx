@@ -36,6 +36,7 @@ const Reports = () => {
   const [appointments, setAppointments] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [tutorProfiles, setTutorProfiles] = useState({});
   const [loading, setLoading] = useState(true);
   const [monthlyExporting, setMonthlyExporting] = useState(false);
   const [landingImage, setLandingImage] = useState("");
@@ -99,6 +100,28 @@ const Reports = () => {
           ].join(", ")
         );
       if (evaluationError) throw evaluationError;
+
+      const tutorIds = Array.from(
+        new Set((appointmentData || []).map((appointment) => appointment.tutor_id).filter(Boolean))
+      );
+      if (tutorIds.length > 0) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profile")
+          .select("user_id, profile_image")
+          .in("user_id", tutorIds);
+
+        if (profileError && profileError.code !== "PGRST116") {
+          throw profileError;
+        }
+
+        const profileMap = {};
+        (profileData || []).forEach((profile) => {
+          profileMap[profile.user_id] = profile.profile_image || "";
+        });
+        if (shouldUpdate()) setTutorProfiles(profileMap);
+      } else if (shouldUpdate()) {
+        setTutorProfiles({});
+      }
 
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
@@ -1225,8 +1248,23 @@ const Reports = () => {
                     </tr>
                   ) : (
                     tutorMonthlyPerformance.map((entry) => (
-                      <tr key={entry.tutorId} className="border-t border-gray-100">
-                        <td className="px-4 py-3 font-medium text-gray-800">{entry.name}</td>
+                        <tr key={entry.tutorId} className="border-t border-gray-100">
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            <div className="flex items-center gap-3">
+                              {tutorProfiles[entry.tutorId] ? (
+                                <img
+                                  src={tutorProfiles[entry.tutorId]}
+                                  alt={entry.name}
+                                  className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                                />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-[#dfecff] text-[#132c91] flex items-center justify-center font-semibold">
+                                  {(entry.name || "?").charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span>{entry.name}</span>
+                            </div>
+                          </td>
                         <td className="px-4 py-3 text-center">{entry.sessions}</td>
                         <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
                         <td className="px-4 py-3 text-center font-semibold text-blue-600">
