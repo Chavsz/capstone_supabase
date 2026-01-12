@@ -103,8 +103,11 @@ const Users = () => {
     }
 
     try {
-      const { error: userError } = await supabase.from("users").delete().eq("user_id", id);
-      if (userError) throw userError;
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       await getAllUsers();
       alert("User deleted successfully.");
@@ -145,7 +148,8 @@ const Users = () => {
     if (normalized === "student") return "Student";
     return role || "N/A";
   };
-                    Next ->
+
+  const updateAdminStatus = async (user, nextValue) => {
     if (!isSuperAdmin) {
       alert("Only the superadmin can update admin access.");
       return;
@@ -154,14 +158,14 @@ const Users = () => {
       alert("You cannot change the superadmin account.");
       return;
     }
-                    Next ->
+    const prompt = nextValue
       ? `Add ${user.name} as admin? This will set is_admin = true.`
       : `Remove admin access from ${user.name}? This will set is_admin = false.`;
     if (!window.confirm(prompt)) return;
     try {
       const { data, error } = await supabase
         .from("users")
-                    Next ->
+        .update({ is_admin: nextValue })
         .eq("user_id", user.user_id)
         .select("user_id, is_admin");
       if (error) throw error;
@@ -177,10 +181,11 @@ const Users = () => {
       await getAllUsers();
       closeUserDetails();
     } catch (err) {
-      console.error(err.message);
+      console.error("Error updating admin access:", err.message);
       alert(`Error updating admin access: ${err.message}`);
     }
   };
+
 
   const verifyUserUpdate = async (userId, message) => {
     try {
@@ -328,27 +333,28 @@ const Users = () => {
 
   const toggleSelectAll = () => {
     setSelectedIds((prev) => {
-                    Next ->
+      const updatedSelectedIds = new Set(prev);
       if (allSelectedOnPage) {
-                    Next ->
+        currentUsers.forEach((user) => updatedSelectedIds.delete(user.user_id));
       } else {
-                    Next ->
+        currentUsers.forEach((user) => updatedSelectedIds.add(user.user_id));
       }
-                    Next ->
+      return updatedSelectedIds;
     });
   };
 
   const toggleSelectUser = (userId) => {
     setSelectedIds((prev) => {
-                    Next ->
-                    Next ->
-                    Next ->
+      const updatedSelectedIds = new Set(prev);
+      if (updatedSelectedIds.has(userId)) {
+        updatedSelectedIds.delete(userId);
       } else {
-                    Next ->
+        updatedSelectedIds.add(userId);
       }
-                    Next ->
+      return updatedSelectedIds;
     });
   };
+
 
   const bulkMoveToStudent = async () => {
     const ids = Array.from(selectedIds);
@@ -672,41 +678,46 @@ const Users = () => {
             </button>
           
           </div>
-          {!showLanding && (
-            <div className="w-full order-3">
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-1 mt-0 md:mt-6">
-                <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
-                  Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
-                  {searchfilteredUsers.length} entries
-                </div>
-                <div className="flex gap-2 order-1 sm:order-2">
-                  <button
-                    className={`px-3 py-1.5 rounded border text-sm ${
-                      currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    <- Previous
-                  </button>
-                  <button
-                    className={`px-3 py-1.5 rounded border text-sm ${
-                      currentPage === totalPages || totalPages === 0
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    Next ->
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+         {!showLanding && (
+  <div className="w-full order-3">
+    {/* Pagination */}
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-1 mt-0 md:mt-6">
+      <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
+        {/* Displaying range of entries */}
+        Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0} -{" "}
+        {Math.min(endIndex, searchfilteredUsers.length)} of {searchfilteredUsers.length} entries
+      </div>
+      <div className="flex gap-2 order-1 sm:order-2">
+        {/* Previous Button */}
+        <button
+          className={`px-3 py-1.5 rounded border text-sm ${
+            currentPage === 1
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          onClick={() => setCurrentPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <- Previous
+        </button>
+
+        {/* Next Button */}
+        <button
+          className={`px-3 py-1.5 rounded border text-sm ${
+            currentPage === totalPages || totalPages === 0
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          onClick={() => setCurrentPage(currentPage + 1)}
+          disabled={currentPage === totalPages || totalPages === 0}
+        >
+          Next ->
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
         </div>
         </div>
       </div>
@@ -807,13 +818,13 @@ const Users = () => {
                     Remove as Admin
                   </button>
                 )}
-              {isSuperAdmin && (
+             {isSuperAdmin && (
                 <button
                   className={`px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 ${
                     selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   onClick={() => deleteUser(selectedUser.user_id)}
-                  disabled={selectedUser.is_superadmin}
+                  disabled={selectedUser.is_superadmin} // Prevent deletion if user is a superadmin
                 >
                   Delete User
                 </button>
@@ -824,10 +835,5 @@ const Users = () => {
       )}
     </div>
   );
-};
-
 export default Users;
-
-
-
 
