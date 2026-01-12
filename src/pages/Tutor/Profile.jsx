@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { FaEdit, FaPlus, FaTrash, FaTimes, FaCalendarAlt } from "react-icons/fa";
-import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { capitalizeWords } from "../../utils/text";
 
@@ -40,12 +36,10 @@ const Profile = () => {
     { start: 8 * 60, end: 12 * 60 },
     { start: 13 * 60, end: 17 * 60 },
   ];
+  const TIME_STEP_MINUTES = 30;
 
   const allowedHoursMessage =
     "Schedules can only be between 8:00 AM - 12:00 PM or 1:00 PM - 5:00 PM.";
-
-  const getMinutesFromDayjs = (value) =>
-    value ? value.hour() * 60 + value.minute() : null;
 
   const getMinutesFromString = (timeString) => {
     if (!timeString) return null;
@@ -99,30 +93,11 @@ const Profile = () => {
     return true;
   };
 
-  const handleTimeChange = (field, value) => {
+  const handleScheduleTimeSelect = (field, value) => {
     setNewTime((prev) => ({
       ...prev,
-      [field]: value && value.isValid() ? value.format("HH:mm") : "",
+      [field]: value,
     }));
-  };
-
-  const handleTimeAccept = (field, value) => {
-    if (!value || !value.isValid()) {
-      setNewTime((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-      return;
-    }
-
-    const minutes = getMinutesFromDayjs(value);
-    if (!isWithinAllowedBlock(minutes)) {
-      alert(allowedHoursMessage);
-      setNewTime((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
   };
 
   async function getName() {
@@ -296,16 +271,31 @@ const Profile = () => {
   }, {});
 
   // Add new time slot
-  const minScheduleTime = dayjs()
-    .set("hour", 8)
-    .set("minute", 0)
-    .set("second", 0)
-    .set("millisecond", 0);
-  const maxScheduleTime = dayjs()
-    .set("hour", 17)
-    .set("minute", 0)
-    .set("second", 0)
-    .set("millisecond", 0);
+  const timeOptions = ALLOWED_TIME_BLOCKS.flatMap((block) => {
+    const options = [];
+    for (let minutes = block.start; minutes <= block.end; minutes += TIME_STEP_MINUTES) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const value = `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+      options.push({
+        value,
+        label: dayjs(`2000-01-01T${value}`).format("h:mm A"),
+        minutes,
+      });
+    }
+    return options;
+  });
+
+  const endTimeOptions = newTime.start
+    ? timeOptions.filter((option) => {
+        const startMinutes = getMinutesFromString(newTime.start);
+        if (startMinutes === null) return false;
+        return (
+          option.minutes > startMinutes &&
+          areWithinSameBlock(startMinutes, option.minutes)
+        );
+      })
+    : timeOptions;
 
   const handleAddTime = async (day) => {
     if (!newTime.start || !newTime.end) return;
@@ -935,82 +925,68 @@ const Profile = () => {
                     <span className="text-gray-400">No schedule</span>
                   )}
                   {scheduleEditDay === day ? (
-                    <div className="flex items-center gap-2">
-                      <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DemoContainer components={["TimePicker"]}>
-                          <TimePicker
-                            value={
-                              newTime.start
-                                ? dayjs(`2000-01-01T${newTime.start}`)
-                                : null
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                      <select
+                        value={newTime.start}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          handleScheduleTimeSelect("start", value);
+                          if (newTime.end) {
+                            const startMinutes = getMinutesFromString(value);
+                            const endMinutes = getMinutesFromString(newTime.end);
+                            if (
+                              startMinutes === null ||
+                              endMinutes === null ||
+                              !areWithinSameBlock(startMinutes, endMinutes) ||
+                              endMinutes <= startMinutes
+                            ) {
+                              setNewTime((prev) => ({ ...prev, end: "" }));
                             }
-                            onChange={(value) => handleTimeChange("start", value)}
-                            onAccept={(value) => handleTimeAccept("start", value)}
-                            label="Start Time"
-                            minTime={minScheduleTime}
-                            maxTime={maxScheduleTime}
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                "& fieldset": {
-                                  borderColor: "red",
-                                },
-                                "&:hover fieldset": {
-                                  borderColor: "red",
-                                },
-                                "&.Mui-focused fieldset": {
-                                  borderColor: "red",
-                                },
-                              },
-                            }}
-                          />
-                        </DemoContainer>
-                      </LocalizationProvider>
-                      <span>-</span>
-                      <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DemoContainer components={["TimePicker"]}>
-                          <TimePicker
-                            value={
-                              newTime.end
-                                ? dayjs(`2000-01-01T${newTime.end}`)
-                                : null
-                            }
-                            onChange={(value) => handleTimeChange("end", value)}
-                            onAccept={(value) => handleTimeAccept("end", value)}
-                            label="End Time"
-                            minTime={minScheduleTime}
-                            maxTime={maxScheduleTime}
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                "& fieldset": {
-                                  borderColor: "red",
-                                },
-                                "&:hover fieldset": {
-                                  borderColor: "red",
-                                },
-                                "&.Mui-focused fieldset": {
-                                  borderColor: "red",
-                                },
-                              },
-                            }}
-                          />
-                        </DemoContainer>
-                      </LocalizationProvider>
-                      <button
-                        onClick={() => handleAddTime(day)}
-                        className="text-green-600 hover:text-green-700 text-sm font-semibold"
-                        title="Confirm"
-                      >
-                        Enter
-                      </button>
-                      <button
-                        onClick={() => {
-                          setScheduleEditDay(null);
-                          setNewTime({ start: "", end: "" });
+                          }
                         }}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:w-40"
                       >
-                        Cancel
-                      </button>
+                        <option value="">Start Time</option>
+                        {timeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="hidden sm:inline">-</span>
+                      <select
+                        value={newTime.end}
+                        onChange={(event) =>
+                          handleScheduleTimeSelect("end", event.target.value)
+                        }
+                        className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:w-40"
+                        disabled={!newTime.start}
+                      >
+                        <option value="">End Time</option>
+                        {endTimeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex items-center gap-3 pt-1 sm:pt-0">
+                        <button
+                          onClick={() => handleAddTime(day)}
+                          className="text-green-600 hover:text-green-700 text-sm font-semibold"
+                          title="Confirm"
+                        >
+                          Enter
+                        </button>
+                        <button
+                          onClick={() => {
+                            setScheduleEditDay(null);
+                            setNewTime({ start: "", end: "" });
+                          }}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button

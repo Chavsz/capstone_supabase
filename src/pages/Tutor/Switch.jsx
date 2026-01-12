@@ -205,14 +205,6 @@ const Switch = () => {
 
       const userId = session.user.id;
 
-      // Update role in users table
-      const { error } = await supabase
-        .from("users")
-        .update({ role: "student" })
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
       await syncStudentProfile(userId);
 
       // Role will be updated in App.jsx when it detects the change
@@ -348,7 +340,7 @@ const Switch = () => {
         onClose={handleCancelSwitch}
         onConfirm={handleConfirmSwitch}
         title="Confirm role switch"
-        message="You are about to switch to the Student interface. This updates your role in the database and will log you into the student dashboard. Continue?"
+        message="You are about to switch to the Student interface. This keeps your main role and switches your dashboard view. Continue?"
         confirmText="Yes, switch me"
         cancelText="Stay as Tutor"
       />
