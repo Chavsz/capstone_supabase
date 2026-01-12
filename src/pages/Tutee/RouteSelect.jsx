@@ -25,8 +25,10 @@ const RouteSelect = ({ onClose }) => {
       }
 
       const isAdmin = Boolean(userData?.is_admin && !userData?.is_superadmin);
-      const isStudent = String(userData?.role || "").toLowerCase() === "student";
-      setCanShowSwitch(Boolean(isAdmin && isStudent));
+      const role = String(userData?.role || "").toLowerCase();
+      const isStudent = role === "student";
+      const isTutor = role === "tutor";
+      setCanShowSwitch(Boolean(isAdmin || isTutor));
     } catch (err) {
       console.error("Unable to check switch access:", err.message);
       setCanShowSwitch(false);

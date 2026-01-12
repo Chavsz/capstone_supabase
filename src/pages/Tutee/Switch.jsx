@@ -5,6 +5,7 @@ import { supabase } from "../../supabase-client";
 const Switch = () => {
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [canSwitchStudent, setCanSwitchStudent] = useState(false);
+  const [canSwitchTutor, setCanSwitchTutor] = useState(false);
   const [currentViewRole, setCurrentViewRole] = useState("student");
   const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
@@ -27,14 +28,18 @@ const Switch = () => {
       }
 
       const storedOverride = localStorage.getItem(ROLE_OVERRIDE_KEY);
-      const isStudent = String(data?.role || "").toLowerCase() === "student";
-      setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin && isStudent));
+      const role = String(data?.role || "").toLowerCase();
+      const isStudent = role === "student";
+      const isTutor = role === "tutor";
+      setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
       setCanSwitchStudent(isStudent);
+      setCanSwitchTutor(isTutor);
       setCurrentViewRole((storedOverride || data?.role || "student").toLowerCase());
     } catch (err) {
       console.error("Error checking admin permissions:", err.message);
       setCanSwitchAdmin(false);
       setCanSwitchStudent(false);
+      setCanSwitchTutor(false);
       setCurrentViewRole("student");
     } finally {
       setSwitchChecked(true);
@@ -94,10 +99,21 @@ const Switch = () => {
 
   useEffect(() => {
     if (!switchChecked) return;
-    if (!canSwitchAdmin) {
+    if (!canSwitchAdmin && !canSwitchTutor) {
       navigate("/dashboard", { replace: true });
     }
-  }, [canSwitchAdmin, navigate, switchChecked]);
+  }, [canSwitchAdmin, canSwitchTutor, navigate, switchChecked]);
+
+  const handleSwitchToTutor = () => {
+    try {
+      localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
+      localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
+    } catch (err) {
+      // Ignore storage errors
+    }
+    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
+    navigate("/dashboard");
+  };
 
   const handleSwitchToAdmin = () => {
     try {
@@ -121,9 +137,18 @@ const Switch = () => {
     navigate("/dashboard");
   };
 
-  if (switchChecked && !canSwitchAdmin) {
+  if (switchChecked && !canSwitchAdmin && !canSwitchTutor) {
     return null;
   }
+
+  const canSwitchToAdmin = canSwitchAdmin && currentViewRole !== "admin";
+  const canSwitchToTutor = canSwitchTutor && currentViewRole !== "tutor";
+  const canSwitchToStudent = canSwitchStudent && currentViewRole !== "student";
+  const primaryTitle = canSwitchToTutor
+    ? "Switch to Tutor"
+    : canSwitchToAdmin
+      ? "Switch to Admin"
+      : "Role Switch";
 
   return (
     <div className="min-h-screen bg-[#f8f9f0] py-10 px-6 flex items-center justify-center">
@@ -134,9 +159,9 @@ const Switch = () => {
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest">
                 Role Switch
               </p>
-              <h1 className="text-3xl font-bold text-gray-800">Role Switch</h1>
+              <h1 className="text-3xl font-bold text-gray-800">{primaryTitle}</h1>
               <p className="text-gray-600">
-                Switch between student and admin views based on your access.
+                Switch between roles based on your access.
               </p>
               <div className="flex flex-wrap gap-2 text-xs text-blue-700">
                 <span className="px-2 py-1 rounded-full bg-blue-50 border border-blue-100">Keeps profile synced</span>
@@ -157,19 +182,44 @@ const Switch = () => {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs uppercase tracking-widest text-blue-100">Current role</p>
-                  <p className="text-lg font-semibold">Student</p>
+                  <p className="text-lg font-semibold">
+                    {currentViewRole.charAt(0).toUpperCase() + currentViewRole.slice(1)}
+                  </p>
                 </div>
                 <div className="text-3xl">⇄</div>
               </div>
               <div className="space-y-2 text-sm text-blue-50">
-                <p>Switch to admin to:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Access admin insights</li>
-                  <li>Manage reports</li>
-                  <li>Switch back anytime</li>
-                </ul>
+                {canSwitchToTutor && !canSwitchToAdmin && (
+                  <>
+                    <p>Switch to tutor to:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Host tutoring sessions</li>
+                      <li>Manage availability</li>
+                      <li>Support your tutees</li>
+                    </ul>
+                  </>
+                )}
+                {canSwitchToAdmin && !canSwitchToTutor && (
+                  <>
+                    <p>Switch to admin to:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Access admin insights</li>
+                      <li>Manage reports</li>
+                      <li>Switch back anytime</li>
+                    </ul>
+                  </>
+                )}
+                {canSwitchToAdmin && canSwitchToTutor && (
+                  <>
+                    <p>Choose a role to continue:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Tutor: manage sessions and availability</li>
+                      <li>Admin: manage reports and insights</li>
+                    </ul>
+                  </>
+                )}
               </div>
-              {canSwitchAdmin && (
+              {canSwitchToAdmin && (
                 <button
                   onClick={handleSwitchToAdmin}
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
@@ -177,7 +227,15 @@ const Switch = () => {
                   Switch to Admin
                 </button>
               )}
-              {canSwitchStudent && currentViewRole !== "student" && (
+              {canSwitchToTutor && (
+                <button
+                  onClick={handleSwitchToTutor}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                >
+                  Switch to Tutor
+                </button>
+              )}
+              {canSwitchToStudent && (
                 <button
                   onClick={handleStayStudent}
                   className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
