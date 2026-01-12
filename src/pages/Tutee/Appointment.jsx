@@ -1401,7 +1401,7 @@ const Appointment = () => {
                   name="topic"
                   value={formData.topic}
                   onChange={handleInputChange}
-                  placeholder="Enter specialization"
+                  placeholder="ex. MAT070 - Line Integrals"
                   className="border border-gray-300 rounded-md p-3 w-full"
                   required
                 />
