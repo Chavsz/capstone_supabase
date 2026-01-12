@@ -494,7 +494,7 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col lg:flex-row gap-6">
+          <div className="w-1/2 flex flex-col lg:flex-row gap-3 sm:gap-6">
           <div className="flex-1">
             <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-3 md:p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -524,7 +524,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[260px] sm:max-h-[360px] overflow-y-auto pr-2">
+              <div className="max-h-[220px] sm:max-h-[360px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -631,7 +631,7 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-12 lg:mt-0">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-6 lg:mt-0">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
@@ -680,7 +680,7 @@ const Users = () => {
       {!showLanding && (
       <div>
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 mt-0 md:mt-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 -mt-1 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries
