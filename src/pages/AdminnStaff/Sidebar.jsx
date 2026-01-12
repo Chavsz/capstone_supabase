@@ -237,7 +237,7 @@ const Sidebar = ({ setAuth, onClose }) => {
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none"
           onClick={(e) => logout(e)}
         >
-          <fiIcons.FiLogOut /> <p className="text-md font-semibold hidden md:block">Log out</p>
+          <fiIcons.FiLogOut /> <p className="text-md font-semibold">Log out</p>
         </button>
       </div>
     </div>

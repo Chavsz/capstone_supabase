@@ -54,7 +54,7 @@ const RouteSelect = ({ onClose }) => {
 
   return (
     <div className="space-y-1">
-      <p className="text-[13px] font-semibold text-white/80 hidden md:block tracking-wide">MENU</p>
+      <p className="text-[13px] font-semibold text-white/80 tracking-wide">MENU</p>
 
       <Route
         to="/dashboard"
@@ -104,7 +104,7 @@ const Route = ({ to, Icon, title, isActive, onClose }) => {
       }}
     >
       <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
-      <p className="text-md font-semibold hidden md:block">{title}</p>
+      <p className="text-md font-semibold">{title}</p>
     </NavLink>
   );
 };

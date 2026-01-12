@@ -8,7 +8,7 @@ import * as faIcons from "react-icons/fa";
 const RouteSelect = ({ onClose, canSwitchAdmin }) => {
   return (
     <div className="space-y-1">
-      <p className="text-[13px] font-extralight text-[#696969] hidden md:block">MENU</p>
+      <p className="text-[13px] font-extralight text-[#696969]">MENU</p>
       <Route
         to="/dashboard"
         Icon={mdIcons.MdOutlineDashboard}
@@ -82,7 +82,7 @@ const Route = ({ to, Icon, title, onClose }) => {
       {({ isActive }) => (
         <>
           <Icon className={isActive ? "text-blue-600" : ""} />
-          <p className="text-md font-semibold hidden md:block">{title}</p>
+          <p className="text-md font-semibold">{title}</p>
         </>
       )}
     </NavLink>
