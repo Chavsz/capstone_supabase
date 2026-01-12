@@ -10,7 +10,7 @@ const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 4;
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -145,8 +145,7 @@ const Users = () => {
     if (normalized === "student") return "Student";
     return role || "N/A";
   };
-
-  const updateAdminStatus = async (user, nextValue) => {
+                    Next ->
     if (!isSuperAdmin) {
       alert("Only the superadmin can update admin access.");
       return;
@@ -155,14 +154,14 @@ const Users = () => {
       alert("You cannot change the superadmin account.");
       return;
     }
-    const prompt = nextValue
+                    Next ->
       ? `Add ${user.name} as admin? This will set is_admin = true.`
       : `Remove admin access from ${user.name}? This will set is_admin = false.`;
     if (!window.confirm(prompt)) return;
     try {
       const { data, error } = await supabase
         .from("users")
-        .update({ is_admin: nextValue })
+                    Next ->
         .eq("user_id", user.user_id)
         .select("user_id, is_admin");
       if (error) throw error;
@@ -329,25 +328,25 @@ const Users = () => {
 
   const toggleSelectAll = () => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
+                    Next ->
       if (allSelectedOnPage) {
-        currentUsers.forEach((user) => next.delete(user.user_id));
+                    Next ->
       } else {
-        currentUsers.forEach((user) => next.add(user.user_id));
+                    Next ->
       }
-      return next;
+                    Next ->
     });
   };
 
   const toggleSelectUser = (userId) => {
     setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
+                    Next ->
+                    Next ->
+                    Next ->
       } else {
-        next.add(userId);
+                    Next ->
       }
-      return next;
+                    Next ->
     });
   };
 
@@ -494,8 +493,8 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col lg:flex-row gap-0 sm:gap-6">
-          <div className="flex-1">
+          <div className="w-1/2 flex flex-col lg:flex-row lg:flex-wrap gap-1 sm:gap-6">
+          <div className="flex-1 w-full lg:w-auto order-1">
             <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-3 md:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
@@ -524,7 +523,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[200px] sm:max-h-[360px] overflow-y-auto pr-2">
+              <div className="pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -631,7 +630,7 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-20 lg:mt-0">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center mt-0 lg:mt-0 order-2">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
@@ -673,46 +672,44 @@ const Users = () => {
             </button>
           
           </div>
+          {!showLanding && (
+            <div className="w-full order-3">
+              {/* Pagination */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-1 mt-0 md:mt-6">
+                <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
+                  Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
+                  {searchfilteredUsers.length} entries
+                </div>
+                <div className="flex gap-2 order-1 sm:order-2">
+                  <button
+                    className={`px-3 py-1.5 rounded border text-sm ${
+                      currentPage === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <- Previous
+                  </button>
+                  <button
+                    className={`px-3 py-1.5 rounded border text-sm ${
+                      currentPage === totalPages || totalPages === 0
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Next ->
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         </div>
       </div>
-
-      {!showLanding && (
-      <div>
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 -mt-3 md:mt-6">
-        <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
-          Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
-          {searchfilteredUsers.length} entries
-        </div>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <button
-            className={`px-3 py-1.5 rounded border text-sm ${
-              currentPage === 1
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            ← Previous
-          </button>
-          <button
-            className={`px-3 py-1.5 rounded border text-sm ${
-              currentPage === totalPages || totalPages === 0
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage === totalPages || totalPages === 0}
-          >
-            Next →
-          </button>
-        </div>
-      </div>
-      </div>
-      )}
-
       {isDetailsOpen && selectedUser && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg border border-gray-200 shadow-lg">
@@ -830,3 +827,7 @@ const Users = () => {
 };
 
 export default Users;
+
+
+
+
