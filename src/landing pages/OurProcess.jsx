@@ -28,7 +28,7 @@ const OurProcess = () => {
           </div>
 
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-colors group">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+            <div className="w-12 h-12 bg-indigo-50 text-red-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
               2
             </div>
             <h3 className="text-xl font-bold mb-3">Confirm & Prepare</h3>

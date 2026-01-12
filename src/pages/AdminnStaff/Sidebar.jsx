@@ -185,7 +185,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   }, [fetchAdminPermissions, syncRoleOverrideState, ROLE_OVERRIDE_KEY, ROLE_OVERRIDE_PREV_KEY]);
 
   return (
-    <div className="flex flex-col p-4 text-white sticky top-0 bg-[#fff7f7] h-screen w-[240px]">
+    <div className="flex flex-col p-4 text-white sticky top-0 bg-[#ffffff] h-screen w-[240px]">
       {/* Mobile Close Button */}
       <div className="flex justify-between items-center mb-4 md:hidden flex-shrink-0">
         {logoUrl ? (
