@@ -494,9 +494,9 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col lg:flex-row lg:flex-wrap gap-2 sm:gap-6">
-          <div className="flex-1 w-full lg:w-auto order-1">
-            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-3 md:p-6">
+          <div className="w-1/2 flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
                   <FiSearch className="text-[#4766fe]" />
@@ -524,7 +524,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="pr-2">
+              <div className="max-h-[360px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -535,7 +535,7 @@ const Users = () => {
                   return (
                     <div
                       key={user.user_id}
-                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-3 sm:py-4 border-b border-blue-200 last:border-b-0"
+                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-4 border-b border-blue-200 last:border-b-0"
                     >
                       <input
                         type="checkbox"
@@ -631,17 +631,17 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center mt-2 lg:mt-0 order-2">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
                     {adminCount}
                   </span>
-                  <FaUserTie className="text-[#4766fe] text-2xl sm:text-3xl" />
+                  <FaUserTie className="text-[#4766fe] text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Admin</span>
             </button>
@@ -650,11 +650,11 @@ const Users = () => {
               onClick={() => handleSelectFilter("Tutor")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
                     {tutorCount}
                   </span>
-                  <FaChalkboardTeacher className="text-[#4766fe] text-2xl sm:text-3xl" />
+                  <FaChalkboardTeacher className="text-[#4766fe] text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Tutors</span>
             </button>
@@ -663,51 +663,16 @@ const Users = () => {
               onClick={() => handleSelectFilter("Student")}
               className="flex flex-col items-center gap-2"
             >
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
-                  <span className="absolute -top-2 -right-2 min-w-[28px] h-7 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-xs sm:text-sm font-bold flex items-center justify-center shadow-sm">
+                <div className="relative w-20 h-20 rounded-full border border-[#cfd8f6] bg-[#f2f7ff] flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 min-w-[32px] h-8 px-2 rounded-full bg-[#dfecff] text-[#132c91] text-sm font-bold flex items-center justify-center shadow-sm">
                     {studentCount}
                   </span>
-                  <FaUserAlt className="text-[#4766fe] text-2xl sm:text-3xl" />
+                  <FaUserAlt className="text-[#4766fe] text-3xl" />
                 </div>
               <span className="text-sm font-semibold text-gray-700">Tutees</span>
             </button>
           
           </div>
-          {!showLanding && (
-            <div className="w-full order-3">
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-1 mt-1 md:mt-6">
-                <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
-                  Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
-                  {searchfilteredUsers.length} entries
-                </div>
-                <div className="flex gap-2 order-1 sm:order-2">
-                  <button
-                    className={`px-3 py-1.5 rounded border text-sm ${
-                      currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    ƒ+? Previous
-                  </button>
-                  <button
-                    className={`px-3 py-1.5 rounded border text-sm ${
-                      currentPage === totalPages || totalPages === 0
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    Next ƒ+'
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         </div>
       </div>
@@ -715,7 +680,7 @@ const Users = () => {
       {!showLanding && (
       <div>
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 -mt-3 md:mt-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries
