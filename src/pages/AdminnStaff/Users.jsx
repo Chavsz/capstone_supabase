@@ -10,7 +10,7 @@ const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 5;
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -524,7 +524,7 @@ const Users = () => {
                   Back
                 </button>
               </div>
-              <div className="max-h-[220px] sm:max-h-[360px] overflow-y-auto pr-2">
+              <div className="max-h-[200px] sm:max-h-[360px] overflow-y-auto pr-2">
                 {currentUsers.length > 0 ? currentUsers.map((user) => {
                   const profile = user.profile || {};
                   const yearLabel = profile.year_level ? profile.year_level : "Year not set";
@@ -631,7 +631,7 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-16 lg:mt-0">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-20 lg:mt-0">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
@@ -680,7 +680,7 @@ const Users = () => {
       {!showLanding && (
       <div>
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 -mt-1 md:mt-6">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-1 -mt-3 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries
