@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 
 import Home from "./landing pages/Home";
 import About from "./landing pages/About";
+import OurProcess from "./landing pages/OurProcess";
 import Events from "./landing pages/Events";
 import OurTutors from "./landing pages/OurTutors";
 import ContactUs from "./landing pages/ContactUs";
@@ -18,6 +19,9 @@ const LandingPage = () => {
         </div>
         <div id="about-section">
           <About />
+        </div>
+        <div id="our-process-section">
+          <OurProcess />
         </div>
         <div id="events-section">
           <Events />

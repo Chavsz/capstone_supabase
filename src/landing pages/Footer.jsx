@@ -21,6 +21,7 @@ const Footer = () => {
     organization: [
       { name: "Home", id: "home-section" },
       { name: "About", id: "about-section" },
+      { name: "Our Process", id: "our-process-section" },
       { name: "Events", id: "events-section" },
       { name: "Our Tutors", id: "our-tutors-section" },
       { name: "Contact Us", id: "contact-us-section" }
