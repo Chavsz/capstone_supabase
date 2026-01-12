@@ -75,7 +75,12 @@ const Register = ({ setAuth }) => {
       }
     } catch (err) {
       console.error(err.message);
-      setMessage(err.message || "Registration failed. Please try again.");
+      const lowerMessage = (err?.message || "").toLowerCase();
+      if (lowerMessage.includes("already registered") || lowerMessage.includes("already been registered")) {
+        setMessage("This email is already in use. Please log in or reset your password.");
+      } else {
+        setMessage(err.message || "Registration failed. Please try again.");
+      }
       setMessageType("error");
     }
   };

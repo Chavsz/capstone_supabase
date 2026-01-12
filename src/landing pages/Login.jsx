@@ -21,6 +21,7 @@ const Login = ({ setAuth }) => {
 
   const onSubmitForm = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     try {
       // Sign in with Supabase
@@ -41,7 +42,28 @@ const Login = ({ setAuth }) => {
 
         if (profileError) {
           if (profileError.code === 'PGRST116') {
-            setMessage("User profile not found. Please contact support.");
+            const fallbackName = data.user.user_metadata?.name || data.user.email || "User";
+            const { data: createdUser, error: insertError } = await supabase
+              .from("users")
+              .insert([
+                {
+                  user_id: data.user.id,
+                  name: fallbackName,
+                  email: data.user.email,
+                  role: "student",
+                },
+              ])
+              .select("role")
+              .single();
+
+            if (insertError) {
+              console.error("Unable to recreate user profile:", insertError.message);
+              setMessage("User profile not found. Please contact support.");
+            } else if (createdUser?.role) {
+              window.dispatchEvent(
+                new CustomEvent("roleChanged", { detail: { newRole: createdUser.role } })
+              );
+            }
           }
         } else if (profileData) {
           if (profileData.role) {
