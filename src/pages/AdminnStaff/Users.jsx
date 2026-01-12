@@ -494,7 +494,7 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col lg:flex-row gap-3 sm:gap-6">
+          <div className="w-1/2 flex flex-col lg:flex-row gap-0 sm:gap-6">
           <div className="flex-1">
             <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-3 md:p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -631,7 +631,7 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-6 lg:mt-0">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-1 lg:gap-4 items-center justify-center -mt-16 lg:mt-0">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
