@@ -6,9 +6,6 @@ const OurProcess = () => {
     <section className="bg-slate-50 text-slate-900">
       <div className="max-w-5xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-blue-600 font-semibold tracking-wide uppercase text-sm mb-3">
-            Our Process
-          </h2>
           <h1 className="text-4xl font-extrabold text-slate-900 sm:text-5xl">
             How it works
           </h1>
