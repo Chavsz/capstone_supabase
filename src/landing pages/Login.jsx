@@ -111,6 +111,18 @@ const Login = ({ setAuth }) => {
   };
 
   useEffect(() => {
+    // Check for OAuth error message from sessionStorage
+    try {
+      const oauthError = sessionStorage.getItem("oauth_error");
+      if (oauthError) {
+        setMessage(oauthError);
+        // Clear the error from sessionStorage after displaying
+        sessionStorage.removeItem("oauth_error");
+      }
+    } catch (e) {
+      // Ignore storage errors
+    }
+
     const fetchLoginPhoto = async () => {
       try {
         const { data, error } = await supabase
@@ -239,7 +251,16 @@ const Login = ({ setAuth }) => {
             </span>
             <span className="flex-1 h-px bg-gray-200" />
           </div>
-     
+
+          {/* Google Sign-In Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+          >
+            <FcGoogle className="w-5 h-5" />
+            <span>Sign in with Google</span>
+          </button>
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-gray-600">

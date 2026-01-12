@@ -384,6 +384,9 @@ function App() {
     isFetching.current = true;
 
     try {
+      // Get current user to access metadata (for OAuth users)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from("users")
         .select("role, is_admin, is_superadmin")
@@ -391,13 +394,87 @@ function App() {
         .single();
 
       if (error) {
-        console.error("Role fetch error:", error);
+        // User not found in users table - create a new record
         if (error.code === 'PGRST116') {
-          console.error("User not found in users table");
+          console.log("User not found in users table, creating new record...");
+          
+          // Get user info from auth user (for OAuth users)
+          const userName = user?.user_metadata?.full_name || 
+                          user?.user_metadata?.name || 
+                          user?.user_metadata?.user_name ||
+                          user?.email?.split('@')[0] || 
+                          "User";
+          const userEmail = user?.email || "";
+          
+          // Validate email domain for OAuth users (same as registration)
+          const allowedDomain = "@g.msuiit.edu.ph";
+          const emailLower = userEmail.toLowerCase();
+          
+          if (!emailLower.endsWith(allowedDomain)) {
+            console.error(`OAuth sign-in rejected: Email domain not allowed. Only ${allowedDomain} emails are permitted.`);
+            // Sign out the user since their email doesn't meet requirements
+            await supabase.auth.signOut();
+            // Store error message for display on login page
+            try {
+              sessionStorage.setItem("oauth_error", `Only ${allowedDomain} email addresses are allowed. Please use a valid email address.`);
+            } catch (e) {
+              // Ignore storage errors
+            }
+            clearAuthState();
+            // Redirect to login page
+            window.location.href = "/login";
+            return;
+          }
+          
+          // Create user record in users table
+          const { data: createdUser, error: insertError } = await supabase
+            .from("users")
+            .insert([
+              {
+                user_id: userId,
+                name: userName,
+                email: userEmail,
+                role: "student", // Default role for new OAuth users
+              },
+            ])
+            .select("role, is_admin, is_superadmin")
+            .single();
+
+          if (insertError) {
+            console.error("Error creating user record:", insertError);
+            setLoading(false);
+            isFetching.current = false;
+            return;
+          }
+
+          // Set role from newly created user
+          if (createdUser) {
+            const isSuperAdmin = Boolean(createdUser.is_superadmin);
+            setAdminAccess(Boolean(createdUser.is_admin || isSuperAdmin));
+            if (isSuperAdmin) {
+              setStoredRoleOverride(null);
+              setRoleOverride(null);
+              setCurrentRole("admin");
+              hasRole.current = true;
+              setLoading(false);
+              isFetching.current = false;
+              return;
+            }
+            
+            if (createdUser.role) {
+              setCurrentRole(createdUser.role);
+              hasRole.current = true;
+              setLoading(false);
+              isFetching.current = false;
+              return;
+            }
+          }
+        } else {
+          console.error("Role fetch error:", error);
+          setLoading(false);
+          isFetching.current = false;
+          return;
         }
-        setLoading(false);
-        isFetching.current = false;
-        return;
       }
 
       if (data) {
