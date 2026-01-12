@@ -10,7 +10,7 @@ const Users = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 4;
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);

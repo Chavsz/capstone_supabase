@@ -228,10 +228,10 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
             path="reports"
             element={
               <RoleRoute
-                allowedRoles={["tutor"]}
+                allowedRoles={["admin", "tutor"]}
                 currentRole={currentRole}
                 loading={loading}
-                element={<TutorReports />}
+                element={currentRole === "admin" ? <AdminReports /> : <TutorReports />}
               />
             }
           />
@@ -255,17 +255,6 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<AdminLavRoomCalendar />}
-            />
-          }
-        />
-        <Route
-          path="reports"
-          element={
-            <RoleRoute
-              allowedRoles={["admin"]}
-              currentRole={currentRole}
-              loading={loading}
-              element={<AdminReports />}
             />
           }
         />
