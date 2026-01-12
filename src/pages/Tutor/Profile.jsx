@@ -1100,8 +1100,8 @@ const Profile = () => {
 
       {/* Edit Information Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-3 sm:p-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-start sm:items-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 sm:mb-6">
               <h2 className="text-xl font-bold text-gray-900">
                 Edit Information
