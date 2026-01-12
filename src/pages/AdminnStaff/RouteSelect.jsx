@@ -81,7 +81,9 @@ const Route = ({ to, Icon, title, onClose }) => {
     >
       {({ isActive }) => (
         <>
-          <Icon className={isActive ? "text-blue-600" : ""} />
+          <span className="w-5 h-5 flex items-center justify-center">
+            <Icon className={isActive ? "text-blue-600" : ""} />
+          </span>
           <p className="text-md font-semibold">{title}</p>
         </>
       )}
