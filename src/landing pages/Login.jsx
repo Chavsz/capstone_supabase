@@ -176,7 +176,7 @@ const Login = ({ setAuth }) => {
     fetchLoginPhoto();
   }, []);
 
-  const heroLogoSrc = sidebarLogo || loginPhoto || LAVLogo;
+  const heroLogoSrc = loginPhoto || LAVLogo;
 
   return (
     <div className="min-h-screen bg-[#eeeeee] flex items-center justify-center p-4 md:p-6">
