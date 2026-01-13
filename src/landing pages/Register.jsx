@@ -25,7 +25,7 @@ const Register = ({ setAuth }) => {
     e.preventDefault();
     
     // Validate email domain and format
-    const allowedDomain = "@g.weru.edu.ph";
+    const allowedDomain = "@g.msuiit.edu.ph";
     const emailLower = email.toLowerCase();
     
     if (!emailLower.endsWith(allowedDomain)) {
@@ -169,7 +169,7 @@ const Register = ({ setAuth }) => {
               Create an account
             </h2>
             <p className="text-sm text-gray-500 mb-6">
-              Set up your details to start booking sessions. Only @g.msuiit.edu.ph email addresses are allowed.
+              Set up your details to start booking sessions.
             </p>
 
           {message && (
