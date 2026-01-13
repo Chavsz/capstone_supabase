@@ -217,7 +217,7 @@ const Login = ({ setAuth }) => {
               Hello, welcome back
             </h2>
             <p className="text-sm text-gray-500 mb-6">
-              Sign in to continue your tutoring journey.
+             Sign in with your 'My.IIT' account to continue your tutoring journey.
             </p>
 
           {message && (
