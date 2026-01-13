@@ -1224,7 +1224,7 @@ const Reports = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
               <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
@@ -1278,7 +1278,7 @@ const Reports = () => {
             </div>
           </section>
 
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md">
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
               <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
