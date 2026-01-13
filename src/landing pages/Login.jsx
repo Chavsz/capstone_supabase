@@ -86,10 +86,13 @@ const Login = ({ setAuth }) => {
     setMessage("");
 
     try {
+      // Get the current origin (works for both localhost and production)
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: redirectUrl,
           queryParams: {
             prompt: "select_account",
           },
