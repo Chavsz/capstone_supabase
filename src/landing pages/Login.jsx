@@ -24,26 +24,49 @@ const Login = ({ setAuth }) => {
     setMessage("");
 
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedInput = email.trim().toLowerCase();
+      const isEmailFormat = normalizedInput.includes("@");
 
-      const { error: existingUserError } = await supabase
-        .from("users")
-        .select("user_id, role, name, email")
-        .eq("email", normalizedEmail)
-        .single();
+      let lookupMatches = [];
+      if (isEmailFormat) {
+        const { data, error } = await supabase
+          .from("users")
+          .select("user_id, role, name, email")
+          .ilike("email", normalizedInput);
+        if (error) throw error;
+        lookupMatches = data || [];
+      } else {
+        const escapedInput = normalizedInput.replace(/"/g, '\\"');
+        const exactFilter = `"${escapedInput}"`;
+        const likeFilter = `"${escapedInput}@%"`;
+        const { data, error } = await supabase
+          .from("users")
+          .select("user_id, role, name, email")
+          .or(`email.eq.${exactFilter},email.ilike.${likeFilter}`)
+          .limit(2);
+        if (error) throw error;
+        lookupMatches = data || [];
+      }
 
-      if (existingUserError) {
-        if (existingUserError.code === "PGRST116") {
-          setMessage("Account not found. Please contact support.");
-          return;
-        }
+      if (!lookupMatches.length) {
+        setMessage("Account not found. Please contact support.");
+        return;
+      }
 
-        throw existingUserError;
+      if (lookupMatches.length > 1) {
+        setMessage("Multiple accounts match. Please use your full email.");
+        return;
+      }
+
+      const resolvedEmail = lookupMatches[0].email || normalizedInput;
+      if (!resolvedEmail) {
+        setMessage("Account email is missing. Please contact support.");
+        return;
       }
 
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+        email: resolvedEmail,
         password,
       });
 
