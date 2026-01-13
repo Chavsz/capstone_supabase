@@ -287,16 +287,6 @@ const Login = ({ setAuth }) => {
             <span>Sign in with Google</span>
           </button>
 
-          {/* Sign Up Link */}
-          <p className="mt-6 text-center text-gray-600">
-            Don't have account?{" "}
-            <Link
-              to="/register"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Sign up
-            </Link>
-          </p>
           </div>
         </div>
       </div>
