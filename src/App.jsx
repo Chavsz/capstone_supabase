@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabase-client";
+import { UserProvider, useUserDetails } from "./contexts/UserContext";
 
 // Landing Pages
 import LandingPage from "./LandingPage";
@@ -294,9 +295,10 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
   );
 }
 
-function App() {
+function AppWithUser() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentRole, setCurrentRole] = useState(null);
+  const { setUserDetails, clearUserDetails } = useUserDetails();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminAccess, setAdminAccess] = useState(false);
@@ -346,12 +348,67 @@ function App() {
     setSession(null);
     setIsAuthenticated(false);
     setCurrentRole(null);
+    clearUserDetails();
     setLoading(false);
     setAdminAccess(false);
     isFetching.current = false;
     hasRole.current = false;
     setStoredRoleOverride(null);
     setRoleOverride(null);
+  };
+
+  const fetchUserDetails = async (userId, userEmail) => {
+    try {
+      let { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116" && userEmail) {
+          const { data: emailData, error: emailError } = await supabase
+            .from("users")
+            .select("*")
+            .ilike("email", userEmail)
+            .single();
+
+          if (emailError && emailError.code !== "PGRST116") {
+            throw emailError;
+          }
+
+          if (emailData) {
+            if (emailData.user_id !== userId) {
+              const { data: updatedData, error: updateError } = await supabase
+                .from("users")
+                .update({ user_id: userId })
+                .ilike("email", userEmail)
+                .select("*")
+                .single();
+
+              if (updateError) {
+                throw updateError;
+              }
+
+              data = updatedData || emailData;
+            } else {
+              data = emailData;
+            }
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      if (data) {
+        setUserDetails(data);
+      }
+
+      return data || null;
+    } catch (err) {
+      console.error("Error fetching user details:", err.message);
+      return null;
+    }
   };
 
   // Single function to fetch role
@@ -361,18 +418,19 @@ function App() {
       return;
     }
 
-    // If we already have a role in state, don't fetch again
-    if (currentRole) {
-      setLoading(false);
-      hasRole.current = true; // Sync the ref
-      return;
-    }
-
     isFetching.current = true;
 
     try {
       // Get current user to access metadata (for OAuth users)
       const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      // If we already have a role in state, don't fetch again
+      if (currentRole) {
+        await fetchUserDetails(userId, user?.email);
+        setLoading(false);
+        hasRole.current = true; // Sync the ref
+        return;
+      }
       
       const { data, error } = await supabase
         .from("users")
@@ -466,6 +524,7 @@ function App() {
             setRoleOverride(null);
             setCurrentRole("admin");
             hasRole.current = true;
+            await fetchUserDetails(userId, userEmail);
             setLoading(false);
             isFetching.current = false;
             return;
@@ -474,6 +533,7 @@ function App() {
           if (linkedData?.role) {
             setCurrentRole(linkedData.role);
             hasRole.current = true;
+            await fetchUserDetails(userId, userEmail);
             setLoading(false);
             isFetching.current = false;
             return;
@@ -494,6 +554,7 @@ function App() {
           setRoleOverride(null);
           setCurrentRole("admin");
           hasRole.current = true;
+          await fetchUserDetails(userId, user?.email);
           setLoading(false);
           isFetching.current = false;
           return;
@@ -503,6 +564,7 @@ function App() {
       if (data && data.role) {
         setCurrentRole(data.role);
         hasRole.current = true; // Mark that we have a role
+        await fetchUserDetails(userId, user?.email);
         setLoading(false);
       } else {
         console.warn("WARNING: No role found for user");
@@ -672,6 +734,14 @@ function App() {
         loading={loading}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <UserProvider>
+      <AppWithUser />
+    </UserProvider>
   );
 }
 
