@@ -226,6 +226,25 @@ const Login = ({ setAuth }) => {
             </div>
           )}
 
+          {/* Google Sign-In Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+          >
+            <FcGoogle className="w-5 h-5" />
+            <span>Sign in with Google</span>
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <span className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs uppercase tracking-wide text-gray-400">
+              or
+            </span>
+            <span className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <form onSubmit={onSubmitForm} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -267,25 +286,6 @@ const Login = ({ setAuth }) => {
               Log in
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <span className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs uppercase tracking-wide text-gray-400">
-              or
-            </span>
-            <span className="flex-1 h-px bg-gray-200" />
-          </div>
-
-          {/* Google Sign-In Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
-          >
-            <FcGoogle className="w-5 h-5" />
-            <span>Sign in with Google</span>
-          </button>
 
           </div>
         </div>
