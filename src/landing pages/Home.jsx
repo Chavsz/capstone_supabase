@@ -92,7 +92,7 @@ function Home() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full text-md transition-all duration-300 transform hover:scale-90 shadow-lg hover:shadow-xl"
-                  to="/login"
+                  to="/register"
                 >
                   Get Started Today
                   <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

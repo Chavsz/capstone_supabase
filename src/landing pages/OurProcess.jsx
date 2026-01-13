@@ -66,7 +66,7 @@ const OurProcess = () => {
 
         <div className="mt-16 text-center">
           <Link
-            to="/login"
+            to="/register"
             className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Start Learning Now

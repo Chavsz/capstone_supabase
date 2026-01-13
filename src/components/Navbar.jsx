@@ -116,7 +116,7 @@ const Navbar = () => {
               </Link>
               <Link 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                to="/login"
+                to="/register"
               >
                 Get Started
               </Link>
@@ -166,7 +166,7 @@ const Navbar = () => {
               </Link>
               <Link 
                 className="bg-blue-600 hover:bg-blue-700 inline-block text-white px-3 py-2 text-base font-medium rounded-lg mt-2 transition-all duration-300"
-                to="/login"
+                to="/register"
               >
                 Get Started
               </Link>

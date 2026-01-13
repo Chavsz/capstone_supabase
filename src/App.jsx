@@ -6,6 +6,7 @@ import { UserProvider, useUserDetails } from "./contexts/UserContext";
 // Landing Pages
 import LandingPage from "./LandingPage";
 import Login from "./landing pages/Login";
+import Register from "./landing pages/Register";
 
 // Dashboards
 import TuteePage from "./pages/Tutee/TuteePage"; // role = student
@@ -119,7 +120,19 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
           )
         }
       />
-      <Route exact path="/register" element={<Navigate to="/login" replace />} />
+      <Route
+        exact
+        path="/register"
+        element={
+          loading ? (
+            loadingScreen
+          ) : !isAuthenticated ? (
+            <Register setAuth={setAuth} />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
       <Route
         path="/dashboard"
         element={
