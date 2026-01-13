@@ -24,9 +24,26 @@ const Login = ({ setAuth }) => {
     setMessage("");
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const { error: existingUserError } = await supabase
+        .from("users")
+        .select("user_id, role, name, email")
+        .eq("email", normalizedEmail)
+        .single();
+
+      if (existingUserError) {
+        if (existingUserError.code === "PGRST116") {
+          setMessage("Account not found. Please contact support.");
+          return;
+        }
+
+        throw existingUserError;
+      }
+
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
 
@@ -42,28 +59,9 @@ const Login = ({ setAuth }) => {
 
         if (profileError) {
           if (profileError.code === 'PGRST116') {
-            const fallbackName = data.user.user_metadata?.name || data.user.email || "User";
-            const { data: createdUser, error: insertError } = await supabase
-              .from("users")
-              .insert([
-                {
-                  user_id: data.user.id,
-                  name: fallbackName,
-                  email: data.user.email,
-                  role: "student",
-                },
-              ])
-              .select("role")
-              .single();
-
-            if (insertError) {
-              console.error("Unable to recreate user profile:", insertError.message);
-              setMessage("User profile not found. Please contact support.");
-            } else if (createdUser?.role) {
-              window.dispatchEvent(
-                new CustomEvent("roleChanged", { detail: { newRole: createdUser.role } })
-              );
-            }
+            await supabase.auth.signOut();
+            setMessage("User profile not found. Please contact support.");
+            return;
           }
         } else if (profileData) {
           if (profileData.role) {
@@ -72,6 +70,7 @@ const Login = ({ setAuth }) => {
             window.dispatchEvent(new CustomEvent('roleChanged', { detail: { newRole: role } }));
           } else {
             setMessage("User role not set. Please contact support.");
+            return;
           }
         }
       }
