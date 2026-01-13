@@ -494,7 +494,7 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="w-1/2 flex flex-col lg:flex-row gap-2 lg:gap-4 items-start">
+          <div className="w-1/2 flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
             <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -631,7 +631,7 @@ const Users = () => {
           </div>
         </div>
 
-          <div className="w-full lg:w-44 flex lg:flex-col gap-2 lg:gap-4 items-center justify-start">
+          <div className="w-full lg:w-44 flex lg:flex-col gap-4 items-center justify-center">
             <button
               type="button"
               onClick={() => handleSelectFilter("Admin")}
@@ -680,7 +680,7 @@ const Users = () => {
       {!showLanding && (
       <div>
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-2 md:mt-3">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6">
         <div className="text-xs md:text-sm text-gray-700 order-2 sm:order-1">
           Showing {searchfilteredUsers.length > 0 ? startIndex + 1 : 0}-{Math.min(endIndex, searchfilteredUsers.length)} of{" "}
           {searchfilteredUsers.length} entries
