@@ -184,7 +184,7 @@ const Login = ({ setAuth }) => {
         {/* Left Panel - Illustration */}
         <div className="relative bg-gradient-to-b from-[#e7ecff] via-[#eef1ff] to-[#ffffff] flex items-center justify-center p-6 md:p-10">
           <Link
-            to="/#home"
+            to="/"
             className="absolute top-4 left-4 flex items-center"
             aria-label="Go to LAV landing page"
           >
@@ -193,7 +193,7 @@ const Login = ({ setAuth }) => {
               alt="Logo"
               className="w-7 h-7 object-contain"
             />
-            <span className="ml-2 text-[#3142a6] font-semibold text-sm"></span>
+            <span className="ml-2 text-[#3142a6] font-semibold text-sm">Home</span>
           </Link>
 
           <div className="flex flex-col items-center gap-4 text-center w-full">
