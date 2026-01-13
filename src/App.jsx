@@ -445,19 +445,6 @@ function AppWithUser() {
           const allowedDomain = "@g.msuiit.edu.ph";
           const emailLower = userEmail.toLowerCase();
 
-          if (!emailLower || !emailLower.endsWith(allowedDomain)) {
-            console.error(`OAuth sign-in rejected: Email domain not allowed. Only ${allowedDomain} emails are permitted.`);
-            await supabase.auth.signOut();
-            try {
-              sessionStorage.setItem("oauth_error", `Only ${allowedDomain} email addresses are allowed. Please use a valid email address.`);
-            } catch (e) {
-              // Ignore storage errors
-            }
-            clearAuthState();
-            window.location.href = "/login";
-            return;
-          }
-
           const { data: existingUser, error: existingUserError } = await supabase
             .from("users")
             .select("user_id, role, is_admin, is_superadmin")
@@ -469,6 +456,21 @@ function AppWithUser() {
             setLoading(false);
             isFetching.current = false;
             return;
+          }
+
+          if (!emailLower || !emailLower.endsWith(allowedDomain)) {
+            if (!existingUser) {
+              console.error(`OAuth sign-in rejected: Email domain not allowed. Only ${allowedDomain} emails are permitted.`);
+              await supabase.auth.signOut();
+              try {
+              sessionStorage.setItem("oauth_error", "Please use your My.IIT account.");
+              } catch (e) {
+                // Ignore storage errors
+              }
+              clearAuthState();
+              window.location.href = "/login";
+              return;
+            }
           }
 
           let linkedData = existingUser;
