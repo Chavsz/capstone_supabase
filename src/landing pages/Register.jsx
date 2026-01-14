@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase-client";
+import { FcGoogle } from "react-icons/fc";
 import LAVLogo from "../assets/LAV_image.png";
 
 const Register = ({ setAuth }) => {
@@ -107,6 +108,36 @@ const Register = ({ setAuth }) => {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    setMessage("");
+    setMessageType("error");
+
+    try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error("Google sign-up error:", err.message);
+      if (err?.message?.includes("Unsupported provider")) {
+        setMessage(
+          "Google sign-in is not enabled in Supabase yet. Enable the Google provider in Auth > Providers (PostgreSQL backend) or continue with email."
+        );
+      } else {
+        setMessage("Unable to continue with Google right now. Please try again.");
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchLoginPhoto = async () => {
       try {
@@ -189,6 +220,26 @@ const Register = ({ setAuth }) => {
               </p>
             </div>
           )}
+
+          <p className="text-sm text-gray-500 mb-3">
+            Sign up with your My.IIT Google account.
+          </p>
+          <button
+            type="button"
+            onClick={handleGoogleSignUp}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+          >
+            <FcGoogle className="w-5 h-5" />
+            <span>Sign up with Google</span>
+          </button>
+
+          <div className="flex items-center gap-3 my-6">
+            <span className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs uppercase tracking-wide text-gray-400">
+              or
+            </span>
+            <span className="flex-1 h-px bg-gray-200" />
+          </div>
 
           <form onSubmit={onSubmitForm} className="space-y-6">
 
