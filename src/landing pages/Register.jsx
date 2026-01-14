@@ -222,7 +222,7 @@ const Register = ({ setAuth }) => {
           )}
 
           <p className="text-sm text-gray-500 mb-3">
-            Sign up with your My.IIT Google account.
+            Sign up with your <strong>My.IIT</strong> Google account.
           </p>
           <button
             type="button"
@@ -230,7 +230,7 @@ const Register = ({ setAuth }) => {
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
           >
             <FcGoogle className="w-5 h-5" />
-            <span>Sign up with Google</span>
+            <span>Sign up with <strong>My.IIT</strong> Google</span>
           </button>
 
           <div className="flex items-center gap-3 my-6">

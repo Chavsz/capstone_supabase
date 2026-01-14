@@ -233,7 +233,7 @@ const Login = ({ setAuth }) => {
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
           >
             <FcGoogle className="w-5 h-5" />
-            <span>Sign in with Google</span>
+            <span>Sign in with <strong>My.IIT</strong> Google</span>
           </button>
 
           {/* Divider */}
