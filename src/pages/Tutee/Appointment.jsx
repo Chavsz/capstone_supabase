@@ -338,6 +338,9 @@ const Appointment = () => {
     today.setHours(0, 0, 0, 0);
     const min = new Date(today);
     min.setDate(min.getDate() + 3);
+    while (min.getDay() === 0 || min.getDay() === 6) {
+      min.setDate(min.getDate() + 1);
+    }
     return min;
   };
 
@@ -350,13 +353,34 @@ const Appointment = () => {
 
   // Prevent selecting past dates and weekends
   const handleDateChange = (e) => {
-    const value = e.target.value;
-    if (!value) {
-      setFormData({ ...formData, date: "" });
+    const rawValue = e.target.value;
+    if (!rawValue) {
+      setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
-    
-    const selected = new Date(`${value}T00:00:00`);
+
+    const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
+      ? rawValue
+      : (() => {
+          const match = rawValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+          if (!match) return rawValue;
+          const [, day, month, year] = match;
+          return `${year}-${month}-${day}`;
+        })();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+      toast.error("Please enter a valid date.");
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return;
+    }
+
+    const selected = new Date(`${normalizedValue}T00:00:00`);
+    if (Number.isNaN(selected.getTime())) {
+      toast.error("Please enter a valid date.");
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return;
+    }
+
     const minSelectable = getMinSelectableDate();
     
     // Enforce 3-day lead time (block today and the next two days)
@@ -368,8 +392,7 @@ const Appointment = () => {
           day: "numeric",
         })}.`
       );
-      setFormData({ ...formData, date: "" });
-      e.target.value = "";
+      setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
     
@@ -377,12 +400,11 @@ const Appointment = () => {
     const day = selected.getDay();
     if (day === 0 || day === 6) {
       toast.error("Weekends are not available.");
-      setFormData({ ...formData, date: "" });
-      e.target.value = "";
+      setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
     
-    setFormData({ ...formData, date: value });
+    setFormData((prev) => ({ ...prev, date: normalizedValue }));
   };
 
   const CLASS_TIME_RANGES = [
