@@ -120,7 +120,9 @@ const Comments = () => {
                     {item.comment.length}/{MAX_COMMENT_LENGTH}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{item.comment}</p>
+                <p className="text-sm text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
+                  {item.comment}
+                </p>
               </div>
             ))}
           </div>
