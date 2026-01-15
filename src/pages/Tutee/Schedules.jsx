@@ -25,6 +25,7 @@ const STATUS_META = {
   declined: { label: "Declined", badge: "bg-[#323335] text-white" },
   cancelled: { label: "Cancelled", badge: "bg-[#ff4b4b] text-white" },
 };
+const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
 
 const formatStatusLabel = (status = "") =>
   STATUS_META[status]?.label || status.replace(/_/g, " ");
@@ -401,6 +402,7 @@ const AppointmentModal = ({
   onShareResources,
   onDeclineConfirmed,
   tutorSchedules = {},
+  tutorUnavailableDays = {},
 }) => {
   const CLASS_TIME_BLOCKS = [
     { start: 8 * 60, end: 12 * 60 },
@@ -581,6 +583,11 @@ const AppointmentModal = ({
   const handleUpdateClick = async () => {
     if (!appointment || !onUpdate) return;
 
+    if (appointment.status !== "pending") {
+      setError("Only pending appointments can be updated.");
+      return;
+    }
+
     if (!formData.date || !formData.start_time || !formData.end_time) {
       setError("Please complete the date and time fields.");
       return;
@@ -594,9 +601,56 @@ const AppointmentModal = ({
       return;
     }
 
+    const unavailableEntries = tutorUnavailableDays[appointment.tutor_id] || [];
+    const unavailableEntry = unavailableEntries.find(
+      (entry) => entry.date === formData.date
+    );
+    if (unavailableEntry) {
+      setError(
+        unavailableEntry.reason
+          ? `Tutor is not available on this date. Reason: ${unavailableEntry.reason}`
+          : "Tutor is not available on this date."
+      );
+      return;
+    }
+
     const availabilityCheck = validateAgainstTutorSchedule();
     if (!availabilityCheck.valid) {
       setError(availabilityCheck.message);
+      return;
+    }
+
+    try {
+      const { data: tutorAppointments, error: tutorError } = await supabase
+        .from("appointment")
+        .select("appointment_id, start_time, end_time, status")
+        .eq("tutor_id", appointment.tutor_id)
+        .eq("date", formData.date)
+        .in("status", BOOKED_STATUSES)
+        .neq("appointment_id", appointment.appointment_id);
+
+      if (tutorError) throw tutorError;
+
+      const startMinutes = getMinutesFromString(formData.start_time);
+      const endMinutes = getMinutesFromString(formData.end_time);
+      const hasConflict = (tutorAppointments || []).some((item) => {
+        const itemStart = getMinutesFromString(item.start_time);
+        const itemEnd = getMinutesFromString(item.end_time);
+        return (
+          itemStart !== null &&
+          itemEnd !== null &&
+          startMinutes < itemEnd &&
+          endMinutes > itemStart
+        );
+      });
+
+      if (hasConflict) {
+        setError("Tutor already has a session at the selected time.");
+        return;
+      }
+    } catch (err) {
+      console.error(err.message);
+      setError("Unable to verify tutor availability. Please try again.");
       return;
     }
 
@@ -1025,6 +1079,7 @@ const Schedules = () => {
   const [selectedEvaluationAppointment, setSelectedEvaluationAppointment] = useState(null);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [tutorSchedules, setTutorSchedules] = useState({});
+  const [tutorUnavailableDays, setTutorUnavailableDays] = useState({});
   const [currentUserId, setCurrentUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -1054,6 +1109,7 @@ const Schedules = () => {
       const tutorIds = [...new Set((data || []).map(apt => apt.tutor_id))];
       let tutorProfiles = {};
       let scheduleMap = {};
+      let unavailableMap = {};
       if (tutorIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profile")
@@ -1092,10 +1148,30 @@ const Schedules = () => {
                 scheduleMap[userId].push(slot);
               });
             }
+
+            const { data: unavailableData } = await supabase
+              .from("tutor_unavailable_days")
+              .select("profile_id, date, reason")
+              .in("profile_id", profileIds);
+
+            if (unavailableData) {
+              unavailableData.forEach((entry) => {
+                const userId = profileIdToUserId[entry.profile_id];
+                if (!userId) return;
+                if (!unavailableMap[userId]) {
+                  unavailableMap[userId] = [];
+                }
+                unavailableMap[userId].push({
+                  date: entry.date,
+                  reason: entry.reason || "",
+                });
+              });
+            }
           }
         }
       }
       setTutorSchedules(scheduleMap);
+      setTutorUnavailableDays(unavailableMap);
 
       // Check which appointments have evaluations
       const appointmentIds = (data || []).map(apt => apt.appointment_id);
@@ -1771,6 +1847,7 @@ const Schedules = () => {
         onShareResources={handleResourceShare}
         onDeclineConfirmed={handleConfirmedDecline}
         tutorSchedules={tutorSchedules}
+        tutorUnavailableDays={tutorUnavailableDays}
       />
 
       {/* Evaluation Modal */}

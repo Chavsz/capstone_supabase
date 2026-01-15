@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
@@ -44,6 +44,7 @@ const Appointment = () => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
+  const lastDetailsAvailabilityRef = useRef(null);
 
   const subjects = [
     {
@@ -496,6 +497,70 @@ const Appointment = () => {
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
     return hours * 60 + minutes;
   };
+
+  const getAvailabilityForTutor = useCallback(
+    (tutorId) => {
+      const startMinutes = getMinutesFromStored(formData.start_time);
+      const endMinutes = getMinutesFromStored(formData.end_time);
+      const hasDate = Boolean(formData.date);
+      const hasTimeRange = startMinutes !== null && endMinutes !== null;
+      const hasSlot = hasDate && hasTimeRange;
+      const dayName = formData.date
+        ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-US", {
+            weekday: "long",
+          })
+        : "";
+
+      if (!hasSlot) return { available: false, label: "Select date & time" };
+      const unavailableEntries = tutorUnavailableDays[tutorId] || [];
+      const unavailableEntry = unavailableEntries.find(
+        (entry) => entry.date === formData.date
+      );
+      if (hasDate && unavailableEntry) {
+        return {
+          available: false,
+          label: unavailableEntry.reason
+            ? `Not available: ${unavailableEntry.reason}`
+            : "Not available on selected date",
+        };
+      }
+
+      const conflictTutorIds = getConflictTutorIds(
+        appointmentsForDate,
+        startMinutes,
+        endMinutes
+      );
+      if (conflictTutorIds.has(tutorId)) {
+        return { available: false, label: "Booked" };
+      }
+
+      const schedules = tutorSchedules[tutorId] || [];
+      const daySchedules = schedules.filter((s) => s.day === dayName);
+      if (daySchedules.length === 0) {
+        return { available: false, label: `Not available on ${dayName}` };
+      }
+
+      const match = daySchedules.some((s) => {
+        const scheduleStart = getMinutesFromStored(s.start_time);
+        const scheduleEnd = getMinutesFromStored(s.end_time);
+        if (scheduleStart === null || scheduleEnd === null) return false;
+        return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+      });
+
+      if (match) {
+        return { available: true, label: "Available now" };
+      }
+      return { available: false, label: "Not available at selected time" };
+    },
+    [
+      appointmentsForDate,
+      formData.date,
+      formData.end_time,
+      formData.start_time,
+      tutorSchedules,
+      tutorUnavailableDays,
+    ]
+  );
 
   const getConflictTutorIds = (appointments, startMinutes, endMinutes) => {
     if (startMinutes === null || endMinutes === null) return new Set();
@@ -1082,6 +1147,21 @@ const Appointment = () => {
     setDrawerDismissedKey("");
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!detailsTutorId) {
+      lastDetailsAvailabilityRef.current = null;
+      return;
+    }
+    const availability = getAvailabilityForTutor(detailsTutorId);
+    const previousAvailability = lastDetailsAvailabilityRef.current;
+    if (previousAvailability === true && !availability.available) {
+      setDetailsTutorId(null);
+      lastDetailsAvailabilityRef.current = null;
+      return;
+    }
+    lastDetailsAvailabilityRef.current = availability.available;
+  }, [detailsTutorId, getAvailabilityForTutor]);
+
   const renderTutorDetails = (options = {}) => {
     const { compact = false, showHeading = true } = options;
     const containerClass = compact
@@ -1140,40 +1220,6 @@ const Appointment = () => {
           endMinutes
         );
 
-        const availabilityForTutor = (tutorId) => {
-          if (!hasSlot) return { available: false, label: "Select date & time" };
-          const unavailableEntries = tutorUnavailableDays[tutorId] || [];
-          const unavailableEntry = unavailableEntries.find(
-            (entry) => entry.date === formData.date
-          );
-          if (hasDate && unavailableEntry) {
-            return {
-              available: false,
-              label: unavailableEntry.reason
-                ? `Not available: ${unavailableEntry.reason}`
-                : "Not available on selected date",
-            };
-          }
-          if (conflictTutorIds.has(tutorId)) {
-            return { available: false, label: "Booked" };
-          }
-          const schedules = tutorSchedules[tutorId] || [];
-          const daySchedules = schedules.filter((s) => s.day === dayName);
-          if (daySchedules.length === 0) {
-            return { available: false, label: `Not available on ${dayName}` };
-          }
-          const match = daySchedules.some((s) => {
-            const scheduleStart = getMinutesFromStored(s.start_time);
-            const scheduleEnd = getMinutesFromStored(s.end_time);
-            if (scheduleStart === null || scheduleEnd === null) return false;
-            return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
-          });
-          if (match) {
-            return { available: true, label: "Available now" };
-          }
-          return { available: false, label: "Not available at selected time" };
-        };
-
         const visibleTutors = tutors
           .filter((tutor) => matchesSubject(tutor))
           .filter((tutor) => {
@@ -1196,7 +1242,7 @@ const Appointment = () => {
             });
           })
           .map((tutor) => {
-            const availability = availabilityForTutor(tutor.user_id);
+            const availability = getAvailabilityForTutor(tutor.user_id);
             return { tutor, availability };
           })
           .sort((a, b) => Number(b.availability.available) - Number(a.availability.available));
