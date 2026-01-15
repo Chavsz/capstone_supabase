@@ -43,7 +43,6 @@ const Appointment = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
-  const [dateInput, setDateInput] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const subjects = [
@@ -429,29 +428,15 @@ const Appointment = () => {
     }
 
     setFormData((prev) => ({ ...prev, date: normalizedValue }));
-    setDateInput(normalizedValue);
     return true;
   };
 
-  // Allow manual typing; validate on blur or when input becomes complete.
   const handleDateChange = (e) => {
     const rawValue = e.target.value;
-    setDateInput(rawValue);
-
     if (!rawValue) {
       setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
-
-    const normalizedValue = normalizeManualDateInput(rawValue);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
-      validateAndApplyDate(normalizedValue, { showToast: false });
-    }
-  };
-
-  const handleDateBlur = (e) => {
-    const rawValue = e.target.value;
-    if (!rawValue) return;
     validateAndApplyDate(rawValue, { showToast: true });
   };
 
@@ -925,9 +910,6 @@ const Appointment = () => {
       const parsed = JSON.parse(savedDraft);
       if (parsed?.formData) {
         setFormData((prev) => ({ ...prev, ...parsed.formData }));
-        if (parsed.formData.date) {
-          setDateInput(parsed.formData.date);
-        }
       }
       if (typeof parsed?.selectedSubject === "string") {
         setSelectedSubject(parsed.selectedSubject);
@@ -942,11 +924,6 @@ const Appointment = () => {
       console.error("Unable to restore appointment draft:", err.message);
     }
   }, [currentUserId]);
-
-  useEffect(() => {
-    if (!formData.date) return;
-    setDateInput(formData.date);
-  }, [formData.date]);
 
   useEffect(() => {
     if (!draftTutorId) return;
@@ -1578,12 +1555,10 @@ const Appointment = () => {
               </h3>
               <div className="space-y-3">
                 <input
-                  type="text"
+                  type="date"
                   name="date"
-                  value={dateInput}
+                  value={formData.date}
                   onChange={handleDateChange}
-                  onBlur={handleDateBlur}
-                  placeholder="YYYY-MM-DD or January 19, 2026"
                   className="border border-gray-300 rounded-md p-3 w-full"
                   required
                 />
