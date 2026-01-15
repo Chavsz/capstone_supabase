@@ -171,6 +171,36 @@ const Reports = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-reports-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointment" },
+        () => fetchData(() => true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "evaluation" },
+        () => fetchData(() => true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "schedule" },
+        () => fetchData(() => true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "landing" },
+        () => fetchData(() => true)
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [fetchData]);
+
   const normalizeDate = (value) => {
     const date = new Date(value);
     date.setHours(0, 0, 0, 0);

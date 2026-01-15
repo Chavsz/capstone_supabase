@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { FaRegCalendarAlt } from "react-icons/fa";
 
@@ -69,6 +69,7 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [userId, setUserId] = useState(null);
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
@@ -108,76 +109,109 @@ const Reports = () => {
     return `${year}-${month}-${day}`;
   };
 
-  useEffect(() => {
-    let active = true;
-
-    const fetchEvaluations = async () => {
-      try {
-        setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) {
-          if (active) {
-            setEvaluations([]);
-            setAppointments([]);
-          }
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("evaluation")
-          .select(
-            [
-              "evaluation_id",
-              "created_at",
-              "presentation_clarity",
-              "drills_sufficiency",
-              "patience_enthusiasm",
-              "study_skills_development",
-              "positive_impact",
-            ].join(", ")
-          )
-          .eq("tutor_id", session.user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        const { data: appointmentData, error: appointmentError } = await supabase
-          .from("appointment")
-          .select("appointment_id, tutor_id, date, start_time, end_time, number_of_tutees, status")
-          .eq("tutor_id", session.user.id)
-          .order("date", { ascending: false });
-
-        if (appointmentError) throw appointmentError;
-
-        if (!active) return;
-        setEvaluations(data || []);
-        setAppointments(appointmentData || []);
-      } catch (err) {
-        console.error("Unable to load reports:", err.message);
-        if (active) {
+  const fetchReportsData = useCallback(async (shouldUpdate) => {
+    try {
+      if (shouldUpdate()) setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        if (shouldUpdate()) {
           setEvaluations([]);
           setAppointments([]);
+          setUserId(null);
         }
-      } finally {
-        if (active) setLoading(false);
+        return;
       }
-    };
 
-    fetchEvaluations();
+      if (shouldUpdate()) setUserId(session.user.id);
 
+      const { data, error } = await supabase
+        .from("evaluation")
+        .select(
+          [
+            "evaluation_id",
+            "appointment_id",
+            "created_at",
+            "presentation_clarity",
+            "drills_sufficiency",
+            "patience_enthusiasm",
+            "study_skills_development",
+            "positive_impact",
+          ].join(", ")
+        )
+        .eq("tutor_id", session.user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const { data: appointmentData, error: appointmentError } = await supabase
+        .from("appointment")
+        .select("appointment_id, tutor_id, date, start_time, end_time, number_of_tutees, status")
+        .eq("tutor_id", session.user.id)
+        .order("date", { ascending: false });
+
+      if (appointmentError) throw appointmentError;
+
+      if (!shouldUpdate()) return;
+      setEvaluations(data || []);
+      setAppointments(appointmentData || []);
+    } catch (err) {
+      console.error("Unable to load reports:", err.message);
+      if (shouldUpdate()) {
+        setEvaluations([]);
+        setAppointments([]);
+      }
+    } finally {
+      if (shouldUpdate()) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchReportsData(() => active);
     return () => {
       active = false;
     };
-  }, []);
+  }, [fetchReportsData]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`tutor-reports-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointment", filter: `tutor_id=eq.${userId}` },
+        () => fetchReportsData(() => true)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "evaluation", filter: `tutor_id=eq.${userId}` },
+        () => fetchReportsData(() => true)
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [fetchReportsData, userId]);
+
+  const appointmentsById = useMemo(() => {
+    const map = new Map();
+    appointments.forEach((appointment) => {
+      map.set(appointment.appointment_id, appointment);
+    });
+    return map;
+  }, [appointments]);
 
   const evaluationsInPeriod = useMemo(() => {
     return evaluations.filter((evaluation) => {
-      if (!evaluation.created_at) return false;
-      const date = normalizeDate(evaluation.created_at);
+      const appointment = appointmentsById.get(evaluation.appointment_id);
+      const baseDate = appointment?.date || evaluation.created_at;
+      if (!baseDate) return false;
+      const date = normalizeDate(baseDate);
       if (!date) return false;
       return date >= rangeStart && date < rangeEnd;
     });
-  }, [evaluations, rangeStart, rangeEnd]);
+  }, [appointmentsById, evaluations, rangeStart, rangeEnd]);
 
   const appointmentsInPeriod = useMemo(() => {
     return appointments.filter((appointment) => {
