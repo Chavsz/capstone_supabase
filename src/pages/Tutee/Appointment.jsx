@@ -368,15 +368,6 @@ const Appointment = () => {
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
-    if (/[A-Za-z]/.test(trimmed)) {
-      const textMatch = trimmed.match(/([A-Za-z]+ \d{1,2}, \d{4})/);
-      const dateText = textMatch ? textMatch[1] : trimmed.replace(/\.$/, "");
-      const parsed = new Date(dateText);
-      if (!Number.isNaN(parsed.getTime())) {
-        return formatDateYMD(parsed);
-      }
-    }
-
     return trimmed;
   };
 
@@ -405,13 +396,7 @@ const Appointment = () => {
     // Enforce 3-day lead time (block today and the next two days)
     if (selected < minSelectable) {
       if (showToast) {
-        toast.error(
-          `Earliest available date is ${minSelectable.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}.`
-        );
+        toast.error("Selected date is too soon.");
       }
       setFormData((prev) => ({ ...prev, date: "" }));
       return false;
@@ -746,13 +731,7 @@ const Appointment = () => {
       const minSelectable = getMinSelectableDate();
     
       if (selected < minSelectable) {
-        toast.error(
-          `Selected date is too soon. Earliest available is ${minSelectable.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}.`
-        );
+        toast.error("Selected date is too soon.");
         return;
       }
     
@@ -914,9 +893,6 @@ const Appointment = () => {
       if (typeof parsed?.selectedSubject === "string") {
         setSelectedSubject(parsed.selectedSubject);
       }
-      if (parsed?.detailsTutorId) {
-        setDetailsTutorId(parsed.detailsTutorId);
-      }
       if (parsed?.selectedTutorId) {
         setDraftTutorId(parsed.selectedTutorId);
       }
@@ -941,7 +917,6 @@ const Appointment = () => {
       formData,
       selectedSubject,
       selectedTutorId: selectedTutor?.user_id || null,
-      detailsTutorId: detailsTutorId || null,
     };
     window.localStorage.setItem(
       `appointmentDraft:${currentUserId}`,
@@ -1054,6 +1029,7 @@ const Appointment = () => {
     const currentKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
     setDrawerDismissedKey(currentKey);
     setShowTutorDrawer(false);
+    setDetailsTutorId(null);
   };
 
   // Helper function to format time
