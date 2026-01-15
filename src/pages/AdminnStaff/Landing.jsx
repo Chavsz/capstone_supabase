@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Landing = () => {
   const [landingData, setLandingData] = useState(null);
@@ -17,6 +18,7 @@ const Landing = () => {
     sidebar_logo: null,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   useEffect(() => {
     const fetchLandingData = async () => {
@@ -155,15 +157,16 @@ const Landing = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSaving(true);
+    runAction(async () => {
+      setIsSaving(true);
 
-    try {
-      let homeImageUrl = landingData?.home_image || null;
-      let aboutImageUrl = landingData?.about_image || null;
-      let loginPhotoUrl = landingData?.login_photo || null;
-      let sidebarLogoUrl = landingData?.sidebar_logo || null;
+      try {
+        let homeImageUrl = landingData?.home_image || null;
+        let aboutImageUrl = landingData?.about_image || null;
+        let loginPhotoUrl = landingData?.login_photo || null;
+        let sidebarLogoUrl = landingData?.sidebar_logo || null;
 
       // Upload new images if they are File objects
       if (formData.home_image instanceof File) {
@@ -244,13 +247,14 @@ const Landing = () => {
         setLandingData(data);
       }
 
-      toast.success("Changes saved successfully!");
-    } catch (error) {
-      console.error("Error saving data:", error);
-      toast.error("Failed to save changes.");
-    } finally {
-      setIsSaving(false);
-    }
+        toast.success("Changes saved successfully!");
+      } catch (error) {
+        console.error("Error saving data:", error);
+        toast.error("Failed to save changes.");
+      } finally {
+        setIsSaving(false);
+      }
+    }, "Failed to save changes.");
   };
 
   return (
@@ -447,7 +451,7 @@ const Landing = () => {
         <div className="flex justify-center">
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || actionBusy}
             className="px-10 py-2.5 bg-blue-600 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? "Saving..." : "Save Changes"}

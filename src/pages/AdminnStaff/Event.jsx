@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Event = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ const Event = () => {
   const [events, setEvents] = useState([]);
   const [editingEvent, setEditingEvent] = useState(null);
   const [failedImages, setFailedImages] = useState(new Set());
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const fetchEvents = async () => {
     try {
@@ -123,14 +125,15 @@ const Event = () => {
   };
 
   // Event submit
-  const handleEventSubmit = async (e) => {
+  const handleEventSubmit = (e) => {
     e.preventDefault();
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("You must be logged in to create/update events");
-        return;
-      }
+    runAction(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error("You must be logged in to create/update events");
+          return;
+        }
 
       let imageUrl = null;
 
@@ -212,10 +215,11 @@ const Event = () => {
         event_image: null,
       });
       document.getElementById("eventImageInput").value = "";
-    } catch (error) {
-      console.error("Error submitting event:", error);
-      toast.error(`Failed to submit event: ${error.message}`);
-    }
+      } catch (error) {
+        console.error("Error submitting event:", error);
+        toast.error(`Failed to submit event: ${error.message}`);
+      }
+    }, "Failed to submit event.");
   };
 
   // Event edit
@@ -232,9 +236,9 @@ const Event = () => {
   };
 
   // Event delete
-  const handleEventDelete = async (eventId) => {
+  const handleEventDelete = (eventId) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
-      try {
+      runAction(async () => {
         // Get event to delete image
         const eventToDelete = events.find(e => e.event_id === eventId);
         
@@ -253,9 +257,7 @@ const Event = () => {
 
         setEvents(events.filter((event) => event.event_id !== eventId));
         toast.success("Event deleted successfully.");
-      } catch (error) {
-        toast.error("Failed to delete event.");
-      }
+      }, "Failed to delete event.");
     }
   };
 
@@ -389,7 +391,8 @@ const Event = () => {
               <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0 mt-4">
                 <button
                   type="submit"
-                  className="flex-1 py-2 md:py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm md:text-base"
+                  disabled={actionBusy}
+                  className="flex-1 py-2 md:py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingEvent ? "Update Event" : "Add Event"}
                 </button>
@@ -408,7 +411,8 @@ const Event = () => {
                       });
                       document.getElementById("eventImageInput").value = "";
                     }}
-                    className="flex-1 py-2 md:py-3 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-sm md:text-base"
+                    disabled={actionBusy}
+                    className="flex-1 py-2 md:py-3 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel Edit
                   </button>
@@ -478,13 +482,15 @@ const Event = () => {
                     <div className="mt-auto flex flex-col sm:flex-row gap-2 sm:space-x-3 sm:gap-0">
                       <button
                         onClick={() => handleEventEdit(event)}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        disabled={actionBusy}
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleEventDelete(event.event_id)}
-                        className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        disabled={actionBusy}
+                        className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Delete
                       </button>

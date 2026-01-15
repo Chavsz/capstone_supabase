@@ -8,6 +8,7 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
 
@@ -41,6 +42,7 @@ const Appointment = () => {
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const subjects = [
     {
@@ -656,93 +658,93 @@ const Appointment = () => {
       tuteeProfile.year_level?.trim()
   );
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!profileComplete) {
-      toast.error("Complete your tutee profile (year level, program, and college) before booking an appointment.");
-      return;
-    }
-
-    if (!selectedTutor) {
-      toast.error("Please select a tutor first");
-      return;
-    }
-
-    const tuteeCount =
-      formData.number_of_tutees && !Number.isNaN(Number(formData.number_of_tutees))
-        ? Number(formData.number_of_tutees)
-        : 1;
-    if (
-      !formData.subject ||
-      !formData.topic ||
-      !formData.mode_of_session ||
-      !formData.date ||
-      !formData.start_time ||
-      !formData.end_time
-    ) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (tuteeCount > 10) {
-      toast.error("Number of tutees must be between 1 and 10.");
-      return;
-    }
-
-    const startMinutes = getMinutesFromStored(formData.start_time);
-    const endMinutes = getMinutesFromStored(formData.end_time);
-
-    if (startMinutes === null || endMinutes === null) {
-      toast.error("Invalid start or end time selected.");
-      return;
-    }
-
-    if (!areWithinSameBlock(startMinutes, endMinutes)) {
-      toast.error("Start and end times must stay within the same session (8 AM - 12 PM or 1 PM - 5 PM).");
-      return;
-    }
-
-    if (endMinutes <= startMinutes) {
-      toast.error("End time must be later than start time.");
-      return;
-    }
-
-    // Extra guard: prevent booking on past dates and weekends
-    const selected = new Date(`${formData.date}T00:00:00`);
-    const minSelectable = getMinSelectableDate();
-    
-    if (selected < minSelectable) {
-      toast.error(
-        `Selected date is too soon. Earliest available is ${minSelectable.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}.`
-      );
-      return;
-    }
-    
-    const day = selected.getDay();
-    if (day === 0 || day === 6) {
-      toast.error("Selected date falls on a weekend. Please choose a weekday.");
-      return;
-    }
-
-    const availabilityCheck = validateTutorAvailability();
-    if (!availabilityCheck.valid) {
-      toast.error(availabilityCheck.message);
-      return;
-    }
-
-    let session;
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      session = sessionData?.session;
-      if (!session) {
-        toast.error("You must be logged in to create an appointment");
+    runAction(async () => {
+      if (!profileComplete) {
+        toast.error("Complete your tutee profile (year level, program, and college) before booking an appointment.");
         return;
       }
+
+      if (!selectedTutor) {
+        toast.error("Please select a tutor first");
+        return;
+      }
+
+      const tuteeCount =
+        formData.number_of_tutees && !Number.isNaN(Number(formData.number_of_tutees))
+          ? Number(formData.number_of_tutees)
+          : 1;
+      if (
+        !formData.subject ||
+        !formData.topic ||
+        !formData.mode_of_session ||
+        !formData.date ||
+        !formData.start_time ||
+        !formData.end_time
+      ) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      if (tuteeCount > 10) {
+        toast.error("Number of tutees must be between 1 and 10.");
+        return;
+      }
+
+      const startMinutes = getMinutesFromStored(formData.start_time);
+      const endMinutes = getMinutesFromStored(formData.end_time);
+
+      if (startMinutes === null || endMinutes === null) {
+        toast.error("Invalid start or end time selected.");
+        return;
+      }
+
+      if (!areWithinSameBlock(startMinutes, endMinutes)) {
+        toast.error("Start and end times must stay within the same session (8 AM - 12 PM or 1 PM - 5 PM).");
+        return;
+      }
+
+      if (endMinutes <= startMinutes) {
+        toast.error("End time must be later than start time.");
+        return;
+      }
+
+    // Extra guard: prevent booking on past dates and weekends
+      const selected = new Date(`${formData.date}T00:00:00`);
+      const minSelectable = getMinSelectableDate();
+    
+      if (selected < minSelectable) {
+        toast.error(
+          `Selected date is too soon. Earliest available is ${minSelectable.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}.`
+        );
+        return;
+      }
+    
+      const day = selected.getDay();
+      if (day === 0 || day === 6) {
+        toast.error("Selected date falls on a weekend. Please choose a weekday.");
+        return;
+      }
+
+      const availabilityCheck = validateTutorAvailability();
+      if (!availabilityCheck.valid) {
+        toast.error(availabilityCheck.message);
+        return;
+      }
+
+      let session;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        session = sessionData?.session;
+        if (!session) {
+          toast.error("You must be logged in to create an appointment");
+          return;
+        }
 
       const { data: tutorAppointments, error: tutorError } = await supabase
         .from("appointment")
@@ -797,66 +799,67 @@ const Appointment = () => {
         );
         return;
       }
-    } catch (conflictCheckError) {
-      console.error(conflictCheckError.message);
-      toast.error("Unable to verify appointment availability. Please try again.");
-      return;
-    }
+      } catch (conflictCheckError) {
+        console.error(conflictCheckError.message);
+        toast.error("Unable to verify appointment availability. Please try again.");
+        return;
+      }
 
-    setLoading(true);
+      setLoading(true);
 
-    const startLabel = new Date(`2000-01-01T${formData.start_time}`).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const endLabel = new Date(`2000-01-01T${formData.end_time}`).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const confirmMessage = `Confirm appointment on ${formData.date} from ${startLabel} to ${endLabel}?`;
-    if (!window.confirm(confirmMessage)) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("appointment")
-        .insert([
-          {
-            user_id: session.user.id,
-            tutor_id: selectedTutor.user_id,
-            subject: formData.subject,
-            topic: formData.topic,
-            mode_of_session: formData.mode_of_session,
-            date: formData.date,
-            start_time: formData.start_time,
-            end_time: formData.end_time,
-            number_of_tutees: tuteeCount,
-            status: "pending",
-          },
-        ]);
-
-      if (error) throw error;
-
-      toast.success("Appointment created successfully!");
-      setFormData({
-        subject: "",
-        topic: "",
-        mode_of_session: "",
-        date: "",
-        start_time: "",
-        end_time: "",
-        number_of_tutees: "",
+      const startLabel = new Date(`2000-01-01T${formData.start_time}`).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
       });
-      setSelectedTutor(null);
-      setSelectedSubject("");
-    } catch (err) {
-      console.error(err.message);
-      toast.error(`Error creating appointment: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+      const endLabel = new Date(`2000-01-01T${formData.end_time}`).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const confirmMessage = `Confirm appointment on ${formData.date} from ${startLabel} to ${endLabel}?`;
+      if (!window.confirm(confirmMessage)) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { error } = await supabase
+          .from("appointment")
+          .insert([
+            {
+              user_id: session.user.id,
+              tutor_id: selectedTutor.user_id,
+              subject: formData.subject,
+              topic: formData.topic,
+              mode_of_session: formData.mode_of_session,
+              date: formData.date,
+              start_time: formData.start_time,
+              end_time: formData.end_time,
+              number_of_tutees: tuteeCount,
+              status: "pending",
+            },
+          ]);
+
+        if (error) throw error;
+
+        toast.success("Appointment created successfully!");
+        setFormData({
+          subject: "",
+          topic: "",
+          mode_of_session: "",
+          date: "",
+          start_time: "",
+          end_time: "",
+          number_of_tutees: "",
+        });
+        setSelectedTutor(null);
+        setSelectedSubject("");
+      } catch (err) {
+        console.error(err.message);
+        toast.error(`Error creating appointment: ${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }, "Unable to create appointment.");
   };
 
   useEffect(() => {
@@ -1616,7 +1619,7 @@ const Appointment = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={loading || hasPendingEvaluation || !profileComplete}
+                disabled={loading || hasPendingEvaluation || !profileComplete || actionBusy}
                 className="bg-blue-600 text-white rounded-md p-3 w-full md:w-auto md:min-w-[180px] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
               >
                 {loading ? "Creating..." : "Book Appointment"}

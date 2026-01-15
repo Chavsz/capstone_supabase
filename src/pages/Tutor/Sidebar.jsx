@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import RouteSelect from "./RouteSelect";
+import useActionGuard from "../../hooks/useActionGuard";
 
 import * as fiIcons from "react-icons/fi";
 
 const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState(null);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const handleLogoClick = () => {
     navigate("/dashboard");
@@ -70,31 +72,34 @@ const Sidebar = ({ setAuth, onClose }) => {
   };
 
   //logout
-  const logout = async (e) => {
+  const logout = (e) => {
     e.preventDefault();
-    if (!window.confirm("Log out from all devices?")) {
-      return;
-    }
-    try {
-      const { error } = await supabase.auth.signOut({ scope: "global" });
-      if (error) throw error;
-      clearAuthStorage();
-      // onAuthStateChange in App.jsx will handle state updates
-      // Small delay to ensure state is cleared before navigation
-      setTimeout(() => {
-        navigate("/login");
-      }, 100);
-    } catch (error) {
-      console.error("Error signing out:", error);
-      try {
-        await supabase.auth.signOut({ scope: "local" });
-      } catch (err) {
-        // Ignore local sign out error
+    runAction(async () => {
+      if (!window.confirm("Log out from all devices?")) {
+        return;
       }
-      clearAuthStorage();
-      // Force navigation even if signOut fails
-      navigate("/");
-    }
+      try {
+        const { error } = await supabase.auth.signOut({ scope: "global" });
+        if (error) throw error;
+        clearAuthStorage();
+        // onAuthStateChange in App.jsx will handle state updates
+        // Small delay to ensure state is cleared before navigation
+        setTimeout(() => {
+          navigate("/login");
+        }, 100);
+      } catch (error) {
+        console.error("Error signing out:", error);
+        try {
+          await supabase.auth.signOut({ scope: "local" });
+        } catch (err) {
+          // Ignore local sign out error
+        }
+        clearAuthStorage();
+        // Force navigation even if signOut fails
+        navigate("/");
+        throw error;
+      }
+    }, "Unable to sign out. Please try again.");
   };
 
   useEffect(() => {
@@ -152,8 +157,9 @@ const Sidebar = ({ setAuth, onClose }) => {
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-4 mb-10">
         <button
-          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-black/10 text-[#181718] shadow-none"
+          className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 cursor-pointer text-sm hover:bg-black/10 text-[#181718] shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={(e) => logout(e)}
+          disabled={actionBusy}
         >
           <fiIcons.FiLogOut /> <p className="text-md font-semibold">Log out</p>
         </button>

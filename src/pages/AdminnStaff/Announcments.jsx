@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Announcments = () => {
   const [announcement, setAnnouncement] = useState(null);
   const [announcementContent, setAnnouncementContent] = useState("");
   const [isEditingAnnouncement, setIsEditingAnnouncement] = useState(false);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   // Fetch announcements
   useEffect(() => {
@@ -34,9 +36,9 @@ const Announcments = () => {
   }, []);
 
   // Announcement submit
-  const handleAnnouncementSubmit = async (e) => {
+  const handleAnnouncementSubmit = (e) => {
     e.preventDefault();
-    try {
+    runAction(async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -78,17 +80,14 @@ const Announcments = () => {
         alert("Announcement created successfully.");
       }
       setIsEditingAnnouncement(false);
-    } catch (error) {
-      console.error("Error submitting announcement:", error);
-      alert("Failed to submit announcement.");
-    }
+    }, "Unable to save announcement.");
   };
 
   // Announcement delete
-  const handleAnnouncementDelete = async () => {
+  const handleAnnouncementDelete = () => {
     if (!announcement) return;
     if (window.confirm("Are you sure you want to delete this announcement?")) {
-      try {
+      runAction(async () => {
         const { error } = await supabase
           .from("announcement")
           .delete()
@@ -100,10 +99,7 @@ const Announcments = () => {
         setAnnouncementContent("");
         setIsEditingAnnouncement(false);
         alert("Announcement deleted successfully.");
-      } catch (error) {
-        console.error("Error deleting announcement:", error);
-        alert("Failed to delete announcement.");
-      }
+      }, "Unable to delete announcement.");
     }
   };
 
@@ -124,13 +120,15 @@ const Announcments = () => {
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={() => setIsEditingAnnouncement(true)}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300 text-sm md:text-base"
+                  disabled={actionBusy}
+                  className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
                 <button
                   onClick={handleAnnouncementDelete}
-                  className="px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 text-sm md:text-base"
+                  disabled={actionBusy}
+                  className="px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
                 </button>
@@ -162,7 +160,8 @@ const Announcments = () => {
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 type="submit"
-                className="px-5 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition duration-300 text-sm md:text-base"
+                disabled={actionBusy}
+                className="px-5 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isEditingAnnouncement
                   ? "Update Announcement"
@@ -172,7 +171,8 @@ const Announcments = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditingAnnouncement(false)}
-                  className="px-5 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition duration-300 text-sm md:text-base"
+                  disabled={actionBusy}
+                  className="px-5 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel Edit
                 </button>

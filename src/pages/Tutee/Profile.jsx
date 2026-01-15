@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { FaEdit, FaTimes, FaTrash } from "react-icons/fa";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Profile = () => {
   const [name, setName] = useState("");
@@ -17,6 +18,7 @@ const Profile = () => {
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState(profile);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   async function getName() {
     try {
@@ -82,25 +84,25 @@ const Profile = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async () => {
-    try {
+  const handleSave = () => {
+    runAction(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-        if (form.name && form.name !== name) {
-          const { error: nameError } = await supabase
-            .from("users")
-            .update({ name: form.name })
-            .eq("user_id", session.user.id);
+      if (form.name && form.name !== name) {
+        const { error: nameError } = await supabase
+          .from("users")
+          .update({ name: form.name })
+          .eq("user_id", session.user.id);
 
-          if (nameError) throw nameError;
-          setName(form.name);
-        }
+        if (nameError) throw nameError;
+        setName(form.name);
+      }
 
-        // Check if profile exists
-        const { data: existingProfile } = await supabase
-          .from("student_profile")
-          .select("profile_id")
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("student_profile")
+        .select("profile_id")
         .eq("user_id", session.user.id)
         .single();
 
@@ -136,16 +138,14 @@ const Profile = () => {
 
       setProfile(form);
       setShowEditModal(false);
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to save profile.");
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    try {
+    runAction(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -174,9 +174,7 @@ const Profile = () => {
         profile_image: publicUrl,
       }));
       setForm((prev) => ({ ...prev, profile_image: publicUrl }));
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to upload image.");
   };
 
   const handleRemoveImage = () => {
@@ -239,7 +237,8 @@ const Profile = () => {
             <div className="flex-1 w-full bg-[#fbfbfd] border border-[#e6e7ea] rounded-lg p-4 relative">
               <button
                 onClick={handleEdit}
-                className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#f2f3f6] transition"
+                disabled={actionBusy}
+                className="absolute top-3 right-3 flex items-center gap-1 px-3 py-1 text-sm border border-[#d5d7dc] rounded-md text-[#323335] hover:bg-[#f2f3f6] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Edit</span>
                 <FaEdit size={12} />
@@ -320,7 +319,8 @@ const Profile = () => {
                       name="profile_image"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      disabled={actionBusy}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div className="flex items-center gap-2 mt-2">
                       <p className="text-sm text-gray-500 ml-2">
@@ -329,7 +329,8 @@ const Profile = () => {
                       {form.profile_image && (
                         <button
                           onClick={handleRemoveImage}
-                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                          disabled={actionBusy}
+                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaTrash size={12} />
                           <span>Remove</span>
@@ -430,7 +431,8 @@ const Profile = () => {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={actionBusy}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save Changes
                 </button>

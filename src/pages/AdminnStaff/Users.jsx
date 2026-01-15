@@ -4,6 +4,7 @@ import { supabase } from "../../supabase-client";
 import { MdDelete, MdAdd, MdPersonRemove, MdAdminPanelSettings, MdMoreHoriz, MdClose } from "react-icons/md";
 import { FaUserTie, FaChalkboardTeacher, FaUserAlt } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,6 +17,7 @@ const Users = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const normalizeRole = (role) => (role || "").toString().trim().toLowerCase();
   const isAdminUser = (user) => Boolean(user?.is_admin || user?.is_superadmin);
@@ -93,7 +95,7 @@ const Users = () => {
   };
 
   // Delete only the user row (superadmin only)
-  const deleteUser = async (id) => {
+  const deleteUserRecord = async (id) => {
     if (!isSuperAdmin) {
       alert("Only the superadmin can delete users.");
       return;
@@ -113,6 +115,10 @@ const Users = () => {
       console.error(err);
       alert("Error deleting user. Please remove related records first or contact support.");
     }
+  };
+  
+  const handleDeleteUser = (id) => {
+    runAction(() => deleteUserRecord(id), "Unable to delete user.");
   };
 
   useEffect(() => {
@@ -146,7 +152,7 @@ const Users = () => {
     return role || "N/A";
   };
 
-  const updateAdminStatus = async (user, nextValue) => {
+  const updateAdminStatusRecord = async (user, nextValue) => {
     if (!isSuperAdmin) {
       alert("Only the superadmin can update admin access.");
       return;
@@ -181,6 +187,10 @@ const Users = () => {
       console.error(err.message);
       alert(`Error updating admin access: ${err.message}`);
     }
+  };
+  
+  const handleUpdateAdminStatus = (user, nextValue) => {
+    runAction(() => updateAdminStatusRecord(user, nextValue), "Unable to update admin access.");
   };
 
   const verifyUserUpdate = async (userId, message) => {
@@ -228,7 +238,7 @@ const Users = () => {
     );
   });
 
-  const promoteToTutor = async (user) => {
+  const promoteToTutorRecord = async (user) => {
     if (!window.confirm(`Add ${user.name} as tutor?`)) return;
     try {
       const { data, error } = await supabase
@@ -258,8 +268,12 @@ const Users = () => {
       alert(`Error promoting user to tutor: ${err.message}`);
     }
   };
+  
+  const handlePromoteToTutor = (user) => {
+    runAction(() => promoteToTutorRecord(user), "Unable to promote user.");
+  };
 
-  const demoteToStudent = async (user) => {
+  const demoteToStudentRecord = async (user) => {
     if (!window.confirm(`Move ${user.name} back to student?`)) return;
     try {
       const { data, error } = await supabase
@@ -288,6 +302,10 @@ const Users = () => {
       console.error(err.message);
       alert(`Error moving user back to student: ${err.message}`);
     }
+  };
+  
+  const handleDemoteToStudent = (user) => {
+    runAction(() => demoteToStudentRecord(user), "Unable to move user to student.");
   };
 
   // Pagination calculations
@@ -351,14 +369,14 @@ const Users = () => {
     });
   };
 
-  const bulkMoveToStudent = async () => {
-    const ids = Array.from(selectedIds);
-    if (!ids.length) {
-      alert("Select at least one user.");
-      return;
-    }
-    if (!window.confirm(`Move ${ids.length} user(s) to student?`)) return;
-    try {
+  const bulkMoveToStudent = () => {
+    runAction(async () => {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) {
+        alert("Select at least one user.");
+        return;
+      }
+      if (!window.confirm(`Move ${ids.length} user(s) to student?`)) return;
       const { error } = await supabase
         .from("users")
         .update({ role: "student" })
@@ -367,20 +385,17 @@ const Users = () => {
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
-    } catch (err) {
-      console.error(err.message);
-      alert(`Error moving users to student: ${err.message}`);
-    }
+    }, "Unable to move users to student.");
   };
 
-  const bulkPromoteToTutor = async () => {
-    const ids = Array.from(selectedIds);
-    if (!ids.length) {
-      alert("Select at least one user.");
-      return;
-    }
-    if (!window.confirm(`Promote ${ids.length} user(s) to tutor?`)) return;
-    try {
+  const bulkPromoteToTutor = () => {
+    runAction(async () => {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) {
+        alert("Select at least one user.");
+        return;
+      }
+      if (!window.confirm(`Promote ${ids.length} user(s) to tutor?`)) return;
       const { error } = await supabase
         .from("users")
         .update({ role: "tutor" })
@@ -389,24 +404,21 @@ const Users = () => {
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
-    } catch (err) {
-      console.error(err.message);
-      alert(`Error promoting users to tutor: ${err.message}`);
-    }
+    }, "Unable to promote users to tutor.");
   };
 
-  const bulkAddAdmin = async () => {
-    if (!isSuperAdmin) {
-      alert("Only the superadmin can add admin access.");
-      return;
-    }
-    const ids = Array.from(selectedIds);
-    if (!ids.length) {
-      alert("Select at least one user.");
-      return;
-    }
-    if (!window.confirm(`Add admin access for ${ids.length} user(s)?`)) return;
-    try {
+  const bulkAddAdmin = () => {
+    runAction(async () => {
+      if (!isSuperAdmin) {
+        alert("Only the superadmin can add admin access.");
+        return;
+      }
+      const ids = Array.from(selectedIds);
+      if (!ids.length) {
+        alert("Select at least one user.");
+        return;
+      }
+      if (!window.confirm(`Add admin access for ${ids.length} user(s)?`)) return;
       const { error } = await supabase
         .from("users")
         .update({ is_admin: true })
@@ -415,29 +427,23 @@ const Users = () => {
       await getAllUsers();
       setSelectedIds(new Set());
       closeUserDetails();
-    } catch (err) {
-      console.error(err.message);
-      alert(`Error updating admin access: ${err.message}`);
-    }
+    }, "Unable to add admin access.");
   };
 
-  const bulkDeleteUsers = async () => {
-    if (!isSuperAdmin) {
-      alert("Only the superadmin can delete users.");
-      return;
-    }
-    const ids = Array.from(selectedIds);
-    if (!ids.length) return;
-    if (!window.confirm(`Delete ${ids.length} user(s) and all of their records?`)) return;
-    try {
+  const bulkDeleteUsers = () => {
+    runAction(async () => {
+      if (!isSuperAdmin) {
+        alert("Only the superadmin can delete users.");
+        return;
+      }
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return;
+      if (!window.confirm(`Delete ${ids.length} user(s) and all of their records?`)) return;
       for (const id of ids) {
-        await deleteUser(id);
+        await deleteUserRecord(id);
       }
       setSelectedIds(new Set());
-    } catch (err) {
-      console.error(err.message);
-      alert("Error deleting users.");
-    }
+    }, "Unable to delete users.");
   };
 
   return (
@@ -590,8 +596,8 @@ const Users = () => {
                   <button
                     type="button"
                     onClick={bulkPromoteToTutor}
-                    className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
-                    disabled={selectedIds.size === 0}
+                    className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={selectedIds.size === 0 || actionBusy}
                   >
                     Promote to Tutor
                   </button>
@@ -600,8 +606,8 @@ const Users = () => {
                   <button
                     type="button"
                     onClick={bulkMoveToStudent}
-                    className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
-                    disabled={selectedIds.size === 0}
+                    className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={selectedIds.size === 0 || actionBusy}
                   >
                     Move to Student
                   </button>
@@ -610,8 +616,8 @@ const Users = () => {
                   <button
                     type="button"
                     onClick={bulkAddAdmin}
-                    className="px-3 py-1.5 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    disabled={selectedIds.size === 0}
+                    className="px-3 py-1.5 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={selectedIds.size === 0 || actionBusy}
                   >
                     Add as Admin
                   </button>
@@ -620,8 +626,8 @@ const Users = () => {
                   <button
                     type="button"
                     onClick={bulkDeleteUsers}
-                    className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100"
-                    disabled={selectedIds.size === 0}
+                    className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={selectedIds.size === 0 || actionBusy}
                   >
                     Delete
                   </button>
@@ -779,7 +785,8 @@ const Users = () => {
               {normalizeRole(selectedUser.role) === "student" && (
                 <button
                   className="px-3 py-1.5 text-sm rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  onClick={() => promoteToTutor(selectedUser)}
+                  onClick={() => handlePromoteToTutor(selectedUser)}
+                  disabled={actionBusy}
                 >
                   Promote to Tutor
                 </button>
@@ -787,7 +794,8 @@ const Users = () => {
               {normalizeRole(selectedUser.role) === "tutor" && (
                 <button
                   className="px-3 py-1.5 text-sm rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
-                  onClick={() => demoteToStudent(selectedUser)}
+                  onClick={() => handleDemoteToStudent(selectedUser)}
+                  disabled={actionBusy}
                 >
                   Move to Student
                 </button>
@@ -797,7 +805,8 @@ const Users = () => {
                     className={`px-3 py-1.5 text-sm rounded-md ${
                       "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => updateAdminStatus(selectedUser, true)}
+                    onClick={() => handleUpdateAdminStatus(selectedUser, true)}
+                    disabled={selectedUser.is_superadmin || actionBusy}
                   >
                     Add as Admin
                   </button>
@@ -805,7 +814,8 @@ const Users = () => {
                 {isSuperAdmin && selectedUser.is_admin && !selectedUser.is_superadmin && (
                   <button
                     className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    onClick={() => updateAdminStatus(selectedUser, false)}
+                    onClick={() => handleUpdateAdminStatus(selectedUser, false)}
+                    disabled={actionBusy}
                   >
                     Remove as Admin
                   </button>
@@ -815,8 +825,8 @@ const Users = () => {
                   className={`px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 ${
                     selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""
                   }`}
-                  onClick={() => deleteUser(selectedUser.user_id)}
-                  disabled={selectedUser.is_superadmin}
+                  onClick={() => handleDeleteUser(selectedUser.user_id)}
+                  disabled={selectedUser.is_superadmin || actionBusy}
                 >
                   Delete User
                 </button>

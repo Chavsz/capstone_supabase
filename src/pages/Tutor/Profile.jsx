@@ -3,6 +3,7 @@ import { supabase } from "../../supabase-client";
 import { FaEdit, FaPlus, FaTrash, FaTimes, FaCalendarAlt } from "react-icons/fa";
 import dayjs from "dayjs";
 import { capitalizeWords } from "../../utils/text";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
@@ -31,6 +32,7 @@ const Profile = () => {
   const [newUnavailableDate, setNewUnavailableDate] = useState("");
   const [newUnavailableReason, setNewUnavailableReason] = useState("");
   const [loadingUnavailable, setLoadingUnavailable] = useState(false);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const ALLOWED_TIME_BLOCKS = [
     { start: 8 * 60, end: 12 * 60 },
@@ -297,24 +299,25 @@ const Profile = () => {
       })
     : timeOptions;
 
-  const handleAddTime = async (day) => {
-    if (!newTime.start || !newTime.end) return;
-    if (!validateTimePair(newTime.start, newTime.end)) return;
-    const existingSlots = schedulesByDay[day] || [];
-    const isDuplicate = existingSlots.some(
-      (slot) =>
-        slot.start_time?.slice(0, 5) === newTime.start &&
-        slot.end_time?.slice(0, 5) === newTime.end
-    );
-    if (isDuplicate) {
-      alert("This schedule already exists for that day.");
-      return;
-    }
-    const confirmation = window.confirm(
-      `Add availability on ${day} from ${newTime.start} to ${newTime.end}?`
-    );
-    if (!confirmation) return;
-    try {
+  const handleAddTime = (day) => {
+    runAction(async () => {
+      if (!newTime.start || !newTime.end) return;
+      if (!validateTimePair(newTime.start, newTime.end)) return;
+      const existingSlots = schedulesByDay[day] || [];
+      const isDuplicate = existingSlots.some(
+        (slot) =>
+          slot.start_time?.slice(0, 5) === newTime.start &&
+          slot.end_time?.slice(0, 5) === newTime.end
+      );
+      if (isDuplicate) {
+        alert("This schedule already exists for that day.");
+        return;
+      }
+      const confirmation = window.confirm(
+        `Add availability on ${day} from ${newTime.start} to ${newTime.end}?`
+      );
+      if (!confirmation) return;
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -346,14 +349,12 @@ const Profile = () => {
       setNewTime({ start: "", end: "" });
       setScheduleEditDay(null);
       getSchedules();
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to add schedule.");
   };
 
   // Delete time slot
-  const handleDeleteTime = async (id) => {
-    try {
+  const handleDeleteTime = (id) => {
+    runAction(async () => {
       const { error } = await supabase
         .from("schedule")
         .delete()
@@ -362,19 +363,18 @@ const Profile = () => {
       if (error) throw error;
 
       getSchedules();
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to remove schedule.");
   };
 
   // Edit time slot
-  const handleEditTime = async (id, start, end) => {
-    if (!validateTimePair(start, end)) return;
-    const confirmation = window.confirm(
-      `Update availability to ${start} - ${end}?`
-    );
-    if (!confirmation) return;
-    try {
+  const handleEditTime = (id, start, end) => {
+    runAction(async () => {
+      if (!validateTimePair(start, end)) return;
+      const confirmation = window.confirm(
+        `Update availability to ${start} - ${end}?`
+      );
+      if (!confirmation) return;
+
       const { error } = await supabase
         .from("schedule")
         .update({
@@ -388,30 +388,29 @@ const Profile = () => {
 
       setScheduleEditDay(null);
       getSchedules();
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to update schedule.");
   };
 
-  const handleAddUnavailableDay = async () => {
-    if (!newUnavailableDate) return;
-    const trimmedReason = newUnavailableReason.trim();
-    if (!trimmedReason) {
-      alert("Please provide a reason for this unavailable day.");
-      return;
-    }
-    if (!profileId) {
-      alert("Please save your profile first.");
-      return;
-    }
-    const exists = unavailableDays.some(
-      (entry) => entry.date === newUnavailableDate
-    );
-    if (exists) {
-      alert("That date is already marked as unavailable.");
-      return;
-    }
-    try {
+  const handleAddUnavailableDay = () => {
+    runAction(async () => {
+      if (!newUnavailableDate) return;
+      const trimmedReason = newUnavailableReason.trim();
+      if (!trimmedReason) {
+        alert("Please provide a reason for this unavailable day.");
+        return;
+      }
+      if (!profileId) {
+        alert("Please save your profile first.");
+        return;
+      }
+      const exists = unavailableDays.some(
+        (entry) => entry.date === newUnavailableDate
+      );
+      if (exists) {
+        alert("That date is already marked as unavailable.");
+        return;
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -435,9 +434,7 @@ const Profile = () => {
         trimmedReason
       );
       getUnavailableDays();
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to add unavailable day.");
   };
 
   const autoUpdateAppointmentsForUnavailableDay = async (
@@ -529,8 +526,8 @@ const Profile = () => {
     }
   };
 
-  const handleRemoveUnavailableDay = async (entry) => {
-    try {
+  const handleRemoveUnavailableDay = (entry) => {
+    runAction(async () => {
       if (!entry) return;
       const formattedDate = new Date(`${entry.date}T00:00:00`).toLocaleDateString(
         "en-US",
@@ -572,9 +569,7 @@ const Profile = () => {
       }
 
       getUnavailableDays();
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to remove unavailable day.");
   };
 
   const autoRestoreAppointmentsForAvailableDay = async (
@@ -711,8 +706,8 @@ const Profile = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async () => {
-    try {
+  const handleSave = () => {
+    runAction(async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -770,16 +765,14 @@ const Profile = () => {
 
       // Dispatch event to notify Header component to refresh profile
       window.dispatchEvent(new CustomEvent("profileUpdated"));
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to save profile.");
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    try {
+    runAction(async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -810,9 +803,7 @@ const Profile = () => {
         profile_image: publicUrl,
       }));
       setForm((prev) => ({ ...prev, profile_image: publicUrl }));
-    } catch (err) {
-      console.error(err.message);
-    }
+    }, "Unable to upload image.");
   };
 
   const handleRemoveImage = () => {
@@ -830,7 +821,8 @@ const Profile = () => {
           
           <button
             onClick={handleEdit}
-            className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            disabled={actionBusy}
+            className="flex items-center gap-2 px-3 py-1 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>Edit</span>
             <FaEdit size={12} />
@@ -914,7 +906,8 @@ const Profile = () => {
                         </span>
                         <button
                           onClick={() => handleDeleteTime(slot.schedule_id)}
-                          className="text-[#c2c2c2]"
+                          disabled={actionBusy}
+                          className="text-[#c2c2c2] disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Delete"
                         >
                           <FaTrash size={12} />
@@ -972,7 +965,8 @@ const Profile = () => {
                       <div className="flex items-center gap-3 pt-1 sm:pt-0">
                         <button
                           onClick={() => handleAddTime(day)}
-                          className="text-green-600 hover:text-green-700 text-sm font-semibold"
+                          disabled={actionBusy}
+                          className="text-green-600 hover:text-green-700 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Confirm"
                         >
                           Enter
@@ -991,7 +985,8 @@ const Profile = () => {
                   ) : (
                     <button
                       onClick={() => setScheduleEditDay(day)}
-                      className="text-blue-700 hover:text-blue-900"
+                      disabled={actionBusy}
+                      className="text-blue-700 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Add time slot"
                     >
                       <FaEdit size={14} />
@@ -1032,7 +1027,8 @@ const Profile = () => {
             />
             <button
               onClick={handleAddUnavailableDay}
-              className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700"
+              disabled={actionBusy}
+              className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add
             </button>
@@ -1063,7 +1059,8 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => handleRemoveUnavailableDay(entry)}
-                  className="text-red-500 hover:text-red-600"
+                  disabled={actionBusy}
+                  className="text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Remove"
                 >
                   <FaTrash size={12} />
@@ -1084,7 +1081,8 @@ const Profile = () => {
               </h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                disabled={actionBusy}
+                className="text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FaTimes size={20} />
               </button>
@@ -1116,7 +1114,8 @@ const Profile = () => {
                       name="profile_image"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      disabled={actionBusy}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <div className="flex items-center gap-2 mt-2">
                       <p className="text-sm text-gray-500 ml-2">
@@ -1125,7 +1124,8 @@ const Profile = () => {
                       {form.profile_image && (
                         <button
                           onClick={handleRemoveImage}
-                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                          disabled={actionBusy}
+                          className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaTrash size={12} />
                           <span>Remove</span>
@@ -1275,7 +1275,8 @@ const Profile = () => {
               <div className="flex justify-end sm:justify-end">
                 <button
                   onClick={handleSave}
-                  className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={actionBusy}
+                  className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save
                 </button>

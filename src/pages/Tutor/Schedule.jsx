@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
 const STATUS_META = {
@@ -77,6 +78,7 @@ const AppointmentModal = ({
   onClose,
   onStatusUpdate,
   feedbacks,
+  isBusy,
 }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -243,7 +245,8 @@ const AppointmentModal = ({
                       onStatusUpdate(appointment.appointment_id, "confirmed");
                       onClose();
                     }}
-                    className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1"
+                    className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isBusy || isDeclining}
                   >
                     Confirm
                   </button>
@@ -251,7 +254,8 @@ const AppointmentModal = ({
                     onClick={() => {
                       setDeclineMode(true);
                     }}
-                    className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
+                    className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isBusy || isDeclining}
                   >
                     Decline
                   </button>
@@ -272,7 +276,7 @@ const AppointmentModal = ({
                     <button
                       onClick={handleDeclineSubmit}
                       className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:bg-red-300 disabled:cursor-not-allowed"
-                      disabled={isDeclining}
+                      disabled={isDeclining || isBusy}
                     >
                       {isDeclining ? "Declining..." : "Confirm Decline"}
                     </button>
@@ -283,7 +287,7 @@ const AppointmentModal = ({
                         setDeclineError("");
                       }}
                       className="bg-gray-200 text-gray-800 rounded-md px-4 py-2 text-sm hover:bg-gray-300 flex-1"
-                      disabled={isDeclining}
+                      disabled={isDeclining || isBusy}
                     >
                       Cancel
                     </button>
@@ -299,7 +303,8 @@ const AppointmentModal = ({
                   onStatusUpdate(appointment.appointment_id, "started");
                   onClose();
                 }}
-                className="bg-[#1e90ff] text-white rounded-md px-4 py-2 text-sm hover:bg-[#1565c0] flex-1"
+                className="bg-[#1e90ff] text-white rounded-md px-4 py-2 text-sm hover:bg-[#1565c0] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isBusy}
               >
                 Start Session
               </button>
@@ -308,7 +313,8 @@ const AppointmentModal = ({
                   onStatusUpdate(appointment.appointment_id, "cancelled");
                   onClose();
                 }}
-                className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1"
+                className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isBusy}
               >
                 Cancel Session
               </button>
@@ -320,7 +326,8 @@ const AppointmentModal = ({
                 onStatusUpdate(appointment.appointment_id, "awaiting_feedback");
                 onClose();
               }}
-              className="bg-[#16a34a] text-white rounded-md px-4 py-2 text-sm hover:bg-[#166534] w-full"
+              className="bg-[#16a34a] text-white rounded-md px-4 py-2 text-sm hover:bg-[#166534] w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isBusy}
             >
               End Session (Awaiting Feedback)
             </button>
@@ -343,6 +350,7 @@ const Schedule = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [appointmentPages, setAppointmentPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const getAppointments = useCallback(async () => {
     try {
@@ -502,6 +510,13 @@ const Schedule = () => {
       throw err;
     }
   };
+
+  const guardedStatusUpdate = (appointmentId, status, metadata = {}) =>
+    runAction(
+      () => handleStatusUpdate(appointmentId, status, metadata),
+      "Unable to update appointment status.",
+      { rethrow: true }
+    );
 
   const formatTime = (timeString) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
@@ -900,7 +915,8 @@ const Schedule = () => {
         appointment={selectedAppointment}
         isOpen={isModalOpen}
         onClose={closeModal}
-        onStatusUpdate={handleStatusUpdate}
+        onStatusUpdate={guardedStatusUpdate}
+        isBusy={actionBusy}
       />
     </div>
   );

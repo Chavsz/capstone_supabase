@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Switch = () => {
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
@@ -9,6 +10,7 @@ const Switch = () => {
   const [currentViewRole, setCurrentViewRole] = useState("student");
   const [switchChecked, setSwitchChecked] = useState(false);
   const [loginPhoto, setLoginPhoto] = useState(null);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -105,36 +107,42 @@ const Switch = () => {
   }, [canSwitchAdmin, canSwitchTutor, navigate, switchChecked]);
 
   const handleSwitchToTutor = () => {
-    try {
-      localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
-      localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
-    } catch (err) {
-      // Ignore storage errors
-    }
-    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
-    navigate("/dashboard");
+    runAction(async () => {
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "tutor");
+      } catch (err) {
+        // Ignore storage errors
+      }
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "tutor" } }));
+      navigate("/dashboard");
+    }, "Failed to switch to tutor.");
   };
 
   const handleSwitchToAdmin = () => {
-    try {
-      localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
-      localStorage.setItem(ROLE_OVERRIDE_KEY, "admin");
-    } catch (err) {
-      // Ignore storage errors
-    }
-    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "admin" } }));
-    navigate("/dashboard");
+    runAction(async () => {
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "student");
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "admin");
+      } catch (err) {
+        // Ignore storage errors
+      }
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "admin" } }));
+      navigate("/dashboard");
+    }, "Failed to switch to admin.");
   };
 
   const handleStayStudent = () => {
-    try {
-      localStorage.setItem(ROLE_OVERRIDE_KEY, "student");
-      localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
-    } catch (err) {
-      // Ignore storage errors
-    }
-    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "student" } }));
-    navigate("/dashboard");
+    runAction(async () => {
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_KEY, "student");
+        localStorage.removeItem(ROLE_OVERRIDE_PREV_KEY);
+      } catch (err) {
+        // Ignore storage errors
+      }
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: "student" } }));
+      navigate("/dashboard");
+    }, "Failed to stay on student view.");
   };
 
   if (switchChecked && !canSwitchAdmin && !canSwitchTutor) {
@@ -222,6 +230,7 @@ const Switch = () => {
               {canSwitchToAdmin && (
                 <button
                   onClick={handleSwitchToAdmin}
+                  disabled={actionBusy}
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Admin
@@ -230,7 +239,8 @@ const Switch = () => {
               {canSwitchToTutor && (
                 <button
                   onClick={handleSwitchToTutor}
-                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                  disabled={actionBusy}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Tutor
                 </button>
@@ -238,7 +248,8 @@ const Switch = () => {
               {canSwitchToStudent && (
                 <button
                   onClick={handleStayStudent}
-                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                  disabled={actionBusy}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Student
                 </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { capitalizeWords } from "../../utils/text";
+import useActionGuard from "../../hooks/useActionGuard";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -16,6 +17,7 @@ const Header = () => {
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const dropdownRef = useRef(null);
   const isProcessingAutoDecline = useRef(false);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
   const [profile, setProfile] = useState({
     program: "",
     college: "",
@@ -183,24 +185,23 @@ const Header = () => {
   };
 
   // Mark notification as read
-  const markAsRead = async (notificationId) => {
-    try {
-      const { error } = await supabase
-        .from("notification")
-        .update({ status: "read" })
-        .eq("notification_id", notificationId);
+  const markAsReadRecord = async (notificationId) => {
+    const { error } = await supabase
+      .from("notification")
+      .update({ status: "read" })
+      .eq("notification_id", notificationId);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Refresh notifications
-      getUnreadNotifications();
-    } catch (err) {
-      console.error("Error marking notification as read:", err.message);
-    }
+    // Refresh notifications
+    getUnreadNotifications();
   };
 
   const handleNotificationClick = async (notification) => {
-    await markAsRead(notification.notification_id);
+    await runAction(
+      () => markAsReadRecord(notification.notification_id),
+      "Unable to mark notification as read."
+    );
     setIsDropdownOpen(false);
     try {
       sessionStorage.setItem(
@@ -531,6 +532,7 @@ const Header = () => {
                       key={notification.notification_id}
                       className="bg-[#def0e4] border border-[#c9e1d3] rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
                       onClick={() => handleNotificationClick(notification)}
+                      aria-disabled={actionBusy}
                     >
                       <p className="text-[#323335] text-sm font-semibold">
                         {formatNotificationContent(notification.notification_content)}

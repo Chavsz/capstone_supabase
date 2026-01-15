@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
@@ -20,6 +21,7 @@ const Lavroom = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const getAppointments = async () => {
     try {
@@ -68,9 +70,9 @@ const Lavroom = () => {
       hour12: true,
     });
 
-  const handleDelete = async (appointmentId) => {
+  const handleDelete = (appointmentId) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
-    try {
+    runAction(async () => {
       const { error } = await supabase
         .from("appointment")
         .delete()
@@ -79,10 +81,7 @@ const Lavroom = () => {
       if (error) throw error;
       toast.success("Appointment deleted successfully");
       getAppointments();
-    } catch (err) {
-      console.error(err.message);
-      toast.error("Error deleting appointment");
-    }
+    }, "Unable to delete appointment.");
   };
 
   const summary = appointments.reduce(
@@ -241,7 +240,8 @@ const Lavroom = () => {
                 <div className="p-4 pt-0">
                   <button
                     onClick={() => handleDelete(appointment.appointment_id)}
-                    className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition"
+                    disabled={actionBusy}
+                    className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Delete Appointment
                   </button>

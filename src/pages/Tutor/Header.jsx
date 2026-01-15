@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import useActionGuard from "../../hooks/useActionGuard";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -13,6 +14,7 @@ const Header = () => {
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const { run: runAction, busy: actionBusy } = useActionGuard();
   const [profile, setProfile] = useState({
     profile_image: "",
   });
@@ -106,24 +108,23 @@ const Header = () => {
   };
 
   // Mark notification as read
-  const markAsRead = async (notificationId) => {
-    try {
-      const { error } = await supabase
-        .from("notification")
-        .update({ status: "read" })
-        .eq("notification_id", notificationId);
+  const markAsReadRecord = async (notificationId) => {
+    const { error } = await supabase
+      .from("notification")
+      .update({ status: "read" })
+      .eq("notification_id", notificationId);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // Refresh notifications
-      getUnreadNotifications();
-    } catch (err) {
-      console.error("Error marking notification as read:", err.message);
-    }
+    // Refresh notifications
+    getUnreadNotifications();
   };
 
   const handleNotificationClick = async (notification) => {
-    await markAsRead(notification.notification_id);
+    await runAction(
+      () => markAsReadRecord(notification.notification_id),
+      "Unable to mark notification as read."
+    );
     setIsDropdownOpen(false);
     try {
       sessionStorage.setItem(
@@ -234,6 +235,7 @@ const Header = () => {
                       key={notification.notification_id}
                       className="bg-yellow-50 border border-yellow-200 rounded-md p-3 cursor-pointer hover:bg-yellow-100 transition-colors"
                       onClick={() => handleNotificationClick(notification)}
+                      aria-disabled={actionBusy}
                     >
                       <p className="text-yellow-800 text-sm">
                         {formatNotificationContent(notification.notification_content)}

@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import useActionGuard from "../../hooks/useActionGuard";
 
 const Switch = () => {
   const [loginPhoto, setLoginPhoto] = useState(null);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
   const [currentViewRole, setCurrentViewRole] = useState("admin");
   const [currentUserRole, setCurrentUserRole] = useState("admin");
+  const { run: runAction, busy: actionBusy } = useActionGuard();
   const navigate = useNavigate();
   const ROLE_OVERRIDE_KEY = "lav.roleOverride";
   const ROLE_OVERRIDE_PREV_KEY = "lav.roleOverridePrev";
@@ -87,14 +89,16 @@ const Switch = () => {
 
   const handleSwitchToRole = (role) => {
     if (!canSwitchAdmin) return;
-    try {
-      localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "admin");
-      localStorage.setItem(ROLE_OVERRIDE_KEY, role);
-    } catch (err) {
-      // Ignore storage errors
-    }
-    window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: role } }));
-    navigate("/dashboard");
+    runAction(async () => {
+      try {
+        localStorage.setItem(ROLE_OVERRIDE_PREV_KEY, "admin");
+        localStorage.setItem(ROLE_OVERRIDE_KEY, role);
+      } catch (err) {
+        // Ignore storage errors
+      }
+      window.dispatchEvent(new CustomEvent("roleChanged", { detail: { newRole: role } }));
+      navigate("/dashboard");
+    }, "Failed to switch role.");
   };
 
   const canSwitchToTutor = currentUserRole === "tutor" && currentViewRole !== "tutor";
@@ -169,7 +173,8 @@ const Switch = () => {
               {canSwitchToTutor && (
                 <button
                   onClick={() => handleSwitchToRole("tutor")}
-                  className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg"
+                  disabled={actionBusy}
+                  className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Tutor
                 </button>
@@ -177,7 +182,8 @@ const Switch = () => {
               {canSwitchToStudent && (
                 <button
                   onClick={() => handleSwitchToRole("student")}
-                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition"
+                  disabled={actionBusy}
+                  className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Student
                 </button>
