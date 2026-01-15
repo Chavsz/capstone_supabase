@@ -1561,7 +1561,7 @@ const Appointment = () => {
                   <DatePicker
                     value={formData.date ? dayjs(formData.date) : null}
                     onChange={handleDateChange}
-                    format="YYYY/MM/DD"
+                    format="MM/DD/YYYY"
                     minDate={dayjs(getMinSelectableDate())}
                     shouldDisableDate={(date) => {
                       const day = date.day();
