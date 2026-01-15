@@ -4,6 +4,7 @@ import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
@@ -43,7 +44,6 @@ const Appointment = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
-  const [dateInput, setDateInput] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
   const lastDetailsAvailabilityRef = useRef(null);
 
@@ -356,27 +356,8 @@ const Appointment = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const normalizeManualDateInput = (rawValue) => {
-    const trimmed = rawValue.trim();
-    if (!trimmed) return "";
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-      return trimmed;
-    }
-
-    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (slashMatch) {
-      const [, month, day, year] = slashMatch;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-
-    return trimmed;
-  };
-
   const validateAndApplyDate = (rawValue, { showToast } = {}) => {
-    const normalizedValue = normalizeManualDateInput(rawValue);
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
       if (showToast) {
         toast.error("Please enter a valid date.");
       }
@@ -384,7 +365,7 @@ const Appointment = () => {
       return false;
     }
 
-    const selected = new Date(`${normalizedValue}T00:00:00`);
+    const selected = new Date(`${rawValue}T00:00:00`);
     if (Number.isNaN(selected.getTime())) {
       if (showToast) {
         toast.error("Please enter a valid date.");
@@ -414,30 +395,17 @@ const Appointment = () => {
       return false;
     }
 
-    setFormData((prev) => ({ ...prev, date: normalizedValue }));
-    setDateInput(
-      `${normalizedValue.slice(5, 7)}/${normalizedValue.slice(8, 10)}/${normalizedValue.slice(0, 4)}`
-    );
+    setFormData((prev) => ({ ...prev, date: rawValue }));
     return true;
   };
 
-  const handleDateChange = (e) => {
-    const rawValue = e.target.value;
-    setDateInput(rawValue);
-    if (!rawValue) {
+  const handleDateChange = (value) => {
+    if (!value || !value.isValid()) {
       setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
-    const normalizedValue = normalizeManualDateInput(rawValue);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
-      validateAndApplyDate(normalizedValue, { showToast: false });
-    }
-  };
-
-  const handleDateBlur = (e) => {
-    const rawValue = e.target.value;
-    if (!rawValue) return;
-    validateAndApplyDate(rawValue, { showToast: true });
+    const normalizedValue = value.format("YYYY-MM-DD");
+    validateAndApplyDate(normalizedValue, { showToast: false });
   };
 
   const CLASS_TIME_RANGES = [
@@ -944,7 +912,6 @@ const Appointment = () => {
         end_time: "",
           number_of_tutees: "",
         });
-        setDateInput("");
         setSelectedTutor(null);
         setSelectedSubject("");
       } catch (err) {
@@ -969,15 +936,6 @@ const Appointment = () => {
       const parsed = JSON.parse(savedDraft);
       if (parsed?.formData) {
         setFormData((prev) => ({ ...prev, ...parsed.formData }));
-        if (parsed.formData.date && !parsed.dateInput) {
-          const [year, month, day] = parsed.formData.date.split("-");
-          if (year && month && day) {
-            setDateInput(`${month}/${day}/${year}`);
-          }
-        }
-      }
-      if (typeof parsed?.dateInput === "string") {
-        setDateInput(parsed.dateInput);
       }
       if (typeof parsed?.selectedSubject === "string") {
         setSelectedSubject(parsed.selectedSubject);
@@ -1004,7 +962,6 @@ const Appointment = () => {
     if (typeof window === "undefined" || !currentUserId) return;
     const payload = {
       formData,
-      dateInput,
       selectedSubject,
       selectedTutorId: selectedTutor?.user_id || null,
     };
@@ -1012,7 +969,7 @@ const Appointment = () => {
       `appointmentDraft:${currentUserId}`,
       JSON.stringify(payload)
     );
-  }, [currentUserId, formData, dateInput, selectedSubject, selectedTutor]);
+  }, [currentUserId, formData, selectedSubject, selectedTutor]);
 
   useEffect(() => {
     setShowAllSubjectTutors(false);
@@ -1601,16 +1558,36 @@ const Appointment = () => {
                 Choose Date and Time
               </h3>
               <div className="space-y-3">
-                <input
-                  type="text"
-                  name="date"
-                  value={dateInput}
-                  onChange={handleDateChange}
-                  onBlur={handleDateBlur}
-                  placeholder="MM/DD/YYYY"
-                  className="border border-gray-300 rounded-md p-3 w-full"
-                  required
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    value={formData.date ? dayjs(formData.date) : null}
+                    onChange={handleDateChange}
+                    format="MM/DD/YYYY"
+                    minDate={dayjs(getMinSelectableDate())}
+                    shouldDisableDate={(date) => {
+                      const day = date.day();
+                      return day === 0 || day === 6;
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        required: true,
+                        className: "border border-gray-300 rounded-md",
+                        sx: {
+                          "& .MuiInputBase-root": {
+                            height: 48,
+                            fontSize: 14,
+                            paddingX: 1,
+                          },
+                          "& .MuiInputBase-input": {
+                            paddingY: "12px",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
                 {/* time picker */}
                 <div className="flex flex-col gap-3 sm:flex-row">
                   {isSmallScreen ? (

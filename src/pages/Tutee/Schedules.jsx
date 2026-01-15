@@ -3,6 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
+import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
   const STATUS_TABS = [
     { status: "all", label: "All" },
@@ -423,30 +427,6 @@ const AppointmentModal = ({
     return date.toLocaleDateString("en-US", { weekday: "long" });
   };
 
-  const formatDateMDY = (dateString) => {
-    if (!dateString) return "";
-    const parsed = new Date(`${dateString}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) return dateString;
-    const month = String(parsed.getMonth() + 1).padStart(2, "0");
-    const day = String(parsed.getDate()).padStart(2, "0");
-    const year = parsed.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
-  const normalizeDateInput = (rawValue) => {
-    const trimmed = rawValue.trim();
-    if (!trimmed) return "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-      return trimmed;
-    }
-    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (slashMatch) {
-      const [, month, day, year] = slashMatch;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-    return "";
-  };
-
   const isWithinClassBlock = (startMinutes, endMinutes) =>
     CLASS_TIME_BLOCKS.some(
       (block) =>
@@ -454,7 +434,7 @@ const AppointmentModal = ({
         endMinutes <= block.end
     );
 
-  const validateAgainstTutorSchedule = (dateOverride) => {
+  const validateAgainstTutorSchedule = () => {
     if (!appointment) return { valid: false, message: "Appointment information not found." };
     const schedules = tutorSchedules[appointment.tutor_id];
     if (!schedules || schedules.length === 0) {
@@ -470,7 +450,7 @@ const AppointmentModal = ({
       return { valid: false, message: "Invalid start or end time." };
     }
 
-    const dayName = getDayName(dateOverride || formData.date);
+    const dayName = getDayName(formData.date);
     if (!dayName) {
       return { valid: false, message: "Invalid appointment date." };
     }
@@ -512,7 +492,6 @@ const AppointmentModal = ({
     end_time: "",
     mode_of_session: "",
   });
-  const [dateInput, setDateInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -550,7 +529,6 @@ const AppointmentModal = ({
         end_time: normalizeTime(sourceAppointment.end_time),
         mode_of_session: sourceAppointment.mode_of_session || "",
       });
-      setDateInput(formatDateMDY(normalizeDate(sourceAppointment.date)));
       setResourceLink(sourceAppointment.resource_link || "");
       setResourceNote(sourceAppointment.resource_note || "");
       setResourceMessage("");
@@ -606,18 +584,6 @@ const AppointmentModal = ({
     }));
   };
 
-  const handleDateInputChange = (e) => {
-    const rawValue = e.target.value;
-    setDateInput(rawValue);
-    const normalizedValue = normalizeDateInput(rawValue);
-    if (normalizedValue) {
-      setFormData((prev) => ({
-        ...prev,
-        date: normalizedValue,
-      }));
-    }
-  };
-
   const handleUpdateClick = async () => {
     if (!appointment || !onUpdate) return;
 
@@ -626,13 +592,7 @@ const AppointmentModal = ({
       return;
     }
 
-    const normalizedDate = normalizeDateInput(dateInput);
-    if (!normalizedDate) {
-      setError("Please enter a valid date (MM/DD/YYYY).");
-      return;
-    }
-
-    if (!formData.start_time || !formData.end_time) {
+    if (!formData.date || !formData.start_time || !formData.end_time) {
       setError("Please complete the date and time fields.");
       return;
     }
@@ -647,7 +607,7 @@ const AppointmentModal = ({
 
     const unavailableEntries = tutorUnavailableDays[appointment.tutor_id] || [];
     const unavailableEntry = unavailableEntries.find(
-      (entry) => entry.date === normalizedDate
+      (entry) => entry.date === formData.date
     );
     if (unavailableEntry) {
       setError(
@@ -658,7 +618,7 @@ const AppointmentModal = ({
       return;
     }
 
-    const availabilityCheck = validateAgainstTutorSchedule(normalizedDate);
+    const availabilityCheck = validateAgainstTutorSchedule();
     if (!availabilityCheck.valid) {
       setError(availabilityCheck.message);
       return;
@@ -669,7 +629,7 @@ const AppointmentModal = ({
         .from("appointment")
         .select("appointment_id, start_time, end_time, status")
         .eq("tutor_id", appointment.tutor_id)
-        .eq("date", normalizedDate)
+        .eq("date", formData.date)
         .in("status", BOOKED_STATUSES)
         .neq("appointment_id", appointment.appointment_id);
 
@@ -702,10 +662,7 @@ const AppointmentModal = ({
     setIsSaving(true);
 
     try {
-      await onUpdate(appointment.appointment_id, {
-        ...formData,
-        date: normalizedDate,
-      });
+      await onUpdate(appointment.appointment_id, formData);
     } catch (err) {
       // onUpdate handles errors and user feedback
     } finally {
@@ -839,19 +796,28 @@ const AppointmentModal = ({
           <div className="flex justify-between items-center">
             <span className="font-semibold text-gray-600">Date:</span>
             {appointment.status === "pending" && isEditing ? (
-              <input
-                type="text"
-                name="date"
-                value={dateInput}
-                onChange={handleDateInputChange}
-                onBlur={() => {
-                  if (dateInput && !normalizeDateInput(dateInput)) {
-                    setError("Please enter a valid date (MM/DD/YYYY).");
-                  }
-                }}
-                placeholder="MM/DD/YYYY"
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
-              />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  value={formData.date ? dayjs(formData.date) : null}
+                  onChange={(value) => {
+                    if (!value || !value.isValid()) {
+                      setFormData((prev) => ({ ...prev, date: "" }));
+                      return;
+                    }
+                    setFormData((prev) => ({
+                      ...prev,
+                      date: value.format("YYYY-MM-DD"),
+                    }));
+                  }}
+                  format="MM/DD/YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      className: "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             ) : (
               <span className="text-gray-900">
                 {formatDate(appointment.date)}
