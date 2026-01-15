@@ -434,43 +434,52 @@ const Reports = () => {
     return stats;
   }, [appointments]);
 
-  const tutorEvaluationStats = useMemo(() => {
-    const map = {};
+  const buildTutorEvaluationStats = useCallback(
+    (items) => {
+      const map = {};
 
-    evaluationsInPeriod.forEach((evaluation) => {
-      const tutorId = evaluation.tutor_id || "unknown";
-      if (!map[tutorId]) {
-        map[tutorId] = {
-          tutorId,
-          name:
-            appointments.find((apt) => apt.tutor_id === tutorId)?.tutor?.name || "Unknown Tutor",
-          overallSum: 0,
-          overallCount: 0,
-          fields: tutorRatingFields.reduce(
-            (acc, field) => ({
-              ...acc,
-              [field.key]: { sum: 0, count: 0 },
-            }),
-            {}
-          ),
-        };
-      }
-
-      const entry = map[tutorId];
-
-      tutorRatingFields.forEach((field) => {
-        const value = Number(evaluation[field.key]);
-        if (!Number.isNaN(value)) {
-          entry.fields[field.key].sum += value;
-          entry.fields[field.key].count += 1;
-          entry.overallSum += value;
-          entry.overallCount += 1;
+      items.forEach((evaluation) => {
+        const tutorId = evaluation.tutor_id || "unknown";
+        if (!map[tutorId]) {
+          map[tutorId] = {
+            tutorId,
+            name:
+              appointments.find((apt) => apt.tutor_id === tutorId)?.tutor?.name ||
+              "Unknown Tutor",
+            overallSum: 0,
+            overallCount: 0,
+            fields: tutorRatingFields.reduce(
+              (acc, field) => ({
+                ...acc,
+                [field.key]: { sum: 0, count: 0 },
+              }),
+              {}
+            ),
+          };
         }
-      });
-    });
 
-    return map;
-  }, [evaluationsInPeriod, appointments]);
+        const entry = map[tutorId];
+
+        tutorRatingFields.forEach((field) => {
+          const value = Number(evaluation[field.key]);
+          if (!Number.isNaN(value)) {
+            entry.fields[field.key].sum += value;
+            entry.fields[field.key].count += 1;
+            entry.overallSum += value;
+            entry.overallCount += 1;
+          }
+        });
+      });
+
+      return map;
+    },
+    [appointments, tutorRatingFields]
+  );
+
+  const tutorEvaluationStats = useMemo(
+    () => buildTutorEvaluationStats(evaluationsInPeriod),
+    [buildTutorEvaluationStats, evaluationsInPeriod]
+  );
 
   const schedulesByTutor = useMemo(() => {
     const grouped = {};
@@ -515,9 +524,24 @@ const Reports = () => {
     });
   }, [appointments, pdfRange]);
 
+  const evaluationsInPdfRange = useMemo(() => {
+    if (!pdfRange) return [];
+    return evaluations.filter((evaluation) => {
+      const appointment = appointmentsById.get(evaluation.appointment_id);
+      if (!appointment?.date) return false;
+      const date = normalizeDate(appointment.date);
+      return date >= pdfRange.start && date < pdfRange.end;
+    });
+  }, [appointmentsById, evaluations, pdfRange]);
+
   const completedAppointmentsInPdfRange = useMemo(
     () => appointmentsInPdfRange.filter((apt) => isFinishedStatus(apt.status)),
     [appointmentsInPdfRange]
+  );
+
+  const tutorEvaluationStatsPdf = useMemo(
+    () => buildTutorEvaluationStats(evaluationsInPdfRange),
+    [buildTutorEvaluationStats, evaluationsInPdfRange]
   );
 
   const totalHoursTeach = useMemo(() => {
@@ -652,12 +676,17 @@ const Reports = () => {
     appointmentsInPeriod.forEach((appointment) => {
       const tutorId = appointment.tutor_id || "unknown";
       if (!aggregate[tutorId]) {
+        const ratingEntry = tutorEvaluationStats[tutorId];
         aggregate[tutorId] = {
           tutorId,
           name: appointment.tutor?.name || "Unknown Tutor",
           sessions: 0,
           hours: 0,
           totalTutees: 0,
+          averageRating:
+            ratingEntry && ratingEntry.overallCount
+              ? ratingEntry.overallSum / ratingEntry.overallCount
+              : null,
         };
       }
       if (isFinishedStatus(appointment.status)) {
@@ -677,19 +706,24 @@ const Reports = () => {
     return Object.values(aggregate)
       .filter((entry) => entry.sessions > 0 || entry.hours > 0)
       .sort((a, b) => b.hours - a.hours);
-  }, [appointmentsInPeriod]);
+  }, [appointmentsInPeriod, tutorEvaluationStats]);
 
   const pdfTutorMonthlyPerformance = useMemo(() => {
     const aggregate = {};
     appointmentsInPdfRange.forEach((appointment) => {
       const tutorId = appointment.tutor_id || "unknown";
       if (!aggregate[tutorId]) {
+        const ratingEntry = tutorEvaluationStatsPdf[tutorId];
         aggregate[tutorId] = {
           tutorId,
           name: appointment.tutor?.name || "Unknown Tutor",
           sessions: 0,
           hours: 0,
           totalTutees: 0,
+          averageRating:
+            ratingEntry && ratingEntry.overallCount
+              ? ratingEntry.overallSum / ratingEntry.overallCount
+              : null,
         };
       }
       if (isFinishedStatus(appointment.status)) {
@@ -709,7 +743,7 @@ const Reports = () => {
     return Object.values(aggregate)
       .filter((entry) => entry.sessions > 0 || entry.hours > 0)
       .sort((a, b) => b.hours - a.hours);
-  }, [appointmentsInPdfRange]);
+  }, [appointmentsInPdfRange, tutorEvaluationStatsPdf]);
 
   const maxTutorHours = tutorMonthlyPerformance.reduce(
     (max, entry) => Math.max(max, entry.hours),
@@ -730,9 +764,15 @@ const Reports = () => {
         return;
       }
 
-      const rows = [["Tutor", "Sessions", "Tutees Served", "Hours"]];
+      const rows = [["Tutor", "Sessions", "Tutees Served", "Hours", "Avg Rating"]];
       tutorMonthlyPerformance.forEach((entry) => {
-        rows.push([entry.name, entry.sessions, entry.totalTutees, entry.hours.toFixed(2)]);
+        rows.push([
+          entry.name,
+          entry.sessions,
+          entry.totalTutees,
+          entry.hours.toFixed(2),
+          entry.averageRating ? entry.averageRating.toFixed(2) : "-",
+        ]);
       });
 
       const csvContent = rows.map((row) => row.join(",")).join("\n");
@@ -828,11 +868,12 @@ const Reports = () => {
             <td>${entry.sessions}</td>
             <td>${entry.totalTutees}</td>
             <td>${entry.hours.toFixed(1)} hrs</td>
+            <td>${entry.averageRating ? entry.averageRating.toFixed(2) : "-"}</td>
           </tr>
         `
         )
         .join("") ||
-      `<tr><td colspan="4">No tutor performance data for ${escapeHtml(
+      `<tr><td colspan="5">No tutor performance data for ${escapeHtml(
         pdfRange?.label || displayPeriodLabel
       )}.</td></tr>`;
 
@@ -1003,6 +1044,7 @@ const Reports = () => {
                   <th>Sessions</th>
                   <th>Total Tutees Served</th>
                   <th>Total Hours</th>
+                  <th>Avg Rating</th>
                 </tr>
               </thead>
               <tbody>
@@ -1227,7 +1269,12 @@ const Reports = () => {
           <section className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
-              <p className="text-sm text-gray-500">Sessions, tutees, and total hours per tutor.</p>
+              <p className="text-sm text-gray-500">
+                Sessions, tutees, total hours, and average rating per tutor.
+              </p>
+              <p className="text-xs text-gray-400">
+                Updated {new Date().toLocaleString("en-US")}
+              </p>
             </div>
             <div className="overflow-x-auto sm:overflow-visible max-w-full overscroll-x-contain touch-pan-x">
               <table className="w-full text-sm min-w-[520px] sm:min-w-0">
@@ -1237,12 +1284,13 @@ const Reports = () => {
                     <th className="text-center px-4 py-3">Sessions</th>
                     <th className="text-center px-4 py-3">Tutees</th>
                     <th className="text-center px-4 py-3">Total Hours</th>
+                    <th className="text-center px-4 py-3">Avg Rating</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tutorMonthlyPerformance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center text-gray-500 py-5">
+                      <td colSpan={5} className="text-center text-gray-500 py-5">
                         No completed sessions were logged for {displayPeriodLabel}.
                       </td>
                     </tr>
@@ -1269,6 +1317,9 @@ const Reports = () => {
                         <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
                         <td className="px-4 py-3 text-center font-semibold text-blue-600">
                           {entry.hours.toFixed(1)} hrs
+                        </td>
+                        <td className="px-4 py-3 text-center font-semibold text-gray-700">
+                          {entry.averageRating ? entry.averageRating.toFixed(2) : "-"}
                         </td>
                       </tr>
                     ))
