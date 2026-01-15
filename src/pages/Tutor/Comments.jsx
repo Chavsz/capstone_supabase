@@ -11,6 +11,8 @@ const shuffle = (items) => {
   return array;
 };
 
+const MAX_COMMENT_LENGTH = 150;
+
 const Comments = () => {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState([]);
@@ -47,7 +49,7 @@ const Comments = () => {
           .filter((item) => item.tutor_comment && item.tutor_comment.trim() !== "")
           .map((item) => ({
             id: item.evaluation_id,
-            comment: item.tutor_comment.trim(),
+            comment: item.tutor_comment.trim().slice(0, MAX_COMMENT_LENGTH),
             tuteeId: item.appointment?.user_id || "anonymous",
           }));
 
@@ -113,6 +115,9 @@ const Comments = () => {
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span className="font-semibold text-blue-600">
                     {maskedNames.get(item.tuteeId) || "Tutee"}
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    {item.comment.length}/{MAX_COMMENT_LENGTH}
                   </span>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">{item.comment}</p>
