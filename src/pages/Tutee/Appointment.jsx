@@ -42,6 +42,7 @@ const Appointment = () => {
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [draftTutorId, setDraftTutorId] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const subjects = [
@@ -353,6 +354,32 @@ const Appointment = () => {
     return `${year}-${month}-${day}`;
   };
 
+  const normalizeManualDateInput = (rawValue) => {
+    const trimmed = rawValue.trim();
+    if (!trimmed) return "";
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slashMatch) {
+      const [, day, month, year] = slashMatch;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+
+    if (/[A-Za-z]/.test(trimmed)) {
+      const textMatch = trimmed.match(/([A-Za-z]+ \d{1,2}, \d{4})/);
+      const dateText = textMatch ? textMatch[1] : trimmed.replace(/\.$/, "");
+      const parsed = new Date(dateText);
+      if (!Number.isNaN(parsed.getTime())) {
+        return formatDateYMD(parsed);
+      }
+    }
+
+    return trimmed;
+  };
+
   // Prevent selecting past dates and weekends
   const handleDateChange = (e) => {
     const rawValue = e.target.value;
@@ -361,14 +388,7 @@ const Appointment = () => {
       return;
     }
 
-    const normalizedValue = /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
-      ? rawValue
-      : (() => {
-          const match = rawValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-          if (!match) return rawValue;
-          const [, day, month, year] = match;
-          return `${year}-${month}-${day}`;
-        })();
+    const normalizedValue = normalizeManualDateInput(rawValue);
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
       toast.error("Please enter a valid date.");
@@ -839,16 +859,20 @@ const Appointment = () => {
             },
           ]);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast.success("Appointment created successfully!");
-        setFormData({
-          subject: "",
-          topic: "",
-          mode_of_session: "",
-          date: "",
-          start_time: "",
-          end_time: "",
+      toast.success("Appointment created successfully!");
+      if (typeof window !== "undefined" && currentUserId) {
+        window.localStorage.removeItem(`appointmentDraft:${currentUserId}`);
+      }
+      setDraftTutorId(null);
+      setFormData({
+        subject: "",
+        topic: "",
+        mode_of_session: "",
+        date: "",
+        start_time: "",
+        end_time: "",
           number_of_tutees: "",
         });
         setSelectedTutor(null);
@@ -866,6 +890,53 @@ const Appointment = () => {
     getTutors();
     getTuteeProfile();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !currentUserId) return;
+    const savedDraft = window.localStorage.getItem(`appointmentDraft:${currentUserId}`);
+    if (!savedDraft) return;
+    try {
+      const parsed = JSON.parse(savedDraft);
+      if (parsed?.formData) {
+        setFormData((prev) => ({ ...prev, ...parsed.formData }));
+      }
+      if (typeof parsed?.selectedSubject === "string") {
+        setSelectedSubject(parsed.selectedSubject);
+      }
+      if (parsed?.detailsTutorId) {
+        setDetailsTutorId(parsed.detailsTutorId);
+      }
+      if (parsed?.selectedTutorId) {
+        setDraftTutorId(parsed.selectedTutorId);
+      }
+    } catch (err) {
+      console.error("Unable to restore appointment draft:", err.message);
+    }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!draftTutorId) return;
+    const matchedTutor = tutors.find((tutor) => tutor.user_id === draftTutorId);
+    if (!matchedTutor) return;
+    setSelectedTutor(matchedTutor);
+    if (!tutorSchedules[matchedTutor.user_id]) {
+      getTutorSchedules(matchedTutor.user_id);
+    }
+  }, [draftTutorId, tutors, tutorSchedules]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !currentUserId) return;
+    const payload = {
+      formData,
+      selectedSubject,
+      selectedTutorId: selectedTutor?.user_id || null,
+      detailsTutorId: detailsTutorId || null,
+    };
+    window.localStorage.setItem(
+      `appointmentDraft:${currentUserId}`,
+      JSON.stringify(payload)
+    );
+  }, [currentUserId, formData, selectedSubject, selectedTutor, detailsTutorId]);
 
   useEffect(() => {
     setShowAllSubjectTutors(false);
