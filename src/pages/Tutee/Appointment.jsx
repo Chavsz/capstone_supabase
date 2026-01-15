@@ -401,11 +401,10 @@ const Appointment = () => {
 
   const handleDateChange = (value) => {
     if (!value || !value.isValid()) {
-      setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
     const normalizedValue = value.format("YYYY-MM-DD");
-    validateAndApplyDate(normalizedValue, { showToast: false });
+    setFormData((prev) => ({ ...prev, date: normalizedValue }));
   };
 
   const CLASS_TIME_RANGES = [
@@ -1574,6 +1573,11 @@ const Appointment = () => {
                         fullWidth: true,
                         required: true,
                         className: "border border-gray-300 rounded-md",
+                        onChange: (event) => {
+                          if (!event.target.value) {
+                            setFormData((prev) => ({ ...prev, date: "" }));
+                          }
+                        },
                         sx: {
                           "& .MuiInputBase-root": {
                             height: 48,

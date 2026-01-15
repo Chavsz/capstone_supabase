@@ -801,7 +801,6 @@ const AppointmentModal = ({
                   value={formData.date ? dayjs(formData.date) : null}
                   onChange={(value) => {
                     if (!value || !value.isValid()) {
-                      setFormData((prev) => ({ ...prev, date: "" }));
                       return;
                     }
                     setFormData((prev) => ({
@@ -814,6 +813,11 @@ const AppointmentModal = ({
                     textField: {
                       size: "small",
                       className: "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
+                      onChange: (event) => {
+                        if (!event.target.value) {
+                          setFormData((prev) => ({ ...prev, date: "" }));
+                        }
+                      },
                     },
                   }}
                 />
