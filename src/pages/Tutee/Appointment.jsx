@@ -1560,24 +1560,23 @@ const Appointment = () => {
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     value={formData.date ? dayjs(formData.date) : null}
+                    defaultCalendarMonth={dayjs().add(3, "day")}
                     onChange={handleDateChange}
                     format="MM/DD/YYYY"
                     minDate={dayjs(getMinSelectableDate())}
+                    disablePast
                     shouldDisableDate={(date) => {
                       const day = date.day();
                       return day === 0 || day === 6;
                     }}
+                    closeOnSelect
                     slotProps={{
                       textField: {
                         size: "small",
                         fullWidth: true,
                         required: true,
                         className: "border border-gray-300 rounded-md",
-                        onChange: (event) => {
-                          if (!event.target.value) {
-                            setFormData((prev) => ({ ...prev, date: "" }));
-                          }
-                        },
+                        helperText: "Use MM/DD/YYYY",
                         sx: {
                           "& .MuiInputBase-root": {
                             height: 48,
