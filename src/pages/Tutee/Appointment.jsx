@@ -43,6 +43,7 @@ const Appointment = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
+  const [dateInput, setDateInput] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
   const lastDetailsAvailabilityRef = useRef(null);
 
@@ -365,7 +366,7 @@ const Appointment = () => {
 
     const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (slashMatch) {
-      const [, day, month, year] = slashMatch;
+      const [, month, day, year] = slashMatch;
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
 
@@ -414,15 +415,28 @@ const Appointment = () => {
     }
 
     setFormData((prev) => ({ ...prev, date: normalizedValue }));
+    setDateInput(
+      `${normalizedValue.slice(5, 7)}/${normalizedValue.slice(8, 10)}/${normalizedValue.slice(0, 4)}`
+    );
     return true;
   };
 
   const handleDateChange = (e) => {
     const rawValue = e.target.value;
+    setDateInput(rawValue);
     if (!rawValue) {
       setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
+    const normalizedValue = normalizeManualDateInput(rawValue);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+      validateAndApplyDate(normalizedValue, { showToast: false });
+    }
+  };
+
+  const handleDateBlur = (e) => {
+    const rawValue = e.target.value;
+    if (!rawValue) return;
     validateAndApplyDate(rawValue, { showToast: true });
   };
 
@@ -930,6 +944,7 @@ const Appointment = () => {
         end_time: "",
           number_of_tutees: "",
         });
+        setDateInput("");
         setSelectedTutor(null);
         setSelectedSubject("");
       } catch (err) {
@@ -954,6 +969,15 @@ const Appointment = () => {
       const parsed = JSON.parse(savedDraft);
       if (parsed?.formData) {
         setFormData((prev) => ({ ...prev, ...parsed.formData }));
+        if (parsed.formData.date && !parsed.dateInput) {
+          const [year, month, day] = parsed.formData.date.split("-");
+          if (year && month && day) {
+            setDateInput(`${month}/${day}/${year}`);
+          }
+        }
+      }
+      if (typeof parsed?.dateInput === "string") {
+        setDateInput(parsed.dateInput);
       }
       if (typeof parsed?.selectedSubject === "string") {
         setSelectedSubject(parsed.selectedSubject);
@@ -980,6 +1004,7 @@ const Appointment = () => {
     if (typeof window === "undefined" || !currentUserId) return;
     const payload = {
       formData,
+      dateInput,
       selectedSubject,
       selectedTutorId: selectedTutor?.user_id || null,
     };
@@ -987,7 +1012,7 @@ const Appointment = () => {
       `appointmentDraft:${currentUserId}`,
       JSON.stringify(payload)
     );
-  }, [currentUserId, formData, selectedSubject, selectedTutor, detailsTutorId]);
+  }, [currentUserId, formData, dateInput, selectedSubject, selectedTutor]);
 
   useEffect(() => {
     setShowAllSubjectTutors(false);
@@ -1577,10 +1602,12 @@ const Appointment = () => {
               </h3>
               <div className="space-y-3">
                 <input
-                  type="date"
+                  type="text"
                   name="date"
-                  value={formData.date}
+                  value={dateInput}
                   onChange={handleDateChange}
+                  onBlur={handleDateBlur}
+                  placeholder="MM/DD/YYYY"
                   className="border border-gray-300 rounded-md p-3 w-full"
                   required
                 />

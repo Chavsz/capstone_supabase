@@ -100,12 +100,20 @@ const AppointmentModal = ({
   const [declineReason, setDeclineReason] = useState("");
   const [declineError, setDeclineError] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
+  const [cancelMode, setCancelMode] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     setDeclineMode(false);
     setDeclineReason("");
     setDeclineError("");
     setIsDeclining(false);
+    setCancelMode(false);
+    setCancelReason("");
+    setCancelError("");
+    setIsCancelling(false);
   }, [appointment, isOpen]);
 
   const handleDeclineSubmit = async () => {
@@ -298,26 +306,62 @@ const AppointmentModal = ({
           )}
           {appointment.status === "confirmed" && (
             <>
-              <button
-                onClick={() => {
-                  onStatusUpdate(appointment.appointment_id, "started");
-                  onClose();
-                }}
-                className="bg-[#1e90ff] text-white rounded-md px-4 py-2 text-sm hover:bg-[#1565c0] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isBusy}
-              >
-                Start Session
-              </button>
-              <button
-                onClick={() => {
-                  onStatusUpdate(appointment.appointment_id, "cancelled");
-                  onClose();
-                }}
-                className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isBusy}
-              >
-                Cancel Session
-              </button>
+              {!cancelMode ? (
+                <>
+                  <button
+                    onClick={() => {
+                      onStatusUpdate(appointment.appointment_id, "started");
+                      onClose();
+                    }}
+                    className="bg-[#1e90ff] text-white rounded-md px-4 py-2 text-sm hover:bg-[#1565c0] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isBusy || isCancelling}
+                  >
+                    Start Session
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCancelMode(true);
+                    }}
+                    className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isBusy || isCancelling}
+                  >
+                    Cancel Session
+                  </button>
+                </>
+              ) : (
+                <div className="w-full space-y-2">
+                  <textarea
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Share the reason for cancelling so the tutee understands why."
+                  />
+                  {cancelError && (
+                    <p className="text-xs text-red-600">{cancelError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCancelSubmit}
+                      className="bg-[#e02402] text-white rounded-md px-4 py-2 text-sm hover:bg-[#b81d02] flex-1 disabled:bg-red-300 disabled:cursor-not-allowed"
+                      disabled={isCancelling || isBusy}
+                    >
+                      {isCancelling ? "Cancelling..." : "Confirm Cancel"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCancelMode(false);
+                        setCancelReason("");
+                        setCancelError("");
+                      }}
+                      className="bg-gray-200 text-gray-800 rounded-md px-4 py-2 text-sm hover:bg-gray-300 flex-1"
+                      disabled={isCancelling || isBusy}
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
           {appointment.status === "started" && (
@@ -449,7 +493,7 @@ const Schedule = () => {
 
       // Update the appointment status
       const updates = { status };
-      if (status === "declined") {
+      if (status === "declined" || status === "cancelled") {
         updates.tutor_decline_reason = metadata.reason || null;
       }
       const { error } = await supabase
@@ -482,6 +526,9 @@ const Schedule = () => {
           }
         } else if (status === "cancelled") {
           notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled. [appointment_id:${appointmentData.appointment_id}]`;
+          if (metadata.reason) {
+            notificationMessage += ` Reason: ${metadata.reason}`;
+          }
         }
 
         // Create notification for the tutee
@@ -508,6 +555,26 @@ const Schedule = () => {
       console.error(err.message);
       toast.error("Error updating appointment status");
       throw err;
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Please share a brief reason.");
+      return;
+    }
+    if (!appointment) return;
+    setCancelError("");
+    setIsCancelling(true);
+    try {
+      await onStatusUpdate(appointment.appointment_id, "cancelled", {
+        reason: cancelReason.trim(),
+      });
+      onClose();
+    } catch (err) {
+      setCancelError(err?.message || "Unable to cancel this appointment.");
+    } finally {
+      setIsCancelling(false);
     }
   };
 

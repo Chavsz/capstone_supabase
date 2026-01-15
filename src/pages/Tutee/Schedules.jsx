@@ -423,6 +423,30 @@ const AppointmentModal = ({
     return date.toLocaleDateString("en-US", { weekday: "long" });
   };
 
+  const formatDateMDY = (dateString) => {
+    if (!dateString) return "";
+    const parsed = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return dateString;
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getDate()).padStart(2, "0");
+    const year = parsed.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  const normalizeDateInput = (rawValue) => {
+    const trimmed = rawValue.trim();
+    if (!trimmed) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slashMatch) {
+      const [, month, day, year] = slashMatch;
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+    return "";
+  };
+
   const isWithinClassBlock = (startMinutes, endMinutes) =>
     CLASS_TIME_BLOCKS.some(
       (block) =>
@@ -430,7 +454,7 @@ const AppointmentModal = ({
         endMinutes <= block.end
     );
 
-  const validateAgainstTutorSchedule = () => {
+  const validateAgainstTutorSchedule = (dateOverride) => {
     if (!appointment) return { valid: false, message: "Appointment information not found." };
     const schedules = tutorSchedules[appointment.tutor_id];
     if (!schedules || schedules.length === 0) {
@@ -446,7 +470,7 @@ const AppointmentModal = ({
       return { valid: false, message: "Invalid start or end time." };
     }
 
-    const dayName = getDayName(formData.date);
+    const dayName = getDayName(dateOverride || formData.date);
     if (!dayName) {
       return { valid: false, message: "Invalid appointment date." };
     }
@@ -488,6 +512,7 @@ const AppointmentModal = ({
     end_time: "",
     mode_of_session: "",
   });
+  const [dateInput, setDateInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -525,6 +550,7 @@ const AppointmentModal = ({
         end_time: normalizeTime(sourceAppointment.end_time),
         mode_of_session: sourceAppointment.mode_of_session || "",
       });
+      setDateInput(formatDateMDY(normalizeDate(sourceAppointment.date)));
       setResourceLink(sourceAppointment.resource_link || "");
       setResourceNote(sourceAppointment.resource_note || "");
       setResourceMessage("");
@@ -580,6 +606,18 @@ const AppointmentModal = ({
     }));
   };
 
+  const handleDateInputChange = (e) => {
+    const rawValue = e.target.value;
+    setDateInput(rawValue);
+    const normalizedValue = normalizeDateInput(rawValue);
+    if (normalizedValue) {
+      setFormData((prev) => ({
+        ...prev,
+        date: normalizedValue,
+      }));
+    }
+  };
+
   const handleUpdateClick = async () => {
     if (!appointment || !onUpdate) return;
 
@@ -588,7 +626,13 @@ const AppointmentModal = ({
       return;
     }
 
-    if (!formData.date || !formData.start_time || !formData.end_time) {
+    const normalizedDate = normalizeDateInput(dateInput);
+    if (!normalizedDate) {
+      setError("Please enter a valid date (MM/DD/YYYY).");
+      return;
+    }
+
+    if (!formData.start_time || !formData.end_time) {
       setError("Please complete the date and time fields.");
       return;
     }
@@ -603,7 +647,7 @@ const AppointmentModal = ({
 
     const unavailableEntries = tutorUnavailableDays[appointment.tutor_id] || [];
     const unavailableEntry = unavailableEntries.find(
-      (entry) => entry.date === formData.date
+      (entry) => entry.date === normalizedDate
     );
     if (unavailableEntry) {
       setError(
@@ -614,7 +658,7 @@ const AppointmentModal = ({
       return;
     }
 
-    const availabilityCheck = validateAgainstTutorSchedule();
+    const availabilityCheck = validateAgainstTutorSchedule(normalizedDate);
     if (!availabilityCheck.valid) {
       setError(availabilityCheck.message);
       return;
@@ -625,7 +669,7 @@ const AppointmentModal = ({
         .from("appointment")
         .select("appointment_id, start_time, end_time, status")
         .eq("tutor_id", appointment.tutor_id)
-        .eq("date", formData.date)
+        .eq("date", normalizedDate)
         .in("status", BOOKED_STATUSES)
         .neq("appointment_id", appointment.appointment_id);
 
@@ -658,7 +702,10 @@ const AppointmentModal = ({
     setIsSaving(true);
 
     try {
-      await onUpdate(appointment.appointment_id, formData);
+      await onUpdate(appointment.appointment_id, {
+        ...formData,
+        date: normalizedDate,
+      });
     } catch (err) {
       // onUpdate handles errors and user feedback
     } finally {
@@ -793,10 +840,16 @@ const AppointmentModal = ({
             <span className="font-semibold text-gray-600">Date:</span>
             {appointment.status === "pending" && isEditing ? (
               <input
-                type="date"
+                type="text"
                 name="date"
-                value={formData.date}
-                onChange={handleInputChange}
+                value={dateInput}
+                onChange={handleDateInputChange}
+                onBlur={() => {
+                  if (dateInput && !normalizeDateInput(dateInput)) {
+                    setError("Please enter a valid date (MM/DD/YYYY).");
+                  }
+                }}
+                placeholder="MM/DD/YYYY"
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
               />
             ) : (
@@ -1329,6 +1382,9 @@ const Schedules = () => {
 
   const handleConfirmedDecline = async ({ appointment, reason }) => {
     if (!appointment) return;
+    if (!window.confirm("Cancel this confirmed session?")) {
+      return;
+    }
     try {
       const { error } = await supabase
         .from("appointment")
