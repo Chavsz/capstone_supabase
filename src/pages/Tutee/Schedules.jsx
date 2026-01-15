@@ -96,6 +96,7 @@ const EvaluationModal = ({
   onClose,
   onEvaluate,
 }) => {
+  const MAX_TUTOR_COMMENT = 150;
   const [activeTab, setActiveTab] = useState("tutor");
   const [evaluationData, setEvaluationData] = useState({
     presentation_clarity: "",
@@ -167,6 +168,10 @@ const EvaluationModal = ({
       setError(
         "Please provide ratings for every Tutor and LAV criterion before submitting."
       );
+      return;
+    }
+    if ((evaluationData.tutor_comment || "").length > MAX_TUTOR_COMMENT) {
+      setError(`Tutor comment must be ${MAX_TUTOR_COMMENT} characters or fewer.`);
       return;
     }
 
@@ -348,15 +353,24 @@ const EvaluationModal = ({
               <textarea
                 className="w-full border border-gray-300 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={4}
+                maxLength={MAX_TUTOR_COMMENT}
                 value={evaluationData.tutor_comment}
                 onChange={(e) =>
                   setEvaluationData((prev) => ({
                     ...prev,
-                    tutor_comment: e.target.value,
+                    tutor_comment: e.target.value.slice(0, MAX_TUTOR_COMMENT),
                   }))
                 }
                 placeholder="Share additional thoughts for your tutor"
               />
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  {evaluationData.tutor_comment.length}/{MAX_TUTOR_COMMENT}
+                </span>
+                {evaluationData.tutor_comment.length >= MAX_TUTOR_COMMENT && (
+                  <span className="text-red-600">Comment limit reached.</span>
+                )}
+              </div>
               <p className="text-xs text-gray-500">
                 Only your tutor can read this message. It remains anonymous and your personal details are protected.
               </p>
