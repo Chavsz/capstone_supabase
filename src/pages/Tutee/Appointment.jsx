@@ -43,6 +43,7 @@ const Appointment = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
+  const [dateInput, setDateInput] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const subjects = [
@@ -380,53 +381,78 @@ const Appointment = () => {
     return trimmed;
   };
 
-  // Prevent selecting past dates and weekends
+  const validateAndApplyDate = (rawValue, { showToast } = {}) => {
+    const normalizedValue = normalizeManualDateInput(rawValue);
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+      if (showToast) {
+        toast.error("Please enter a valid date.");
+      }
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return false;
+    }
+
+    const selected = new Date(`${normalizedValue}T00:00:00`);
+    if (Number.isNaN(selected.getTime())) {
+      if (showToast) {
+        toast.error("Please enter a valid date.");
+      }
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return false;
+    }
+
+    const minSelectable = getMinSelectableDate();
+
+    // Enforce 3-day lead time (block today and the next two days)
+    if (selected < minSelectable) {
+      if (showToast) {
+        toast.error(
+          `Earliest available date is ${minSelectable.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}.`
+        );
+      }
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return false;
+    }
+
+    // Check if selected date is a weekend
+    const day = selected.getDay();
+    if (day === 0 || day === 6) {
+      if (showToast) {
+        toast.error("Weekends are not available.");
+      }
+      setFormData((prev) => ({ ...prev, date: "" }));
+      return false;
+    }
+
+    setFormData((prev) => ({ ...prev, date: normalizedValue }));
+    setDateInput(normalizedValue);
+    return true;
+  };
+
+  // Allow manual typing; validate on blur or when input becomes complete.
   const handleDateChange = (e) => {
     const rawValue = e.target.value;
+    setDateInput(rawValue);
+
     if (!rawValue) {
       setFormData((prev) => ({ ...prev, date: "" }));
       return;
     }
 
     const normalizedValue = normalizeManualDateInput(rawValue);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+      validateAndApplyDate(normalizedValue, { showToast: false });
+    }
+  };
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
-      toast.error("Please enter a valid date.");
-      setFormData((prev) => ({ ...prev, date: "" }));
-      return;
-    }
-
-    const selected = new Date(`${normalizedValue}T00:00:00`);
-    if (Number.isNaN(selected.getTime())) {
-      toast.error("Please enter a valid date.");
-      setFormData((prev) => ({ ...prev, date: "" }));
-      return;
-    }
-
-    const minSelectable = getMinSelectableDate();
-    
-    // Enforce 3-day lead time (block today and the next two days)
-    if (selected < minSelectable) {
-      toast.error(
-        `Earliest available date is ${minSelectable.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}.`
-      );
-      setFormData((prev) => ({ ...prev, date: "" }));
-      return;
-    }
-    
-    // Check if selected date is a weekend
-    const day = selected.getDay();
-    if (day === 0 || day === 6) {
-      toast.error("Weekends are not available.");
-      setFormData((prev) => ({ ...prev, date: "" }));
-      return;
-    }
-    
-    setFormData((prev) => ({ ...prev, date: normalizedValue }));
+  const handleDateBlur = (e) => {
+    const rawValue = e.target.value;
+    if (!rawValue) return;
+    validateAndApplyDate(rawValue, { showToast: true });
   };
 
   const CLASS_TIME_RANGES = [
@@ -899,6 +925,9 @@ const Appointment = () => {
       const parsed = JSON.parse(savedDraft);
       if (parsed?.formData) {
         setFormData((prev) => ({ ...prev, ...parsed.formData }));
+        if (parsed.formData.date) {
+          setDateInput(parsed.formData.date);
+        }
       }
       if (typeof parsed?.selectedSubject === "string") {
         setSelectedSubject(parsed.selectedSubject);
@@ -913,6 +942,11 @@ const Appointment = () => {
       console.error("Unable to restore appointment draft:", err.message);
     }
   }, [currentUserId]);
+
+  useEffect(() => {
+    if (!formData.date) return;
+    setDateInput(formData.date);
+  }, [formData.date]);
 
   useEffect(() => {
     if (!draftTutorId) return;
@@ -1068,8 +1102,6 @@ const Appointment = () => {
     if (!name) return "?";
     return name.trim().charAt(0).toUpperCase();
   };
-
-  const minDate = formatDateYMD(getMinSelectableDate());
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -1546,11 +1578,12 @@ const Appointment = () => {
               </h3>
               <div className="space-y-3">
                 <input
-                  type="date"
+                  type="text"
                   name="date"
-                  value={formData.date}
+                  value={dateInput}
                   onChange={handleDateChange}
-                  min={minDate}
+                  onBlur={handleDateBlur}
+                  placeholder="YYYY-MM-DD or January 19, 2026"
                   className="border border-gray-300 rounded-md p-3 w-full"
                   required
                 />
