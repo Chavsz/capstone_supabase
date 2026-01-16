@@ -190,6 +190,8 @@ const Header = () => {
       .delete()
       .eq("user_id", session.user.id);
     if (error) throw error;
+    setNotifications([]);
+    setUnreadCount(0);
     getNotifications();
   };
 
