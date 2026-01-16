@@ -174,6 +174,8 @@ const MyClasses = () => {
           end_time,
           mode_of_session,
           number_of_tutees,
+          resource_link,
+          resource_note,
           status,
           tutor_decline_reason,
           tutee_decline_reason,
@@ -574,7 +576,7 @@ const MyClasses = () => {
                             {(STATUS_LABELS[booking.status] || booking.status).toUpperCase()}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                           <div>
                             <div className="font-semibold text-[#1f3b94]">Subject</div>
                             <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
@@ -611,6 +613,28 @@ const MyClasses = () => {
                               {booking.number_of_tutees || 1}
                             </div>
                           </div>
+                          {(booking.resource_link || booking.resource_note) && (
+                            <div className="col-span-2 rounded-xl border border-blue-200 bg-blue-50 px-2 py-2 text-[10px] text-[#1f3b94]">
+                              <div className="font-semibold text-[#1f3b94]">
+                                Shared Resources
+                              </div>
+                              {booking.resource_link && (
+                                <a
+                                  href={booking.resource_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 block break-all text-[#20315f] underline"
+                                >
+                                  {booking.resource_link}
+                                </a>
+                              )}
+                              {booking.resource_note && (
+                                <div className="mt-1 text-[#20315f]">
+                                  {booking.resource_note}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -778,6 +802,29 @@ const MyClasses = () => {
                       {hoveredAppointment.number_of_tutees || 1}
                     </div>
                   </div>
+                  {(hoveredAppointment.resource_link ||
+                    hoveredAppointment.resource_note) && (
+                    <div className="col-span-2 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-[#2d3a6d]">
+                      <div className="font-semibold text-[#1f3b94]">
+                        Shared Resources
+                      </div>
+                      {hoveredAppointment.resource_link && (
+                        <a
+                          href={hoveredAppointment.resource_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 block break-all text-[#20315f] underline"
+                        >
+                          {hoveredAppointment.resource_link}
+                        </a>
+                      )}
+                      {hoveredAppointment.resource_note && (
+                        <div className="mt-1 text-[#20315f]">
+                          {hoveredAppointment.resource_note}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="col-span-2 flex items-center justify-between gap-2">
                     <div className="font-semibold text-[#1f3b94]">Status</div>
                     <span
