@@ -430,55 +430,7 @@ const MyClasses = () => {
 
       <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1 pb-2">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search tutor, student, or subject"
-                className="w-full max-w-xs rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm lg:w-64"
-              />
-              {[
-                "all",
-                "pending",
-                "confirmed",
-                "started",
-                "awaiting_feedback",
-                "completed",
-                "declined",
-                "cancelled",
-              ].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setStatusFilter(status)}
-                  className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
-                    statusFilter === status
-                      ? "text-white"
-                      : "bg-white text-gray-600 border-gray-200"
-                  }`}
-                  style={
-                    statusFilter === status && status !== "all"
-                      ? {
-                          backgroundColor: getStatusColor(status),
-                          borderColor: getStatusColor(status),
-                          color: status === "pending" ? "#323335" : "#ffffff",
-                        }
-                      : statusFilter === status
-                        ? {
-                            backgroundColor: "#1f3b94",
-                            borderColor: "#1f3b94",
-                            color: "#ffffff",
-                          }
-                        : undefined
-                  }
-                >
-                  {STATUS_LABELS[status] || "All"}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex items-center justify-end">
             <div className="relative flex items-center gap-2">
               <button
                 type="button"
