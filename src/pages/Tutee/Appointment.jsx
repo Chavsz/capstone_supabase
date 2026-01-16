@@ -848,20 +848,27 @@ const Appointment = () => {
 
       if (userError) throw userError;
 
-      const hasUserConflict = (userAppointments || []).some((appointment) => {
-        const appointmentStart = getMinutesFromStored(appointment.start_time);
-        const appointmentEnd = getMinutesFromStored(appointment.end_time);
-        return (
-          appointmentStart !== null &&
-          appointmentEnd !== null &&
-          startMinutes < appointmentEnd &&
-          endMinutes > appointmentStart
-        );
-      });
+      const conflictingUserAppointments = (userAppointments || []).filter(
+        (appointment) => {
+          const appointmentStart = getMinutesFromStored(appointment.start_time);
+          const appointmentEnd = getMinutesFromStored(appointment.end_time);
+          return (
+            appointmentStart !== null &&
+            appointmentEnd !== null &&
+            startMinutes < appointmentEnd &&
+            endMinutes > appointmentStart
+          );
+        }
+      );
 
-      if (hasUserConflict) {
+      if (conflictingUserAppointments.length > 0) {
+        const hasPending = conflictingUserAppointments.some(
+          (appointment) => appointment.status === "pending"
+        );
         toast.error(
-          "You already have another appointment at this time. Cancel it before booking a new one."
+          hasPending
+            ? "You already have a pending appointment at this time. Please wait for it to be confirmed, declined, or cancelled."
+            : "You already have an appointment at this time. Cancel it before booking a new one."
         );
         return;
       }

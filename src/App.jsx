@@ -19,6 +19,7 @@ import TuteeDashboard from "./pages/Tutee/TuteeDashboard";
 import TuteeProfile from "./pages/Tutee/Profile";
 import TuteeSchedules from "./pages/Tutee/Schedules";
 import TuteeAppointment from "./pages/Tutee/Appointment";
+import TuteeMyClasses from "./pages/Tutee/MyClasses";
 import TuteeSwitch from "./pages/Tutee/Switch";
 
 // Tutor Pages
@@ -176,6 +177,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<TuteeAppointment />}
+            />
+          }
+        />
+        <Route
+          path="classes"
+          element={
+            <RoleRoute
+              allowedRoles={["student"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TuteeMyClasses />}
             />
           }
         />

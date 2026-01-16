@@ -64,6 +64,13 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/classes"
+        Icon={mdIcons.MdClass}
+        title="My Classes"
+        isActive={location.pathname === "/dashboard/classes"}
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/appointment"
         Icon={mdIcons.MdCalendarMonth}
         title="Appointment"
