@@ -413,7 +413,7 @@ const MyClasses = () => {
   }, [matchingDayIndices, searchTerm, statusFilter]);
 
   return (
-    <div className="h-[calc(100vh-96px)] overflow-hidden p-4 md:p-6">
+    <div className="h-[calc(100vh-140px)] overflow-hidden p-4 md:p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-700">
@@ -634,7 +634,7 @@ const MyClasses = () => {
                   data-day-col
                   className="border border-[#1433a5] p-2"
                 >
-                  <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+                  <div className="h-full space-y-3 overflow-y-auto pr-1">
                   {items.length === 0 ? (
                     <div className="text-xs text-[#7b8bb8] py-8 text-center">
                       No bookings
