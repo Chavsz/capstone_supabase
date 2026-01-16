@@ -428,7 +428,7 @@ const MyClasses = () => {
         </div>
       </div>
 
-      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm flex flex-col min-h-0">
+      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm flex flex-col min-h-0 h-full">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-end">
             <div className="relative flex items-center gap-2">
