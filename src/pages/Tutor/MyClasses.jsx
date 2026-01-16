@@ -413,7 +413,7 @@ const MyClasses = () => {
   }, [matchingDayIndices, searchTerm, statusFilter]);
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
+    <div className="h-[calc(100vh-96px)] overflow-hidden p-4 md:p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-700">
@@ -428,7 +428,7 @@ const MyClasses = () => {
         </div>
       </div>
 
-      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
+      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm flex flex-col min-h-0">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-end">
             <div className="relative flex items-center gap-2">
@@ -626,8 +626,7 @@ const MyClasses = () => {
         {isDesktop && (
           <div
             ref={gridRef}
-            className="relative border border-[#1433a5] bg-[#ffffff] overflow-hidden grid grid-cols-5"
-            style={{ maxHeight: "calc(100vh - 320px)" }}
+            className="relative border border-[#1433a5] bg-[#ffffff] overflow-hidden grid grid-cols-5 flex-1 min-h-0"
           >
               {bookingsByDay.map((items, dayIndex) => (
                 <div
