@@ -248,7 +248,7 @@ const Appointment = () => {
         .from("appointment")
         .select("tutor_id, start_time, end_time, status")
         .eq("date", targetDate)
-        .in("status", BOOKED_STATUSES);
+        .not("status", "in", "(cancelled,declined)");
 
       if (error) throw error;
       setAppointmentsForDate(data || []);
@@ -817,7 +817,7 @@ const Appointment = () => {
         .select("start_time, end_time, status")
         .eq("tutor_id", selectedTutor.user_id)
         .eq("date", formData.date)
-        .in("status", BOOKED_STATUSES);
+        .not("status", "in", "(cancelled,declined)");
 
       if (tutorError) throw tutorError;
 
@@ -844,7 +844,7 @@ const Appointment = () => {
         .select("start_time, end_time, status")
         .eq("user_id", session.user.id)
         .eq("date", formData.date)
-        .in("status", BOOKED_STATUSES);
+        .not("status", "in", "(cancelled,declined)");
 
       if (userError) throw userError;
 
