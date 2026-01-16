@@ -223,6 +223,31 @@ const Header = () => {
     }
   };
 
+  const handleUpcomingClick = (appointment) => {
+    if (!appointment) return;
+    setIsDropdownOpen(false);
+    const notification = {
+      notification_id: `upcoming-${appointment.appointment_id || Date.now()}`,
+      notification_content: `Upcoming session. [appointment_id:${appointment.appointment_id}]`,
+    };
+    try {
+      sessionStorage.setItem(
+        "lav.pendingNotification.tutee",
+        JSON.stringify(notification)
+      );
+    } catch (err) {
+      // Ignore storage errors.
+    }
+    const targetPath = "/dashboard/schedules";
+    if (window.location.pathname === targetPath) {
+      window.dispatchEvent(
+        new CustomEvent("lav.notification.tutee", { detail: notification })
+      );
+    } else {
+      navigate(targetPath, { state: { notification } });
+    }
+  };
+
   const markAllAsRead = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -526,9 +551,12 @@ const Header = () => {
                       <div className="mt-2 space-y-2">
                         {upcomingSessions.map(
                           ({ appointment, minutesUntil }) => (
-                            <div
+                            <button
                               key={appointment.appointment_id}
-                              className="text-[#4c4ba2] text-sm"
+                              type="button"
+                              onClick={() => handleUpcomingClick(appointment)}
+                              className="w-full text-left text-[#4c4ba2] text-sm rounded-md p-2 hover:bg-[#cfe4d8] transition-colors"
+                              disabled={actionBusy}
                             >
                               <p className="font-semibold">
                                 In {minutesUntil}{" "}
@@ -558,7 +586,7 @@ const Header = () => {
                                   }
                                 )}
                               </p>
-                            </div>
+                            </button>
                           )
                         )}
                       </div>

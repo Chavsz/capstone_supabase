@@ -146,6 +146,30 @@ const Header = () => {
     }
   };
 
+  const handlePendingClick = () => {
+    setIsDropdownOpen(false);
+    const notification = {
+      notification_id: `pending-${Date.now()}`,
+      notification_content: "Pending appointment request.",
+    };
+    try {
+      sessionStorage.setItem(
+        "lav.pendingNotification.tutor",
+        JSON.stringify(notification)
+      );
+    } catch (err) {
+      // Ignore storage errors.
+    }
+    const targetPath = "/dashboard/schedule";
+    if (window.location.pathname === targetPath) {
+      window.dispatchEvent(
+        new CustomEvent("lav.notification.tutor", { detail: notification })
+      );
+    } else {
+      navigate(targetPath, { state: { notification } });
+    }
+  };
+
   const markAllAsRead = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -317,14 +341,19 @@ const Header = () => {
                 <div className="space-y-3">
                   {/* Pending Appointments */}
                   {pendingCount > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <button
+                      type="button"
+                      onClick={handlePendingClick}
+                      className="w-full text-left bg-blue-50 border border-blue-200 rounded-md p-3 hover:bg-blue-100 transition-colors"
+                      disabled={actionBusy}
+                    >
                       <p className="text-blue-800  text-[14px] font-semibold">
                         There {pendingCount === 1 ? 'is' : 'are'} {pendingCount} pending appointment{pendingCount > 1 ? 's' : ''}
                       </p>
                       <p className="text-blue-600 text-sm mt-1">
                         Review and respond to appointment requests
                       </p>
-                    </div>
+                    </button>
                   )}
 
                   {/* Unread Notifications */}
