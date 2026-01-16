@@ -104,6 +104,10 @@ const MyClasses = () => {
   const [searchIndex, setSearchIndex] = useState(0);
   const [pendingFocus, setPendingFocus] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
 
   const weekDates = useMemo(() => {
     return dayLabels.map((label, index) => {
@@ -200,6 +204,28 @@ const MyClasses = () => {
       setUserId(data?.session?.user?.id || null);
     };
     getSession();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const handleChange = (event) => {
+      setIsDesktop(event.matches);
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -477,63 +503,68 @@ const MyClasses = () => {
           </div>
         </div>
 
-        <div className="text-center text-[#1f3b94] font-semibold hidden md:grid grid-cols-5">
-          {weekDates.map((day, index) => (
-            <div
-              key={day.label}
-              className={`pb-2 rounded-xl ${
-                desktopMatchingDayIndices.has(index) ? "bg-[#feda3c]" : ""
-              }`}
-            >
-              <div className="text-base md:text-lg tracking-wide">
-                {day.label.toUpperCase()}
-              </div>
+        {isDesktop && (
+          <div className="text-center text-[#1f3b94] font-semibold grid grid-cols-5">
+            {weekDates.map((day, index) => (
               <div
-                className={`text-[10px] mt-1 ${
-                  desktopMatchingDayIndices.has(index)
-                    ? "text-[#181718]"
-                    : "text-[#8a8fa8]"
+                key={day.label}
+                className={`pb-2 rounded-xl ${
+                  desktopMatchingDayIndices.has(index) ? "bg-[#feda3c]" : ""
                 }`}
               >
-                {day.date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                <div className="text-base md:text-lg tracking-wide">
+                  {day.label.toUpperCase()}
+                </div>
+                <div
+                  className={`text-[10px] mt-1 ${
+                    desktopMatchingDayIndices.has(index)
+                      ? "text-[#181718]"
+                      : "text-[#8a8fa8]"
+                  }`}
+                >
+                  {day.date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Mobile day selector */}
-        <div className="flex gap-2 overflow-x-auto pb-2 md:hidden">
-          {weekDates.map((day, index) => (
-            <button
-              key={day.label}
-              type="button"
-              onClick={() => setSelectedDayIndex(index)}
-              className={`min-w-[72px] rounded-2xl border px-3 py-2 text-xs font-semibold ${
-                selectedDayIndex === index
-                  ? matchingDayIndices.has(index)
-                    ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
-                    : "border-[#1f3b94] bg-[#1f3b94] text-white"
-                  : matchingDayIndices.has(index)
-                    ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
-                    : "border-gray-200 bg-white text-[#1f3b94]"
-              }`}
-            >
-              <div className="text-[11px]">{day.label.toUpperCase()}</div>
-              <div className="text-[10px] opacity-80">
-                {day.date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-            </button>
-          ))}
-        </div>
+        {!isDesktop && (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {weekDates.map((day, index) => (
+              <button
+                key={day.label}
+                type="button"
+                onClick={() => setSelectedDayIndex(index)}
+                className={`min-w-[72px] rounded-2xl border px-3 py-2 text-xs font-semibold ${
+                  selectedDayIndex === index
+                    ? matchingDayIndices.has(index)
+                      ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
+                      : "border-[#1f3b94] bg-[#1f3b94] text-white"
+                    : matchingDayIndices.has(index)
+                      ? "border-[#feda3c] bg-[#feda3c] text-[#181718]"
+                      : "border-gray-200 bg-white text-[#1f3b94]"
+                }`}
+              >
+                <div className="text-[11px]">{day.label.toUpperCase()}</div>
+                <div className="text-[10px] opacity-80">
+                  {day.date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Mobile single-day list */}
-        <div className="md:hidden border border-[#1433a5] bg-[#ffffff] rounded-2xl p-2">
+        {!isDesktop && (
+          <div className="border border-[#1433a5] bg-[#ffffff] rounded-2xl p-2">
           <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
             {activeDayBookings.length === 0 ? (
               <div className="text-xs text-[#7b8bb8] py-10 text-center">
@@ -637,12 +668,14 @@ const MyClasses = () => {
             )}
           </div>
         </div>
+        )}
 
         {/* Desktop grid */}
-        <div
-          ref={gridRef}
-          className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible hidden md:grid grid-cols-5"
-        >
+        {isDesktop && (
+          <div
+            ref={gridRef}
+            className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible grid grid-cols-5"
+          >
             {bookingsByDay.map((items, dayIndex) => (
               <div
                 key={dayLabels[dayIndex]}
@@ -823,6 +856,7 @@ const MyClasses = () => {
             </div>
           )}
         </div>
+        )}
 
         <div className="flex items-center justify-between mt-4">
           <button
