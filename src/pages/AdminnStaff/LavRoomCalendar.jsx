@@ -459,7 +459,7 @@ const LavRoomCalendar = () => {
           </div>
         </div>
 
-        <div className="text-center text-[#1f3b94] font-semibold hidden lg:grid grid-cols-5">
+        <div className="text-center text-[#1f3b94] font-semibold hidden md:grid grid-cols-5">
           {weekDates.map((day, index) => (
             <div
               key={day.label}
@@ -487,7 +487,7 @@ const LavRoomCalendar = () => {
         </div>
 
         {/* Mobile day selector */}
-        <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto pb-2 md:hidden">
           {weekDates.map((day, index) => (
             <button
               key={day.label}
@@ -515,7 +515,7 @@ const LavRoomCalendar = () => {
         </div>
 
         {/* Mobile single-day list */}
-        <div className="lg:hidden border border-[#1433a5] bg-[#ffffff] rounded-2xl p-2">
+        <div className="md:hidden border border-[#1433a5] bg-[#ffffff] rounded-2xl p-2">
           <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
             {activeDayBookings.length === 0 ? (
               <div className="text-xs text-[#7b8bb8] py-10 text-center">
@@ -623,7 +623,7 @@ const LavRoomCalendar = () => {
         {/* Desktop grid */}
         <div
           ref={gridRef}
-          className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible hidden lg:grid grid-cols-5"
+          className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible hidden md:grid grid-cols-5"
         >
             {bookingsByDay.map((items, dayIndex) => (
               <div
