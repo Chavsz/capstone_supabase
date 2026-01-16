@@ -758,7 +758,7 @@ const Schedule = () => {
       location.state?.notification || readStoredNotification();
     if (!notification) return;
     handleIncomingNotification(notification);
-  }, [handleIncomingNotification, location.state]);
+  }, [handleIncomingNotification, location.state, appointments.length]);
 
   useEffect(() => {
     const handleEvent = (event) => {
