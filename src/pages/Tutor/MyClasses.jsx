@@ -626,7 +626,7 @@ const MyClasses = () => {
         {isDesktop && (
           <div
             ref={gridRef}
-            className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible grid grid-cols-5"
+            className="relative border border-[#1433a5] bg-[#ffffff] overflow-hidden grid grid-cols-5"
             style={{ maxHeight: "calc(100vh - 320px)" }}
           >
               {bookingsByDay.map((items, dayIndex) => (
