@@ -627,14 +627,15 @@ const MyClasses = () => {
           <div
             ref={gridRef}
             className="relative border border-[#1433a5] bg-[#ffffff] overflow-visible grid grid-cols-5"
+            style={{ maxHeight: "calc(100vh - 320px)" }}
           >
-            {bookingsByDay.map((items, dayIndex) => (
-              <div
-                key={dayLabels[dayIndex]}
-                data-day-col
-                className="border border-[#1433a5] p-2"
-              >
-                <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
+              {bookingsByDay.map((items, dayIndex) => (
+                <div
+                  key={dayLabels[dayIndex]}
+                  data-day-col
+                  className="border border-[#1433a5] p-2"
+                >
+                  <div className="h-full space-y-3 overflow-y-auto pr-1">
                   {items.length === 0 ? (
                     <div className="text-xs text-[#7b8bb8] py-8 text-center">
                       No bookings
