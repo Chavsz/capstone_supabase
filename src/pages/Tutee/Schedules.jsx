@@ -712,9 +712,14 @@ const AppointmentModal = ({
     initializeForm(appointment);
   };
 
+  const normalizeStatus = (statusValue) =>
+    String(statusValue || "").trim().toLowerCase().replace(/\s+/g, "_");
+
   const handleResourceSave = async () => {
     if (!appointment) return;
-    if (appointment.status !== "started") {
+    const normalizedStatus = normalizeStatus(appointment.status);
+    const isInSession = normalizedStatus === "started" || normalizedStatus === "in_session";
+    if (!isInSession) {
       setResourceStatus("error");
       setResourceMessage("Resources can only be shared while the session is in progress.");
       return;
@@ -750,8 +755,9 @@ const AppointmentModal = ({
 
   if (!isOpen || !appointment) return null;
 
-  const canViewResources = ["confirmed", "started"].includes(appointment.status);
-  const canEditResources = appointment.status === "started";
+  const normalizedStatus = normalizeStatus(appointment.status);
+  const canViewResources = ["confirmed", "started", "in_session"].includes(normalizedStatus);
+  const canEditResources = normalizedStatus === "started" || normalizedStatus === "in_session";
   const canDeleteAppointment = appointment.status === "pending";
 
   const handleDeleteClick = async () => {
