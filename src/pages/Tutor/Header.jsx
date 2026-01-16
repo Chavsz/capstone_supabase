@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import { toast } from "react-hot-toast";
 import useActionGuard from "../../hooks/useActionGuard";
 
 //icons
@@ -195,6 +196,23 @@ const Header = () => {
     getNotifications();
   };
 
+  const handleMarkAllClick = () => {
+    if (unreadCount === 0) {
+      toast.error("No unread notifications.");
+      return;
+    }
+    runAction(markAllAsRead, "Unable to mark all as read.");
+  };
+
+  const handleDeleteAllClick = () => {
+    if (notifications.length === 0) {
+      toast.error("No notifications to delete.");
+      return;
+    }
+    if (!window.confirm("Delete all notifications?")) return;
+    runAction(deleteAllNotifications, "Unable to delete notifications.");
+  };
+
   const formatNotificationContent = (content = "") =>
     content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
 
@@ -318,22 +336,17 @@ const Header = () => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        runAction(markAllAsRead, "Unable to mark all as read.")
-                      }
+                      onClick={handleMarkAllClick}
                       className="text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
-                      disabled={actionBusy || unreadCount === 0}
+                      disabled={actionBusy}
                     >
                       Read All
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!window.confirm("Delete all notifications?")) return;
-                        runAction(deleteAllNotifications, "Unable to delete notifications.");
-                      }}
+                      onClick={handleDeleteAllClick}
                       className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
-                      disabled={actionBusy || notifications.length === 0}
+                      disabled={actionBusy}
                     >
                       Delete All
                     </button>
