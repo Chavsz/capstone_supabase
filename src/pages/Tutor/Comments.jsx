@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { FaComment } from "react-icons/fa";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 const shuffle = (items) => {
   const array = [...items];
@@ -16,6 +17,7 @@ const MAX_COMMENT_LENGTH = 150;
 const Comments = () => {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState([]);
+  const { reportError, clearError } = useDataSync();
 
   useEffect(() => {
     let active = true;
@@ -55,9 +57,15 @@ const Comments = () => {
 
         if (!active) return;
         setComments(shuffle(filtered));
+        clearError("tutor-comments");
       } catch (err) {
         console.error("Unable to load comments:", err.message);
-        if (active) setComments([]);
+        if (active) {
+          setComments([]);
+          reportError("tutor-comments", "Unable to load tutee comments.", () =>
+            fetchComments()
+          );
+        }
       } finally {
         if (active) setLoading(false);
       }

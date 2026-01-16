@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { FaRegCalendarAlt } from "react-icons/fa";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 const tutorRatingFields = [
   { key: "presentation_clarity", label: "Presentation" },
@@ -70,6 +71,7 @@ const Reports = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [userId, setUserId] = useState(null);
+  const { version, reportError, clearError } = useDataSync();
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
@@ -118,6 +120,7 @@ const Reports = () => {
           setEvaluations([]);
           setAppointments([]);
           setUserId(null);
+          clearError("tutor-reports");
         }
         return;
       }
@@ -154,16 +157,20 @@ const Reports = () => {
       if (!shouldUpdate()) return;
       setEvaluations(data || []);
       setAppointments(appointmentData || []);
+      clearError("tutor-reports");
     } catch (err) {
       console.error("Unable to load reports:", err.message);
       if (shouldUpdate()) {
         setEvaluations([]);
         setAppointments([]);
+        reportError("tutor-reports", "Unable to load tutor reports.", () =>
+          fetchReportsData(() => true)
+        );
       }
     } finally {
       if (shouldUpdate()) setLoading(false);
     }
-  }, []);
+  }, [clearError, reportError]);
 
   useEffect(() => {
     let active = true;
@@ -171,7 +178,7 @@ const Reports = () => {
     return () => {
       active = false;
     };
-  }, [fetchReportsData]);
+  }, [fetchReportsData, version]);
 
   useEffect(() => {
     if (!userId) return;

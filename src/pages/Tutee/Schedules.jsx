@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
   const STATUS_TABS = [
     { status: "all", label: "All" },
@@ -518,6 +519,8 @@ const AppointmentModal = ({
   const [declineError, setDeclineError] = useState("");
   const [isDeclining, setIsDeclining] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(true);
+  const [isCompactDetails, setIsCompactDetails] = useState(false);
 
   const initializeForm = useCallback(
     (sourceAppointment) => {
@@ -562,8 +565,27 @@ const AppointmentModal = ({
       setDeclineReason("");
       setDeclineError("");
       setIsDeclining(false);
+      setIsDetailsExpanded(true);
     }
   }, [appointment, initializeForm, isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const updateLayout = () => {
+      setIsCompactDetails(mediaQuery.matches);
+      setIsDetailsExpanded(!mediaQuery.matches);
+    };
+    updateLayout();
+    mediaQuery.addEventListener("change", updateLayout);
+    return () => mediaQuery.removeEventListener("change", updateLayout);
+  }, []);
+
+  useEffect(() => {
+    if (isEditing) {
+      setIsDetailsExpanded(true);
+    }
+  }, [isEditing]);
 
   const handleConfirmedDecline = async () => {
     if (!declineReason.trim()) {
@@ -773,174 +795,172 @@ const AppointmentModal = ({
         </div>
 
         <div className="space-y-3 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Subject:</span>
-            <span className="text-gray-900">{appointment.subject}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Specialization:</span>
-            <span className="text-gray-900">
-              {capitalizeWords(appointment.topic)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Tutor:</span>
-            <span className="text-gray-900">
-              {capitalizeWords(appointment.tutor_name)}
-            </span>
-          </div>
-          {appointment.tutor_name && (
-            <>
-              {/* <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">College:</span>
-                <span className="text-gray-900">
-                  {appointment.college || "Not specified"}
-                </span>
-              </div> */}
-              {/* <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Specialization:</span>
-                <span className="text-gray-900">
-                  {appointment.topic
-                    ? capitalizeWords(appointment.topic)
-                    : "Not specified"}
-                </span>
-              </div> */}
-            </>
-          )}
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Date:</span>
-            {appointment.status === "pending" && isEditing ? (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  value={formData.date ? dayjs(formData.date) : null}
-                  onChange={(value) => {
-                    if (!value || !value.isValid()) {
-                      return;
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      date: value.format("YYYY-MM-DD"),
-                    }));
-                  }}
-                  format="MM/DD/YYYY"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      className: "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            ) : (
-              <span className="text-gray-900">
-                {formatDate(appointment.date)}
-              </span>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-400">
+                Tutor Details
+              </p>
+              <p className="text-base font-semibold text-gray-800">
+                {capitalizeWords(appointment.tutor_name || "Tutor")}
+              </p>
+              <p className="text-sm text-gray-500">
+                {appointment.subject} · {capitalizeWords(appointment.topic)}
+              </p>
+            </div>
+            {isCompactDetails && (
+              <button
+                type="button"
+                onClick={() => setIsDetailsExpanded((prev) => !prev)}
+                className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                aria-expanded={isDetailsExpanded}
+              >
+                {isDetailsExpanded ? "Hide Details" : "See Details"}
+              </button>
             )}
           </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Time:</span>
-            {appointment.status === "pending" && isEditing ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="time"
-                  name="start_time"
-                  value={formData.start_time}
-                  onChange={handleInputChange}
-                  className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
-                />
-                <span className="text-gray-600 text-sm">to</span>
-                <input
-                  type="time"
-                  name="end_time"
-                  value={formData.end_time}
-                  onChange={handleInputChange}
-                  className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
-                />
+
+          <div
+            className={`transition-all duration-300 ease-in-out ${
+              isDetailsExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+            } overflow-hidden`}
+          >
+            <div className="space-y-3 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-600">Date:</span>
+                {appointment.status === "pending" && isEditing ? (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={formData.date ? dayjs(formData.date) : null}
+                      onChange={(value) => {
+                        if (!value || !value.isValid()) {
+                          return;
+                        }
+                        setFormData((prev) => ({
+                          ...prev,
+                          date: value.format("YYYY-MM-DD"),
+                        }));
+                      }}
+                      format="MM/DD/YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          className: "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                ) : (
+                  <span className="text-gray-900">
+                    {formatDate(appointment.date)}
+                  </span>
+                )}
               </div>
-            ) : (
-              <span className="text-gray-900">
-                {formatTime(appointment.start_time)} -{" "}
-                {formatTime(appointment.end_time)}
-              </span>
-            )}
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Mode:</span>
-            {appointment.status === "pending" && isEditing ? (
-              <select
-                name="mode_of_session"
-                value={formData.mode_of_session}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 w-40"
-              >
-                <option value="">Select mode</option>
-                <option value="Face-to-Face">Face-to-Face</option>
-                <option value="Online">Online</option>
-              </select>
-            ) : (
-              <span className="text-gray-900">
-                {appointment.mode_of_session || "Not specified"}
-              </span>
-            )}
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Number of Tutees:</span>
-            <span className="text-gray-900">
-              {appointment.number_of_tutees || 1}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-600">Status:</span>
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
-                appointment.status
-              )}`}
-            >
-              {formatStatusLabel(appointment.status)}
-            </span>
-          </div>
-          {(appointment.status === "declined" || appointment.status === "cancelled") && (
-            <div className="mt-3 space-y-2">
-              {appointment.tutor_decline_reason && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
-                  Tutor note: {appointment.tutor_decline_reason}
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-600">Time:</span>
+                {appointment.status === "pending" && isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      name="start_time"
+                      value={formData.start_time}
+                      onChange={handleInputChange}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
+                    />
+                    <span className="text-gray-600 text-sm">to</span>
+                    <input
+                      type="time"
+                      name="end_time"
+                      value={formData.end_time}
+                      onChange={handleInputChange}
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-gray-900">
+                    {formatTime(appointment.start_time)} -{" "}
+                    {formatTime(appointment.end_time)}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-600">Mode:</span>
+                {appointment.status === "pending" && isEditing ? (
+                  <select
+                    name="mode_of_session"
+                    value={formData.mode_of_session}
+                    onChange={handleInputChange}
+                    className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 w-40"
+                  >
+                    <option value="">Select mode</option>
+                    <option value="Face-to-Face">Face-to-Face</option>
+                    <option value="Online">Online</option>
+                  </select>
+                ) : (
+                  <span className="text-gray-900">
+                    {appointment.mode_of_session || "Not specified"}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-600">Number of Tutees:</span>
+                <span className="text-gray-900">
+                  {appointment.number_of_tutees || 1}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-600">Status:</span>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
+                    appointment.status
+                  )}`}
+                >
+                  {formatStatusLabel(appointment.status)}
+                </span>
+              </div>
+              {(appointment.status === "declined" || appointment.status === "cancelled") && (
+                <div className="mt-3 space-y-2">
+                  {appointment.tutor_decline_reason && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+                      Tutor note: {appointment.tutor_decline_reason}
+                    </div>
+                  )}
+                  {appointment.tutee_decline_reason && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-700">
+                      Tutee note: {appointment.tutee_decline_reason}
+                    </div>
+                  )}
                 </div>
               )}
-              {appointment.tutee_decline_reason && (
-                <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm text-orange-700">
-                  Tutee note: {appointment.tutee_decline_reason}
+              {(appointment.status === "confirmed" || appointment.status === "started") &&
+                appointment.mode_of_session === "Online" &&
+                appointment.online_link && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">Online Link:</span>
+                    <a
+                      href={appointment.online_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
+                    >
+                      Join Meeting
+                    </a>
+                  </div>
+                )}
+              {(appointment.status === "confirmed" || appointment.status === "started") && appointment.file_link && (
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-600">Materials:</span>
+                  <a
+                    href={appointment.file_link}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
+                  >
+                    {appointment.file_link}
+                  </a>
                 </div>
               )}
             </div>
-          )}
-        {(appointment.status === "confirmed" || appointment.status === "started") &&
-          appointment.mode_of_session === "Online" &&
-          appointment.online_link && (
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-600">Online Link:</span>
-              <a
-                href={appointment.online_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
-              >
-                Join Meeting
-              </a>
-            </div>
-          )}
-        {(appointment.status === "confirmed" || appointment.status === "started") && appointment.file_link && (
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-gray-600">Materials:</span>
-              <a
-                href={appointment.file_link}
-                rel="noopener noreferrer"
-                target="_blank"
-                className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
-              >
-                {appointment.file_link}
-              </a>
-            </div>
-          )}
+          </div>
         </div>
 
         {canShareResources && (
@@ -1118,6 +1138,7 @@ const Schedules = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [pages, setPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
+  const { reportError, clearError } = useDataSync();
 
   const getAppointments = useCallback(async () => {
     try {
@@ -1236,13 +1257,17 @@ const Schedules = () => {
       });
 
       setAppointments(formattedData);
+      clearError("tutee-schedules");
     } catch (err) {
       console.error(err.message);
       toast.error("Error loading appointments");
+      reportError("tutee-schedules", "Unable to load tutee schedules.", () =>
+        getAppointments()
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [clearError, reportError]);
 
   const fetchNotificationCount = useCallback(async () => {
     try {
@@ -1258,10 +1283,16 @@ const Schedules = () => {
       if (error) throw error;
 
       setNotificationCount(count || 0);
+      clearError("tutee-schedules-notifications");
     } catch (err) {
       console.error(err.message);
+      reportError(
+        "tutee-schedules-notifications",
+        "Unable to load notifications.",
+        () => fetchNotificationCount()
+      );
     }
-  }, []);
+  }, [clearError, reportError]);
 
   useEffect(() => {
     getAppointments();

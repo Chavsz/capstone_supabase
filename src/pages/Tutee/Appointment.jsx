@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
 
@@ -45,6 +46,7 @@ const Appointment = () => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
+  const { version, reportError, clearError } = useDataSync();
   const lastDetailsAvailabilityRef = useRef(null);
 
   const subjects = [
@@ -169,8 +171,12 @@ const Appointment = () => {
           setTutorUnavailableDays({});
         }
       }
+      clearError("tutee-appointment");
     } catch (err) {
       console.error(err.message);
+      reportError("tutee-appointment", "Unable to load tutors.", () =>
+        getTutors()
+      );
     } finally {
       setLoadingProfiles(false);
     }
@@ -199,8 +205,12 @@ const Appointment = () => {
       };
 
       setTuteeProfile(profileData);
+      clearError("tutee-appointment-profile");
     } catch (err) {
       console.error("Unable to load student profile:", err.message);
+      reportError("tutee-appointment-profile", "Unable to load tutee profile.", () =>
+        getTuteeProfile()
+      );
     } finally {
       setLoadingTuteeProfile(false);
     }
@@ -925,7 +935,7 @@ const Appointment = () => {
   useEffect(() => {
     getTutors();
     getTuteeProfile();
-  }, []);
+  }, [version]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !currentUserId) return;

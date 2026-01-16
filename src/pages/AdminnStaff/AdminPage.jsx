@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
+import { DataSyncErrorBanner, useDataSync } from "../../contexts/DataSyncContext";
 
 import * as fiIcons from "react-icons/fi";
 
 function AdminPage({ setAuth }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { version } = useDataSync();
 
   return (
     <div className="bg-[#f8fcff] min-h-screen">
@@ -39,7 +41,8 @@ function AdminPage({ setAuth }) {
 
         {/* Main Content */}
         <div className="w-full">
-          <div key={window.location.pathname}>
+          <DataSyncErrorBanner />
+          <div key={`${window.location.pathname}-${version}`}>
             <Outlet />
           </div>
         </div>

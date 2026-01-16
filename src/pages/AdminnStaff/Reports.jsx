@@ -3,6 +3,7 @@ import { FaDownload, FaPrint, FaRegCalendarAlt } from "react-icons/fa";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 const tutorRatingFields = [
   { key: "presentation_clarity", label: "Presentation" },
@@ -42,6 +43,7 @@ const Reports = () => {
   const [landingImage, setLandingImage] = useState("");
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const { version, reportError, clearError } = useDataSync();
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
@@ -144,6 +146,7 @@ const Reports = () => {
       setAppointments(appointmentData || []);
       setEvaluations(evaluationData || []);
       setSchedules(scheduleEntries);
+      clearError("admin-reports");
 
       const { data: landingData, error: landingError } = await supabase
         .from("landing")
@@ -157,7 +160,12 @@ const Reports = () => {
       if (shouldUpdate()) setLandingImage(landingData?.[0]?.home_image || "");
     } catch (error) {
       console.error(error);
-      if (shouldUpdate()) toast.error("Unable to load reports data");
+      if (shouldUpdate()) {
+        toast.error("Unable to load reports data");
+        reportError("admin-reports", "Unable to load admin reports.", () =>
+          fetchData(() => true)
+        );
+      }
     } finally {
       if (shouldUpdate()) setLoading(false);
     }
@@ -169,7 +177,7 @@ const Reports = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [version]);
 
   useEffect(() => {
     const channel = supabase

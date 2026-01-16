@@ -144,6 +144,29 @@ const Header = () => {
     }
   };
 
+  const markAllAsRead = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { error } = await supabase
+      .from("notification")
+      .update({ status: "read" })
+      .eq("user_id", session.user.id)
+      .eq("status", "unread");
+    if (error) throw error;
+    getUnreadNotifications();
+  };
+
+  const deleteAllNotifications = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { error } = await supabase
+      .from("notification")
+      .delete()
+      .eq("user_id", session.user.id);
+    if (error) throw error;
+    getUnreadNotifications();
+  };
+
   const formatNotificationContent = (content = "") =>
     content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
 
@@ -176,6 +199,53 @@ const Header = () => {
 
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
+
+  // Realtime updates for notifications and pending appointments
+  useEffect(() => {
+    let channel;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        channel = supabase
+          .channel(`tutor-notifications-${session.user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "notification",
+              filter: `user_id=eq.${session.user.id}`,
+            },
+            () => {
+              getUnreadNotifications();
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "appointment",
+              filter: `tutor_id=eq.${session.user.id}`,
+            },
+            () => {
+              getPendingCount();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error("Error subscribing to notifications:", err.message);
+      }
+    })();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 
@@ -215,6 +285,32 @@ const Header = () => {
                   <IoIosNotifications className="text-gray-600" />
                   Notifications
                 </h3>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <span>{unreadCount} unread</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        runAction(markAllAsRead, "Unable to mark all as read.")
+                      }
+                      className="text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
+                      disabled={actionBusy || unreadCount === 0}
+                    >
+                      Read All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!window.confirm("Delete all notifications?")) return;
+                        runAction(deleteAllNotifications, "Unable to delete notifications.");
+                      }}
+                      className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
+                      disabled={actionBusy || unreadCount === 0}
+                    >
+                      Delete All
+                    </button>
+                  </div>
+                </div>
                 
                 <div className="space-y-3">
                   {/* Pending Appointments */}

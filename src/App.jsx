@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabase-client";
 import { UserProvider, useUserDetails } from "./contexts/UserContext";
+import { DataSyncProvider } from "./contexts/DataSyncContext";
 
 // Landing Pages
 import LandingPage from "./LandingPage";
@@ -755,7 +756,9 @@ function AppWithUser() {
 function App() {
   return (
     <UserProvider>
-      <AppWithUser />
+      <DataSyncProvider>
+        <AppWithUser />
+      </DataSyncProvider>
     </UserProvider>
   );
 }
