@@ -410,7 +410,7 @@ const MyClasses = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search tutee, subject, or topic"
+                placeholder="Search tutor, student, or subject"
                 className="w-full max-w-xs rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm lg:w-64"
               />
               {[
@@ -556,7 +556,11 @@ const MyClasses = () => {
                       <span>end</span>
                       <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
                     </div>
-                    <div className={`font-semibold ${getMobileTextColor(booking.status)}`}>tutee</div>
+                    <div className={`font-semibold ${getMobileTextColor(booking.status)}`}>tutor</div>
+                    <div className={getMobileTextColor(booking.status)}>
+                      {booking.tutor?.name || "N/A"}
+                    </div>
+                    <div className={`font-semibold mt-2 ${getMobileTextColor(booking.status)}`}>tutee</div>
                     <div className={getMobileTextColor(booking.status)}>
                       {booking.tutee?.name || "N/A"}
                     </div>
@@ -693,7 +697,11 @@ const MyClasses = () => {
                           <span>end</span>
                           <span>{booking.end_time?.slice(0, 5) || "--:--"}</span>
                         </div>
-                        <div className={`font-semibold ${getTextColor(booking.status)}`}>tutee</div>
+                        <div className={`font-semibold ${getTextColor(booking.status)}`}>tutor</div>
+                        <div className={getTextColor(booking.status)}>
+                          {booking.tutor?.name || "N/A"}
+                        </div>
+                        <div className={`font-semibold mt-1 ${getTextColor(booking.status)}`}>tutee</div>
                         <div className={getTextColor(booking.status)}>
                           {booking.tutee?.name || "N/A"}
                         </div>
@@ -759,6 +767,12 @@ const MyClasses = () => {
                     <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
                       {formatTime(hoveredAppointment.start_time)} -{" "}
                       {formatTime(hoveredAppointment.end_time)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#1f3b94]">Tutor</div>
+                    <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                      {hoveredAppointment.tutor?.name || "N/A"}
                     </div>
                   </div>
                   <div>
