@@ -11,7 +11,7 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 const Header = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
@@ -46,8 +46,8 @@ const Header = () => {
   }
 
 
-  // Fetch unread notifications
-  const getUnreadNotifications = async () => {
+  // Fetch notifications
+  const getNotifications = async () => {
     try {
       const {
         data: { session },
@@ -58,13 +58,13 @@ const Header = () => {
         .from("notification")
         .select("*")
         .eq("user_id", session.user.id)
-        .eq("status", "unread")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      setUnreadNotifications(data || []);
-      setUnreadCount((data || []).length);
+      const next = data || [];
+      setNotifications(next);
+      setUnreadCount(next.filter((item) => item.status === "unread").length);
     } catch (err) {
       console.error("Error fetching notifications:", err.message);
     }
@@ -194,14 +194,16 @@ const Header = () => {
     if (error) throw error;
 
     // Refresh notifications
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const handleNotificationClick = async (notification) => {
-    await runAction(
-      () => markAsReadRecord(notification.notification_id),
-      "Unable to mark notification as read."
-    );
+    if (notification.status === "unread") {
+      await runAction(
+        () => markAsReadRecord(notification.notification_id),
+        "Unable to mark notification as read."
+      );
+    }
     setIsDropdownOpen(false);
     try {
       sessionStorage.setItem(
@@ -230,7 +232,7 @@ const Header = () => {
       .eq("user_id", session.user.id)
       .eq("status", "unread");
     if (error) throw error;
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const deleteAllNotifications = async () => {
@@ -241,7 +243,7 @@ const Header = () => {
       .delete()
       .eq("user_id", session.user.id);
     if (error) throw error;
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const formatNotificationContent = (content = "") =>
@@ -365,7 +367,7 @@ const Header = () => {
 
       // Refresh notifications if any appointments were declined
       if (appointmentsToDecline.length > 0) {
-        getUnreadNotifications();
+        getNotifications();
       }
     } catch (err) {
       console.error("Error in auto-decline check:", err.message);
@@ -392,7 +394,7 @@ const Header = () => {
   useEffect(() => {
     getName();
     getProfile();
-    getUnreadNotifications();
+    getNotifications();
     getConfirmedCount();
     getUpcomingSessions();
     checkAndAutoDeclineAppointments(); // Check on mount
@@ -432,7 +434,7 @@ const Header = () => {
               filter: `user_id=eq.${session.user.id}`,
             },
             () => {
-              getUnreadNotifications();
+              getNotifications();
             }
           )
           .subscribe();
@@ -451,7 +453,7 @@ const Header = () => {
   const toggleDropdown = () => {
     if (!isDropdownOpen) {
       // Refresh data when opening dropdown
-      getUnreadNotifications();
+      getNotifications();
       getConfirmedCount();
       getUpcomingSessions();
       checkAndAutoDeclineAppointments(); // Also check for auto-decline when opening dropdown
@@ -507,7 +509,7 @@ const Header = () => {
                         runAction(deleteAllNotifications, "Unable to delete notifications.");
                       }}
                       className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
-                      disabled={actionBusy || unreadCount === 0}
+                      disabled={actionBusy || notifications.length === 0}
                     >
                       Delete All
                     </button>
@@ -576,24 +578,40 @@ const Header = () => {
                   )} */}
 
                   {/* Unread Notifications */}
-                  {unreadNotifications.map((notification) => (
+                  {notifications.map((notification) => (
                     <div
                       key={notification.notification_id}
-                      className="bg-[#def0e4] border border-[#c9e1d3] rounded-md p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                      className={`rounded-md border p-3 cursor-pointer transition-colors ${
+                        notification.status === "unread"
+                          ? "bg-[#def0e4] border-[#c9e1d3] hover:bg-blue-100"
+                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      }`}
                       onClick={() => handleNotificationClick(notification)}
                       aria-disabled={actionBusy}
                     >
-                      <p className="text-[#323335] text-sm font-semibold">
+                      <p
+                        className={`text-sm font-semibold ${
+                          notification.status === "unread"
+                            ? "text-[#323335]"
+                            : "text-gray-700"
+                        }`}
+                      >
                         {formatNotificationContent(notification.notification_content)}
                       </p>
-                      <p className="text-[#4c4ba2] text-xs mt-1">
+                      <p
+                        className={`text-xs mt-1 ${
+                          notification.status === "unread"
+                            ? "text-[#4c4ba2]"
+                            : "text-gray-500"
+                        }`}
+                      >
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
                     </div>
                   ))}
 
                   {/* No notifications */}
-                  {totalNotifications === 0 && (
+                  {upcomingSessions.length === 0 && notifications.length === 0 && (
                     <div className="text-gray-500 text-center py-4">
                       <p>No new notifications</p>
                     </div>

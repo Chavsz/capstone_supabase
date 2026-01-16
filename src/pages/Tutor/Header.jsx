@@ -11,7 +11,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
@@ -85,8 +85,8 @@ const Header = () => {
     }
   }
 
-  // Fetch unread notifications
-  const getUnreadNotifications = async () => {
+  // Fetch notifications
+  const getNotifications = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -95,13 +95,13 @@ const Header = () => {
         .from("notification")
         .select("*")
         .eq("user_id", session.user.id)
-        .eq("status", "unread")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      setUnreadNotifications(data || []);
-      setUnreadCount((data || []).length);
+      const next = data || [];
+      setNotifications(next);
+      setUnreadCount(next.filter((item) => item.status === "unread").length);
     } catch (err) {
       console.error("Error fetching notifications:", err.message);
     }
@@ -117,14 +117,16 @@ const Header = () => {
     if (error) throw error;
 
     // Refresh notifications
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const handleNotificationClick = async (notification) => {
-    await runAction(
-      () => markAsReadRecord(notification.notification_id),
-      "Unable to mark notification as read."
-    );
+    if (notification.status === "unread") {
+      await runAction(
+        () => markAsReadRecord(notification.notification_id),
+        "Unable to mark notification as read."
+      );
+    }
     setIsDropdownOpen(false);
     try {
       sessionStorage.setItem(
@@ -153,7 +155,7 @@ const Header = () => {
       .eq("user_id", session.user.id)
       .eq("status", "unread");
     if (error) throw error;
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const deleteAllNotifications = async () => {
@@ -164,7 +166,7 @@ const Header = () => {
       .delete()
       .eq("user_id", session.user.id);
     if (error) throw error;
-    getUnreadNotifications();
+    getNotifications();
   };
 
   const formatNotificationContent = (content = "") =>
@@ -189,7 +191,7 @@ const Header = () => {
     getName();
     getProfile();
     getPendingCount();
-    getUnreadNotifications();
+    getNotifications();
 
     // Listen for profile update events
     const handleProfileUpdate = () => {
@@ -221,7 +223,7 @@ const Header = () => {
               filter: `user_id=eq.${session.user.id}`,
             },
             () => {
-              getUnreadNotifications();
+              getNotifications();
             }
           )
           .on(
@@ -253,7 +255,7 @@ const Header = () => {
     if (!isDropdownOpen) {
       // Refresh data when opening dropdown
       getPendingCount();
-      getUnreadNotifications();
+      getNotifications();
     }
     setIsDropdownOpen(!isDropdownOpen);
   };
@@ -305,7 +307,7 @@ const Header = () => {
                         runAction(deleteAllNotifications, "Unable to delete notifications.");
                       }}
                       className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
-                      disabled={actionBusy || unreadCount === 0}
+                      disabled={actionBusy || notifications.length === 0}
                     >
                       Delete All
                     </button>
@@ -326,24 +328,40 @@ const Header = () => {
                   )}
 
                   {/* Unread Notifications */}
-                  {unreadNotifications.map((notification) => (
+                  {notifications.map((notification) => (
                     <div 
                       key={notification.notification_id}
-                      className="bg-yellow-50 border border-yellow-200 rounded-md p-3 cursor-pointer hover:bg-yellow-100 transition-colors"
+                      className={`rounded-md border p-3 cursor-pointer transition-colors ${
+                        notification.status === "unread"
+                          ? "bg-yellow-50 border-yellow-200 hover:bg-yellow-100"
+                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      }`}
                       onClick={() => handleNotificationClick(notification)}
                       aria-disabled={actionBusy}
                     >
-                      <p className="text-yellow-800 text-sm">
+                      <p
+                        className={`text-sm ${
+                          notification.status === "unread"
+                            ? "text-yellow-800"
+                            : "text-gray-700"
+                        }`}
+                      >
                         {formatNotificationContent(notification.notification_content)}
                       </p>
-                      <p className="text-yellow-600 text-xs mt-1">
+                      <p
+                        className={`text-xs mt-1 ${
+                          notification.status === "unread"
+                            ? "text-yellow-600"
+                            : "text-gray-500"
+                        }`}
+                      >
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
                     </div>
                   ))}
 
                   {/* No notifications */}
-                  {totalNotifications === 0 && (
+                  {pendingCount === 0 && notifications.length === 0 && (
                     <div className="text-gray-500 text-center py-4">
                       <p>No new notifications</p>
                     </div>
