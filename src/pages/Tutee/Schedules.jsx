@@ -714,9 +714,9 @@ const AppointmentModal = ({
 
   const handleResourceSave = async () => {
     if (!appointment) return;
-    if (appointment.status !== "confirmed") {
+    if (appointment.status !== "started") {
       setResourceStatus("error");
-      setResourceMessage("Resources can only be shared while the session is confirmed.");
+      setResourceMessage("Resources can only be shared while the session is in progress.");
       return;
     }
     if (!resourceLink.trim()) {
@@ -750,7 +750,8 @@ const AppointmentModal = ({
 
   if (!isOpen || !appointment) return null;
 
-  const canShareResources = appointment.status === "confirmed";
+  const canViewResources = ["confirmed", "started"].includes(appointment.status);
+  const canEditResources = appointment.status === "started";
   const canDeleteAppointment = appointment.status === "pending";
 
   const handleDeleteClick = async () => {
@@ -963,7 +964,7 @@ const AppointmentModal = ({
           </div>
         </div>
 
-        {canShareResources && (
+        {canViewResources && (
           <div className="mt-6 border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">
               Share resources with your tutor
@@ -972,6 +973,11 @@ const AppointmentModal = ({
               Paste a Google Drive or resource link along with notes about the topic or specific
               pages your tutor should focus on.
             </p>
+            {!canEditResources && (
+              <p className="text-xs text-gray-500 mb-3">
+                Resources can be edited only during the session.
+              </p>
+            )}
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">
@@ -982,7 +988,8 @@ const AppointmentModal = ({
                   value={resourceLink}
                   onChange={(e) => setResourceLink(e.target.value)}
                   placeholder="https://drive.google.com/..."
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+                  disabled={!canEditResources}
                 />
               </div>
               <div>
@@ -993,8 +1000,9 @@ const AppointmentModal = ({
                   value={resourceNote}
                   onChange={(e) => setResourceNote(e.target.value)}
                   rows={3}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder="Add page numbers, chapters, or quick instructions for the tutor."
+                  disabled={!canEditResources}
                 />
               </div>
               {resourceMessage && (
@@ -1011,7 +1019,7 @@ const AppointmentModal = ({
                   type="button"
                   onClick={handleResourceSave}
                   className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 flex-1 disabled:bg-blue-300 disabled:cursor-not-allowed"
-                  disabled={isResourceSaving}
+                  disabled={isResourceSaving || !canEditResources}
                 >
                   {isResourceSaving ? "Saving..." : "Share Link"}
                 </button>
@@ -1138,6 +1146,7 @@ const Schedules = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [pages, setPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
+  const [currentUserName, setCurrentUserName] = useState("");
   const { reportError, clearError } = useDataSync();
 
   const getAppointments = useCallback(async () => {
@@ -1145,6 +1154,14 @@ const Schedules = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       setCurrentUserId(session.user.id);
+      if (!currentUserName) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("name")
+          .eq("user_id", session.user.id)
+          .single();
+        setCurrentUserName(userData?.name || "");
+      }
 
       const { data, error } = await supabase
         .from("appointment")
@@ -1379,6 +1396,26 @@ const Schedules = () => {
         .eq("appointment_id", appointmentId);
 
       if (error) throw error;
+
+      const appointment = appointments.find(
+        (item) => item.appointment_id === appointmentId
+      );
+      if (appointment?.tutor_id) {
+        const tutorMessage = `Tutee ${capitalizeWords(currentUserName || "tutee")} provided files or notes for ${
+          appointment.subject || "a session"
+        }${appointment.topic ? ` - ${appointment.topic}` : ""} on ${
+          appointment.date ? formatDate(appointment.date) : "the scheduled date"
+        } at ${
+          appointment.start_time ? formatTime(appointment.start_time) : "the scheduled time"
+        }. [appointment_id:${appointmentId}]`;
+        await supabase.from("notification").insert([
+          {
+            user_id: appointment.tutor_id,
+            notification_content: tutorMessage,
+            status: "unread",
+          },
+        ]);
+      }
 
       toast.success("Resources shared with your tutor.");
       await getAppointments();
