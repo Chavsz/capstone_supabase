@@ -1112,6 +1112,72 @@ const Appointment = () => {
     return schedules.filter((schedule) => schedule.day === day);
   };
 
+  const subjectSelected = selectedSubject.trim().length > 0;
+  const startMinutes = getMinutesFromStored(formData.start_time);
+  const endMinutes = getMinutesFromStored(formData.end_time);
+  const hasDate = Boolean(formData.date);
+  const hasTimeRange = startMinutes !== null && endMinutes !== null;
+  const hasSlot = hasDate && hasTimeRange;
+  const dayName = formData.date
+    ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-US", {
+        weekday: "long",
+      })
+    : "";
+
+  const conflictTutorIds = useMemo(
+    () => getConflictTutorIds(appointmentsForDate, startMinutes, endMinutes),
+    [appointmentsForDate, startMinutes, endMinutes]
+  );
+
+  const visibleTutors = useMemo(() => {
+    if (!subjectSelected) return [];
+    const subjectLower = selectedSubject.toLowerCase();
+    return tutors
+      .filter((tutor) => {
+        const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
+        return tutorSubject.toLowerCase().includes(subjectLower);
+      })
+      .filter((tutor) => {
+        if (!hasDate || showAllSubjectTutors) return true;
+        const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
+        if (unavailableEntries.some((entry) => entry.date === formData.date)) {
+          return false;
+        }
+        const schedules = tutorSchedules[tutor.user_id] || [];
+        const daySchedules = schedules.filter((s) => s.day === dayName);
+        if (daySchedules.length === 0) return false;
+        if (!hasTimeRange) return true;
+        return daySchedules.some((s) => {
+          const scheduleStart = getMinutesFromStored(s.start_time);
+          const scheduleEnd = getMinutesFromStored(s.end_time);
+          if (scheduleStart === null || scheduleEnd === null) return false;
+          return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
+        });
+      })
+      .map((tutor) => {
+        const availability = getAvailabilityForTutor(tutor.user_id);
+        return { tutor, availability };
+      })
+      .sort(
+        (a, b) => Number(b.availability.available) - Number(a.availability.available)
+      );
+  }, [
+    dayName,
+    endMinutes,
+    formData.date,
+    getAvailabilityForTutor,
+    hasDate,
+    hasTimeRange,
+    selectedSubject,
+    showAllSubjectTutors,
+    startMinutes,
+    subjectSelected,
+    tutorDetails,
+    tutorSchedules,
+    tutorUnavailableDays,
+    tutors,
+  ]);
+
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
   const getInitial = (name = "") => {
@@ -1160,6 +1226,16 @@ const Appointment = () => {
     lastDetailsAvailabilityRef.current = availability.available;
   }, [detailsTutorId, getAvailabilityForTutor]);
 
+  useEffect(() => {
+    if (!detailsTutorId) return;
+    const visibleIds = new Set(
+      visibleTutors.map(({ tutor }) => tutor.user_id)
+    );
+    if (!visibleIds.has(detailsTutorId)) {
+      setDetailsTutorId(null);
+    }
+  }, [detailsTutorId, visibleTutors]);
+
   const renderTutorDetails = (options = {}) => {
     const { compact = false, showHeading = true } = options;
     const containerClass = compact
@@ -1187,67 +1263,14 @@ const Appointment = () => {
       ? "bg-gray-200 px-2 py-0.5 rounded text-[11px]"
       : "bg-gray-200 px-2 py-1 rounded text-xs";
 
-    return (
-      <div className={containerClass}>
-        {showHeading && <h3 className={titleClass}>Tutor Details</h3>}
+      return (
+        <div className={containerClass}>
+          {showHeading && <h3 className={titleClass}>Tutor Details</h3>}
 
-        {(() => {
-        const subjectSelected = selectedSubject.trim().length > 0;
-        const startMinutes = getMinutesFromStored(formData.start_time);
-        const endMinutes = getMinutesFromStored(formData.end_time);
-        const hasDate = Boolean(formData.date);
-        const hasTimeRange = startMinutes !== null && endMinutes !== null;
-        const hasSlot = hasDate && hasTimeRange;
-        const dayName = formData.date
-          ? new Date(`${formData.date}T00:00:00`).toLocaleDateString("en-US", {
-              weekday: "long",
-            })
-          : "";
-
-        const matchesSubject = (tutor) => {
-          const tutorSubject = tutorDetails[tutor.user_id]?.subject || "";
-          return (
-            subjectSelected &&
-            tutorSubject.toLowerCase().includes(selectedSubject.toLowerCase())
-          );
-        };
-
-        const conflictTutorIds = getConflictTutorIds(
-          appointmentsForDate,
-          startMinutes,
-          endMinutes
-        );
-
-        const visibleTutors = tutors
-          .filter((tutor) => matchesSubject(tutor))
-          .filter((tutor) => {
-            if (!hasDate || showAllSubjectTutors) return true;
-            const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
-            if (
-              unavailableEntries.some((entry) => entry.date === formData.date)
-            ) {
-              return false;
-            }
-            const schedules = tutorSchedules[tutor.user_id] || [];
-            const daySchedules = schedules.filter((s) => s.day === dayName);
-            if (daySchedules.length === 0) return false;
-            if (!hasTimeRange) return true;
-            return daySchedules.some((s) => {
-              const scheduleStart = getMinutesFromStored(s.start_time);
-              const scheduleEnd = getMinutesFromStored(s.end_time);
-              if (scheduleStart === null || scheduleEnd === null) return false;
-              return startMinutes >= scheduleStart && endMinutes <= scheduleEnd;
-            });
-          })
-          .map((tutor) => {
-            const availability = getAvailabilityForTutor(tutor.user_id);
-            return { tutor, availability };
-          })
-          .sort((a, b) => Number(b.availability.available) - Number(a.availability.available));
-
-        if (!subjectSelected) {
-          return (
-            <div className="flex items-center justify-center h-64">
+          {(() => {
+          if (!subjectSelected) {
+            return (
+              <div className="flex items-center justify-center h-64">
               <p className="text-gray-500 text-lg">Select a subject to see tutors</p>
             </div>
           );
