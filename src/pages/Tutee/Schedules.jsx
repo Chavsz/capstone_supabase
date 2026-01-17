@@ -1402,6 +1402,17 @@ const Schedules = () => {
 
   const handleResourceShare = async (appointmentId, payload) => {
     try {
+      const appointment = appointments.find(
+        (item) => item.appointment_id === appointmentId
+      );
+      const prevLink = appointment?.resource_link || "";
+      const prevNote = appointment?.resource_note || "";
+      const nextLink = payload.resource_link || "";
+      const nextNote = payload.resource_note || "";
+      const isUpdate =
+        Boolean(prevLink || prevNote) &&
+        (prevLink !== nextLink || prevNote !== nextNote);
+
       const { error } = await supabase
         .from("appointment")
         .update(payload)
@@ -1409,11 +1420,10 @@ const Schedules = () => {
 
       if (error) throw error;
 
-      const appointment = appointments.find(
-        (item) => item.appointment_id === appointmentId
-      );
       if (appointment?.tutor_id) {
-        const tutorMessage = `Tutee ${capitalizeWords(currentUserName || "tutee")} provided files or notes for ${
+        const tutorMessage = `Tutee ${capitalizeWords(currentUserName || "tutee")} ${
+          isUpdate ? "updated" : "shared"
+        } files or notes for ${
           appointment.subject || "a session"
         }${appointment.topic ? ` - ${appointment.topic}` : ""} on ${
           appointment.date ? formatDate(appointment.date) : "the scheduled date"

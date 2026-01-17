@@ -151,13 +151,14 @@ const MyClasses = () => {
           subject,
           topic,
           date,
-          start_time,
-          end_time,
-          mode_of_session,
-          number_of_tutees,
-          status,
-          tutor_decline_reason,
-          tutee_decline_reason,
+            start_time,
+            end_time,
+            mode_of_session,
+            number_of_tutees,
+            session_location,
+            status,
+            tutor_decline_reason,
+            tutee_decline_reason,
           tutor:users!appointment_tutor_id_fkey(name),
           tutee:users!appointment_user_id_fkey(name)`
         )
@@ -493,17 +494,23 @@ const MyClasses = () => {
                               {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                             </div>
                           </div>
-                          <div>
-                            <div className="font-semibold text-[#1f3b94]">Mode</div>
-                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
-                              {booking.mode_of_session || "N/A"}
+                            <div>
+                              <div className="font-semibold text-[#1f3b94]">Mode</div>
+                              <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                                {booking.mode_of_session || "N/A"}
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <div className="font-semibold text-[#1f3b94]">Tutees</div>
-                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
-                              {booking.number_of_tutees || 1}
+                            <div>
+                              <div className="font-semibold text-[#1f3b94]">Location</div>
+                              <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                                {booking.session_location || "To be confirmed"}
+                              </div>
                             </div>
+                            <div>
+                              <div className="font-semibold text-[#1f3b94]">Tutees</div>
+                              <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                                {booking.number_of_tutees || 1}
+                              </div>
                           </div>
                         </div>
                       </div>
@@ -650,17 +657,23 @@ const MyClasses = () => {
                       {hoveredAppointment.tutor?.name || "N/A"}
                     </div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-[#1f3b94]">Mode</div>
-                    <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                      {hoveredAppointment.mode_of_session || "N/A"}
+                    <div>
+                      <div className="font-semibold text-[#1f3b94]">Mode</div>
+                      <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                        {hoveredAppointment.mode_of_session || "N/A"}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-[#1f3b94]">Number of Tutees</div>
-                    <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                      {hoveredAppointment.number_of_tutees || 1}
+                    <div>
+                      <div className="font-semibold text-[#1f3b94]">Location</div>
+                      <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                        {hoveredAppointment.session_location || "To be confirmed"}
+                      </div>
                     </div>
+                    <div>
+                      <div className="font-semibold text-[#1f3b94]">Number of Tutees</div>
+                      <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                        {hoveredAppointment.number_of_tutees || 1}
+                      </div>
                   </div>
                   <div className="col-span-2 flex items-center justify-between gap-2">
                     <div className="font-semibold text-[#1f3b94]">Status</div>
