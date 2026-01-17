@@ -1,12 +1,6 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Roboto:wght@400;500;600&display=swap");
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
 :root {
   --lav-indigo: #4c4ba2;
   --lav-deep: #132c91;
@@ -28,29 +22,15 @@ html {
   scroll-behavior: smooth;
 }
 
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100%;
-}
 
 body {
   background: var(--lav-bg-soft);
   color: var(--lav-dark);
   font-family: "Roboto", system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
   overflow-y: scroll;
 }
 
-img,
-picture,
-video,
-canvas,
-svg {
-  max-width: 100%;
-  height: auto;
-}
+
 
 h1,
 h2,
