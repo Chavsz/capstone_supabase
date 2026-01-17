@@ -110,7 +110,7 @@ const Route = ({ to, Icon, title, isActive, onClose }) => {
         if (onClose) onClose();
       }}
     >
-      <Icon className={isActive ? "text-[#f9d31a]" : "text-white"} />
+      <Icon className={isActive ? "text-white" : "text-white"} />
       <p className="text-md font-semibold">{title}</p>
     </NavLink>
   );

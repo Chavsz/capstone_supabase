@@ -183,7 +183,7 @@ const TuteeDashboard = () => {
       <div className="flex justify-end items-center">
         <Link
           to="/dashboard/appointment"
-          className="lav-btn md:px-8 md:py-2 text-sm md:text-base bg-[#f9d31a] text-[#181718] border border-[#d8b700] hover:bg-[#fce15c] transition-colors"
+          className="lav-btn md:px-8 md:py-2 text-sm md:text-base bg-[#f9d31a] text-gray-700 border border-[#d8b700] hover:bg-[#fce15c] transition-colors"
         >
           Make an Appointment
         </Link>
@@ -272,7 +272,7 @@ const TuteeDashboard = () => {
         <div className="row-span-3 col-span-2 min-w-0">
           <div className="bg-white p-2 rounded-lg border border-[#EBEDEF] flex flex-col h-[220px] overflow-hidden">
             <div className="flex gap-3 items-center px-1">
-              <p className="text-blue-600 text-2xl"><MdOutlineWorkHistory /></p>
+              <p className="text-[#4c4ba2] text-2xl"><MdOutlineWorkHistory /></p>
               <p className="text-gray-600 font-semibold">Session History</p>
               <Link
                 to="/dashboard/schedules"
@@ -284,7 +284,7 @@ const TuteeDashboard = () => {
 
             {/*Completed Sessions */}
             <div className="overflow-x-auto lg:overflow-x-visible overflow-y-auto flex-1">
-              <table className="w-full text-[#1a1a1a] min-w-[540px] lg:min-w-0">
+              <table className="w-full text-gray-600 min-w-[540px] lg:min-w-0">
                 <thead>
                   <tr className="border-b border-[#EBEDEF]">
                     <th className="text-left font-bold py-2 px-2">Tutor</th>

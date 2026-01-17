@@ -430,7 +430,7 @@ const MyClasses = () => {
         </div>
       </div>
 
-      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
+      <div className="bg-[#ffffff] rounded-lg border border-[#EBEDEF] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-end">
             <div className="relative flex items-center gap-2">
@@ -861,14 +861,14 @@ const MyClasses = () => {
           <button
             type="button"
             onClick={handlePrevWeek}
-            className="px-4 py-2 rounded-full border border-[#1f3b94] text-[#1f3b94] text-sm hover:bg-[#e9e0d3]"
+            className="px-3 py-1.5 rounded-lg border border-[#1f3b94] text-[#1f3b94] text-sm hover:bg-[#e9e0d3]"
           >
             Previous
           </button>
           <button
             type="button"
             onClick={handleNextWeek}
-            className="px-4 py-2 rounded-full border border-[#1f3b94] text-[#1f3b94] text-sm hover:bg-[#e9e0d3]"
+            className="px-3 py-1.5 rounded-lg border border-[#1f3b94] text-[#1f3b94] text-sm hover:bg-[#e9e0d3]"
           >
             Next
           </button>

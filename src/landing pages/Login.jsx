@@ -292,7 +292,7 @@ const Login = ({ setAuth }) => {
             Don't have account?{" "}
             <Link
               to="/register"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-[#4c4ba2] hover:text-blue-700 font-medium"
             >
               Sign up
             </Link>
