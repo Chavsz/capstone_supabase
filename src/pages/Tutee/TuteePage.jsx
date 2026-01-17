@@ -20,7 +20,7 @@ function TuteePage({ setAuth }) {
   }, [location.pathname]);
 
   return (
-    <div className="bg-[#f8f9f0] min-h-screen overflow-x-hidden">
+    <div className="bg-[#f8f9f0] min-h-screen">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -38,7 +38,7 @@ function TuteePage({ setAuth }) {
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300 min-h-screen">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300">
         {/* Sidebar */}
         <div
           className={`fixed md:static inset-y-0 left-0 z-[60] transform transition-transform duration-300 ${
@@ -49,7 +49,7 @@ function TuteePage({ setAuth }) {
         </div>
 
         {/* Main Content */}
-        <div className="w-full min-w-0 flex flex-col relative z-0">
+        <div className="w-full flex flex-col relative z-0">
           {!isProfilePage && <Header />}
           <DataSyncErrorBanner />
           <div className="flex-1">
