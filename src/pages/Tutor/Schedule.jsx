@@ -77,6 +77,7 @@ const AppointmentModal = ({
   isOpen,
   onClose,
   onStatusUpdate,
+  onLocationUpdate,
   feedbacks,
   isBusy,
 }) => {
@@ -106,6 +107,9 @@ const AppointmentModal = ({
   const [isCancelling, setIsCancelling] = useState(false);
   const [confirmLocation, setConfirmLocation] = useState("");
   const [confirmError, setConfirmError] = useState("");
+  const [locationDraft, setLocationDraft] = useState("");
+  const [locationError, setLocationError] = useState("");
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
 
   useEffect(() => {
     setDeclineMode(false);
@@ -118,6 +122,9 @@ const AppointmentModal = ({
     setIsCancelling(false);
     setConfirmLocation("");
     setConfirmError("");
+    setLocationDraft(appointment?.session_location || "");
+    setLocationError("");
+    setIsUpdatingLocation(false);
   }, [appointment, isOpen]);
 
   const handleConfirm = async () => {
@@ -261,6 +268,55 @@ const AppointmentModal = ({
             </div>
           )}
         </div>
+
+        {appointment.status === "confirmed" && (
+          <div className="mb-4 space-y-2">
+            <label className="text-sm font-semibold text-gray-700">
+              Session Location
+            </label>
+            <input
+              type="text"
+              value={locationDraft}
+              onChange={(event) => {
+                setLocationDraft(event.target.value);
+                if (locationError) {
+                  setLocationError("");
+                }
+              }}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#132c91]"
+              placeholder="e.g., LAV Room 2, Library Study Area"
+            />
+            {locationError && (
+              <p className="text-xs text-red-600">{locationError}</p>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                const trimmed = locationDraft.trim();
+                if (!trimmed) {
+                  setLocationError("Please provide a session location.");
+                  return;
+                }
+                setLocationError("");
+                setIsUpdatingLocation(true);
+                try {
+                  await onLocationUpdate(appointment.appointment_id, trimmed);
+                  setLocationDraft(trimmed);
+                } catch (err) {
+                  setLocationError(
+                    err?.message || "Unable to update session location."
+                  );
+                } finally {
+                  setIsUpdatingLocation(false);
+                }
+              }}
+              className="w-full rounded-md border border-[#132c91] px-3 py-2 text-sm font-semibold text-[#132c91] hover:bg-[#eaf0ff] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isBusy || isUpdatingLocation}
+            >
+              {isUpdatingLocation ? "Updating..." : "Update Location"}
+            </button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-wrap">
@@ -601,6 +657,67 @@ const Schedule = () => {
     }
   };
 
+  const handleLocationUpdate = async (appointmentId, location) => {
+    try {
+      const { data: appointmentData, error: fetchError } = await supabase
+        .from("appointment")
+        .select("user_id, subject, topic, date, start_time, session_location")
+        .eq("appointment_id", appointmentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const nextLocation = location?.trim() || "";
+      const currentLocation = appointmentData?.session_location || "";
+      if (nextLocation === currentLocation) {
+        return;
+      }
+
+      const { error } = await supabase
+        .from("appointment")
+        .update({ session_location: nextLocation })
+        .eq("appointment_id", appointmentId);
+
+      if (error) throw error;
+
+      if (appointmentData?.user_id) {
+        const formattedDate = new Date(appointmentData.date).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        const formattedTime = new Date(`2000-01-01T${appointmentData.start_time}`).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+        const actionLabel = currentLocation ? "updated" : "set";
+        const notificationMessage = `Session location ${actionLabel} for your appointment on ${formattedDate} at ${formattedTime}. Location: ${nextLocation}. [appointment_id:${appointmentId}]`;
+
+        const { error: notificationError } = await supabase
+          .from("notification")
+          .insert([
+            {
+              user_id: appointmentData.user_id,
+              notification_content: notificationMessage,
+              status: "unread",
+            },
+          ]);
+
+        if (notificationError) {
+          console.error("Error creating location notification:", notificationError);
+        }
+      }
+
+      getAppointments();
+      toast.success("Session location updated.");
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Error updating session location.");
+      throw err;
+    }
+  };
+
   const handleCancelSubmit = async () => {
     if (!cancelReason.trim()) {
       setCancelError("Please share a brief reason.");
@@ -625,6 +742,13 @@ const Schedule = () => {
     runAction(
       () => handleStatusUpdate(appointmentId, status, metadata),
       "Unable to update appointment status.",
+      { rethrow: true }
+    );
+
+  const guardedLocationUpdate = (appointmentId, location) =>
+    runAction(
+      () => handleLocationUpdate(appointmentId, location),
+      "Unable to update session location.",
       { rethrow: true }
     );
 
@@ -1026,6 +1150,7 @@ const Schedule = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         onStatusUpdate={guardedStatusUpdate}
+        onLocationUpdate={guardedLocationUpdate}
         isBusy={actionBusy}
       />
     </div>

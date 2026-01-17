@@ -42,6 +42,7 @@ const Appointment = () => {
   const [tutorUnavailableDays, setTutorUnavailableDays] = useState({});
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
+  const [showBookingPopup, setShowBookingPopup] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
@@ -914,10 +915,11 @@ const Appointment = () => {
 
       if (error) throw error;
 
-      toast.success("Appointment created successfully!");
-      if (typeof window !== "undefined" && currentUserId) {
-        window.localStorage.removeItem(`appointmentDraft:${currentUserId}`);
-      }
+        toast.success("Appointment created successfully!");
+        setShowBookingPopup(true);
+        if (typeof window !== "undefined" && currentUserId) {
+          window.localStorage.removeItem(`appointmentDraft:${currentUserId}`);
+        }
       setDraftTutorId(null);
       setFormData({
         subject: "",
@@ -1488,7 +1490,38 @@ const Appointment = () => {
 
   return (
     <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
-        <h1 className="text-gray-600 font-bold text-2xl mb-6">
+      {showBookingPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#e9f1ff] p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-[#1f3b94]">
+                  Booking Confirmed! Waiting for Tutor&apos;s Confirmation...
+                </h2>
+                <p className="mt-3 text-sm text-[#2d3a6d]">
+                  You&apos;ve successfully booked a session! Once the tutor confirms
+                  your booking, you&apos;ll be able to add your resource links
+                  (e.g., Google Drive links) and send messages to your tutor for
+                  specific pages or any questions you have.
+                </p>
+              </div>
+              <div className="mt-1 h-10 w-10 flex-shrink-0 rounded-full bg-white/70 p-2">
+                <div className="h-full w-full animate-spin rounded-full border-2 border-[#1f3b94] border-t-transparent" />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowBookingPopup(false)}
+                className="rounded-full bg-[#1f3b94] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d6d]"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <h1 className="text-gray-600 font-bold text-2xl mb-6">
         Make Appointment
       </h1>
       {hasPendingEvaluation && (

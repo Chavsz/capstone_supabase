@@ -16,6 +16,7 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [confirmedPopup, setConfirmedPopup] = useState(null);
   const [visibleNotifications, setVisibleNotifications] = useState(
     NOTIFICATION_PAGE_SIZE
   );
@@ -278,6 +279,34 @@ const Header = () => {
   const formatNotificationContent = (content = "") =>
     content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
 
+  const getConfirmedPopupKey = () => "lav.confirmedPopups";
+
+  const readConfirmedPopupIds = () => {
+    try {
+      const raw = sessionStorage.getItem(getConfirmedPopupKey());
+      const parsed = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch (err) {
+      return new Set();
+    }
+  };
+
+  const storeConfirmedPopupId = (id) => {
+    if (!id) return;
+    try {
+      const ids = readConfirmedPopupIds();
+      ids.add(id);
+      sessionStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
+    } catch (err) {
+      // Ignore storage errors.
+    }
+  };
+
+  const extractAppointmentId = (content = "") => {
+    const match = content.match(/\[appointment_id:([^\]]+)\]/i);
+    return match ? match[1].trim() : "";
+  };
+
   // Auto-decline appointments that are pending for more than 14 hours
   const checkAndAutoDeclineAppointments = async () => {
     // Prevent concurrent execution
@@ -419,6 +448,29 @@ const Header = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!notifications.length) return;
+    const shownIds = readConfirmedPopupIds();
+    const confirmed = notifications.find((notification) => {
+      const content = notification.notification_content || "";
+      if (!/has been confirmed/i.test(content)) return false;
+      const appointmentId = extractAppointmentId(content);
+      if (!appointmentId || shownIds.has(appointmentId)) return false;
+      return true;
+    });
+
+    if (confirmed) {
+      const appointmentId = extractAppointmentId(
+        confirmed.notification_content || ""
+      );
+      storeConfirmedPopupId(appointmentId);
+      setConfirmedPopup({
+        appointmentId,
+        content: confirmed.notification_content || "",
+      });
+    }
+  }, [notifications]);
+
   // Fetch data on component mount
   useEffect(() => {
     getName();
@@ -499,6 +551,36 @@ const Header = () => {
 
   return (
     <div className="pt-3 px-3 text-[#323335] bg-[#f8f9f0]">
+      {confirmedPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#e7f7ee] p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-[#0f5a3b]">
+                  Tutor Confirmed! You can add your resources now.
+                </h2>
+                <p className="mt-3 text-sm text-[#1b4b3a]">
+                  Your tutor has confirmed the session. Open the appointment
+                  details to add your resource links and send any notes or
+                  questions to your tutor.
+                </p>
+              </div>
+              <div className="mt-1 h-10 w-10 flex-shrink-0 rounded-full bg-white/70 p-2">
+                <div className="h-full w-full animate-spin rounded-full border-2 border-[#0f5a3b] border-t-transparent" />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmedPopup(null)}
+                className="rounded-full bg-[#0f5a3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b432c]"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2 justify-end items-center text-[#323335] text-xl">
         {/* Notification Icon with Dropdown */}
         <div className="relative" ref={dropdownRef}>
