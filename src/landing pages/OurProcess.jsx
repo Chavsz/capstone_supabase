@@ -1,22 +1,35 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const OurProcess = () => {
   return (
     <section className="bg-slate-50 text-slate-900">
       <div className="max-w-5xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
           <h1 className="text-4xl font-extrabold text-slate-900 sm:text-5xl">
             How it works
           </h1>
           <p className="mt-4 text-lg text-slate-600">
             A streamlined journey from booking to mastery.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-colors group">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            viewport={{ once: true }}
+            className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
+          >
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
               1
             </div>
             <h3 className="text-xl font-bold mb-3">Book & Filter</h3>
@@ -25,10 +38,16 @@ const OurProcess = () => {
               <strong>auto-filters</strong> available tutors based on your specific
               schedule and needs.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-colors group">
-            <div className="w-12 h-12 bg-indigo-50 text-red-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
+          >
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all">
               2
             </div>
             <h3 className="text-xl font-bold mb-3">Confirm & Prepare</h3>
@@ -37,10 +56,16 @@ const OurProcess = () => {
               share resource links or notes. If declined, tutors provide a specific
               reason.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-colors group">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-amber-600 group-hover:text-white transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
+          >
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
               3
             </div>
             <h3 className="text-xl font-bold mb-3">Live Session</h3>
@@ -49,10 +74,16 @@ const OurProcess = () => {
               real-time on your dashboard as the status updates to{" "}
               <strong>In Session</strong>.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-colors group">
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-bold text-xl mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
+          >
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
               4
             </div>
             <h3 className="text-xl font-bold mb-3">Rate & Unlock</h3>
@@ -61,17 +92,23 @@ const OurProcess = () => {
               the session. This feedback unlocks your ability to book your next
               lesson.
             </p>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="mt-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          viewport={{ once: true }}
+          className="mt-16 text-center"
+        >
           <Link
             to="/register"
             className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Start Learning Now
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
