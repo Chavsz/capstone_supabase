@@ -9,11 +9,15 @@ import { IoIosNotifications } from "react-icons/io";
 import { IoPersonCircleOutline } from "react-icons/io5";
 
 const Header = () => {
+  const NOTIFICATION_PAGE_SIZE = 5;
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [visibleNotifications, setVisibleNotifications] = useState(
+    NOTIFICATION_PAGE_SIZE
+  );
   const dropdownRef = useRef(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
   const [profile, setProfile] = useState({
@@ -300,11 +304,15 @@ const Header = () => {
       // Refresh data when opening dropdown
       getPendingCount();
       getNotifications();
+      setVisibleNotifications(NOTIFICATION_PAGE_SIZE);
     }
     setIsDropdownOpen(!isDropdownOpen);
   };
 
   const totalNotifications = pendingCount + unreadCount;
+  const visibleNotificationList = notifications.slice(0, visibleNotifications);
+  const canShowMoreNotifications =
+    notifications.length > visibleNotifications;
 
   return (
     <div className="pt-3 px-3">
@@ -353,7 +361,7 @@ const Header = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                   {/* Pending Appointments */}
                   {pendingCount > 0 && (
                     <button
@@ -372,7 +380,7 @@ const Header = () => {
                   )}
 
                   {/* Unread Notifications */}
-                  {notifications.map((notification) => (
+                  {visibleNotificationList.map((notification) => (
                     <div 
                       key={notification.notification_id}
                       className={`rounded-md border p-3 cursor-pointer transition-colors ${
@@ -388,7 +396,7 @@ const Header = () => {
                           notification.status === "unread"
                             ? "text-yellow-800"
                             : "text-gray-700"
-                        }`}
+                        } break-words`}
                       >
                         {formatNotificationContent(notification.notification_content)}
                       </p>
@@ -403,6 +411,19 @@ const Header = () => {
                       </p>
                     </div>
                   ))}
+
+                  {canShowMoreNotifications && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibleNotifications((prev) => prev + NOTIFICATION_PAGE_SIZE)
+                      }
+                      className="w-full rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                      disabled={actionBusy}
+                    >
+                      Show more notifications
+                    </button>
+                  )}
 
                   {/* No notifications */}
                   {pendingCount === 0 && notifications.length === 0 && (

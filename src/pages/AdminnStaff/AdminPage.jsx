@@ -11,7 +11,7 @@ function AdminPage({ setAuth }) {
   const { version } = useDataSync();
 
   return (
-    <div className="bg-[#f8fcff] min-h-screen">
+    <div className="bg-[#f8fcff] min-h-screen overflow-x-hidden">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -29,7 +29,7 @@ function AdminPage({ setAuth }) {
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300 min-h-screen">
         {/* Sidebar */}
         <div
           className={`fixed md:static inset-y-0 right-0 z-50 transform transition-transform duration-300 ${
@@ -40,7 +40,7 @@ function AdminPage({ setAuth }) {
         </div>
 
         {/* Main Content */}
-        <div className="w-full">
+        <div className="w-full min-w-0">
           <DataSyncErrorBanner />
           <div key={`${window.location.pathname}-${version}`}>
             <Outlet />

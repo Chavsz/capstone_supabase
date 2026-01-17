@@ -17,7 +17,7 @@ function TutorPage({ setAuth }) {
   const { version } = useDataSync();
 
   return (
-    <div className="bg-[#f8f9f0] min-h-screen">
+    <div className="bg-[#f8f9f0] min-h-screen overflow-x-hidden">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -35,7 +35,7 @@ function TutorPage({ setAuth }) {
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] transition-width duration-300 min-h-screen">
         {/* Sidebar */}
         <div
           className={`fixed md:static inset-y-0 left-0 z-50 transform transition-transform duration-300 ${
@@ -46,7 +46,7 @@ function TutorPage({ setAuth }) {
         </div>
 
         {/* Main Content */}
-        <div className="w-full flex flex-col">
+        <div className="w-full min-w-0 flex flex-col">
           {!isProfilePage && <Header />}
           <DataSyncErrorBanner />
           <div className="flex-1">
