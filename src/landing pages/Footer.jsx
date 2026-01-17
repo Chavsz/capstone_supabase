@@ -41,7 +41,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-[#5370ff] text-white relative overflow-hidden">
+    <footer className="bg-blue-500 text-white relative overflow-hidden">
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         {/* Main Footer Content */}
@@ -63,7 +63,7 @@ const Footer = () => {
                 >
                   LAV
                 </h3>
-                <p className="text-sm text-white/80">Learning Assistance Volunteer</p>
+                <p className="text-sm text-white">Learning Assistance Volunteer</p>
               </div>
             </div>
             <p className="text-white/90 leading-relaxed mb-6 max-w-sm">
@@ -88,7 +88,7 @@ const Footer = () => {
                   <a
                     href="#"
                     onClick={(e) => handleSectionClick(e, link.id)}
-                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -112,7 +112,7 @@ const Footer = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -136,7 +136,7 @@ const Footer = () => {
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-white/85 hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block"
+                    className="text-white hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </a>
@@ -163,7 +163,7 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-xl border border-white/30 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
+                className="flex-1 px-4 py-3 rounded-xl border border-white/30 bg-white/10 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-white/60"
               />
               <button className="bg-white/20 hover:bg-white/30 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-[#132c91]/20">
                 Subscribe

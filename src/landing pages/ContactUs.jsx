@@ -50,7 +50,7 @@ function ContactUs() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100"
+            className="bg-white rounded-xl shadow-md p-8 border border-gray-200"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">

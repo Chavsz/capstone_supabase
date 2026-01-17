@@ -91,7 +91,7 @@ function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full text-md transition-all duration-300 transform hover:scale-90 shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full text-md transition-all duration-300 transform hover:scale-90"
                   to="/register"
                 >
                   Get Started Today
@@ -111,7 +111,7 @@ function Home() {
             className="relative"
           >
             <div className="relative">
-              <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden">
+              <div className="relative bg-white rounded-3xl shadow-lg overflow-hidden">
                 <img
                   src={
                     landingData.home_image || "/placeholder.png"
