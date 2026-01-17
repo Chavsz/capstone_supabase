@@ -104,6 +104,8 @@ const AppointmentModal = ({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
+  const [confirmLocation, setConfirmLocation] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   useEffect(() => {
     setDeclineMode(false);
@@ -114,7 +116,25 @@ const AppointmentModal = ({
     setCancelReason("");
     setCancelError("");
     setIsCancelling(false);
+    setConfirmLocation("");
+    setConfirmError("");
   }, [appointment, isOpen]);
+
+  const handleConfirm = async () => {
+    if (!confirmLocation.trim()) {
+      setConfirmError("Please provide a session location.");
+      return;
+    }
+    setConfirmError("");
+    try {
+      await onStatusUpdate(appointment.appointment_id, "confirmed", {
+        location: confirmLocation.trim(),
+      });
+      onClose();
+    } catch (err) {
+      setConfirmError(err?.message || "Unable to confirm this appointment.");
+    }
+  };
 
   const handleDeclineSubmit = async () => {
     if (!declineReason.trim()) {
@@ -248,11 +268,28 @@ const AppointmentModal = ({
             <>
               {!declineMode ? (
                 <>
+                  <div className="w-full space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">
+                      Session Location
+                    </label>
+                    <input
+                      type="text"
+                      value={confirmLocation}
+                      onChange={(event) => {
+                        setConfirmLocation(event.target.value);
+                        if (confirmError) {
+                          setConfirmError("");
+                        }
+                      }}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#132c91]"
+                      placeholder="e.g., LAV Room 2, Library Study Area"
+                    />
+                    {confirmError && (
+                      <p className="text-xs text-red-600">{confirmError}</p>
+                    )}
+                  </div>
                   <button
-                    onClick={() => {
-                      onStatusUpdate(appointment.appointment_id, "confirmed");
-                      onClose();
-                    }}
+                    onClick={handleConfirm}
                     className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isBusy || isDeclining}
                   >
@@ -485,7 +522,7 @@ const Schedule = () => {
       // First, get the appointment details to get the tutee's user_id
       const { data: appointmentData, error: fetchError } = await supabase
         .from("appointment")
-        .select("user_id, subject, topic, date, start_time")
+        .select("appointment_id, user_id, subject, topic, date, start_time")
         .eq("appointment_id", appointmentId)
         .single();
 
@@ -493,6 +530,9 @@ const Schedule = () => {
 
       // Update the appointment status
       const updates = { status };
+      if (status === "confirmed") {
+        updates.session_location = metadata.location?.trim() || null;
+      }
       if (status === "declined" || status === "cancelled") {
         updates.tutor_decline_reason = metadata.reason || null;
       }
@@ -518,7 +558,10 @@ const Schedule = () => {
             minute: "2-digit",
             hour12: true,
           });
-          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed. [appointment_id:${appointmentData.appointment_id}]`;
+          const locationText = metadata.location
+            ? ` Location: ${metadata.location.trim()}.`
+            : "";
+          notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed.${locationText} [appointment_id:${appointmentData.appointment_id}]`;
         } else if (status === "declined") {
           notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined. [appointment_id:${appointmentData.appointment_id}]`;
           if (metadata.reason) {

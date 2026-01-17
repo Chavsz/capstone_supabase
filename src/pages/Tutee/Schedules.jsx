@@ -889,11 +889,11 @@ const AppointmentModal = ({
                   </span>
                 )}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Mode:</span>
-                {appointment.status === "pending" && isEditing ? (
-                  <select
-                    name="mode_of_session"
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-600">Mode:</span>
+                  {appointment.status === "pending" && isEditing ? (
+                    <select
+                      name="mode_of_session"
                     value={formData.mode_of_session}
                     onChange={handleInputChange}
                     className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 w-40"
@@ -903,14 +903,20 @@ const AppointmentModal = ({
                     <option value="Online">Online</option>
                   </select>
                 ) : (
-                  <span className="text-gray-900">
-                    {appointment.mode_of_session || "Not specified"}
-                  </span>
+                    <span className="text-gray-900">
+                      {appointment.mode_of_session || "Not specified"}
+                    </span>
+                  )}
+                </div>
+                {appointment.session_location && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-gray-600">Session Location:</span>
+                    <span className="text-gray-900">{appointment.session_location}</span>
+                  </div>
                 )}
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Number of Tutees:</span>
-                <span className="text-gray-900">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-600">Number of Tutees:</span>
+                  <span className="text-gray-900">
                   {appointment.number_of_tutees || 1}
                 </span>
               </div>

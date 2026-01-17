@@ -19,7 +19,7 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
-        to="/dashboard/classes"
+        to="/dashboard/tutor-classes"
         Icon={mdIcons.MdClass}
         title="My Classes"
         onClose={onClose}

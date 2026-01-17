@@ -229,7 +229,7 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
           }
         />
         <Route
-          path="classes"
+          path="tutor-classes"
           element={
             <RoleRoute
               allowedRoles={["tutor"]}
