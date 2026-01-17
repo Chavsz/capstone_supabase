@@ -1062,58 +1062,6 @@ const Appointment = () => {
     tutorSchedules,
   ]);
 
-  useEffect(() => {
-    const hasDetails = Boolean(
-      selectedSubject ||
-      formData.date ||
-      formData.start_time ||
-      formData.end_time
-    );
-    const shouldAutoOpen = Boolean(selectedSubject && hasTimeRange);
-    const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
-    if (!hasDetails || isLargeScreen) {
-      setShowTutorDrawer(false);
-      setDrawerDismissedKey("");
-      return;
-    }
-    if (shouldAutoOpen && drawerDismissedKey !== nextKey) {
-      setShowTutorDrawer(true);
-    }
-  }, [
-    selectedSubject,
-    formData.date,
-    formData.start_time,
-    formData.end_time,
-    hasTimeRange,
-    drawerDismissedKey,
-    isLargeScreen,
-  ]);
-
-  const openTutorDrawer = () => setShowTutorDrawer(true);
-  const closeTutorDrawer = () => {
-    const currentKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
-    setDrawerDismissedKey(currentKey);
-    setShowTutorDrawer(false);
-    setDetailsTutorId(null);
-  };
-
-  // Helper function to format time
-  const formatTime = (timeString) => {
-    if (!timeString) return "";
-    const time = new Date(`2000-01-01T${timeString}`);
-    return time.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
-  // Helper function to get schedules for a specific day
-  const getSchedulesForDay = (tutorId, day) => {
-    const schedules = tutorSchedules[tutorId] || [];
-    return schedules.filter((schedule) => schedule.day === day);
-  };
-
   const subjectSelected = selectedSubject.trim().length > 0;
   const startMinutes = getMinutesFromStored(formData.start_time);
   const endMinutes = getMinutesFromStored(formData.end_time);
@@ -1179,6 +1127,58 @@ const Appointment = () => {
     tutorUnavailableDays,
     tutors,
   ]);
+
+  useEffect(() => {
+    const hasDetails = Boolean(
+      selectedSubject ||
+      formData.date ||
+      formData.start_time ||
+      formData.end_time
+    );
+    const shouldAutoOpen = Boolean(selectedSubject && hasTimeRange);
+    const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
+    if (!hasDetails || isLargeScreen) {
+      setShowTutorDrawer(false);
+      setDrawerDismissedKey("");
+      return;
+    }
+    if (shouldAutoOpen && drawerDismissedKey !== nextKey) {
+      setShowTutorDrawer(true);
+    }
+  }, [
+    selectedSubject,
+    formData.date,
+    formData.start_time,
+    formData.end_time,
+    hasTimeRange,
+    drawerDismissedKey,
+    isLargeScreen,
+  ]);
+
+  const openTutorDrawer = () => setShowTutorDrawer(true);
+  const closeTutorDrawer = () => {
+    const currentKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
+    setDrawerDismissedKey(currentKey);
+    setShowTutorDrawer(false);
+    setDetailsTutorId(null);
+  };
+
+  // Helper function to format time
+  const formatTime = (timeString) => {
+    if (!timeString) return "";
+    const time = new Date(`2000-01-01T${timeString}`);
+    return time.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  // Helper function to get schedules for a specific day
+  const getSchedulesForDay = (tutorId, day) => {
+    const schedules = tutorSchedules[tutorId] || [];
+    return schedules.filter((schedule) => schedule.day === day);
+  };
 
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
