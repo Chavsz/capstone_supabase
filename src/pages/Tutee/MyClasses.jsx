@@ -503,7 +503,7 @@ const MyClasses = () => {
                             <div>
                               <div className="font-semibold text-[#1f3b94]">Location</div>
                               <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
-                                {booking.session_location || "To be confirmed"}
+                                {booking.session_location || "Not set yet"}
                               </div>
                             </div>
                             <div>
@@ -666,7 +666,7 @@ const MyClasses = () => {
                     <div>
                       <div className="font-semibold text-[#1f3b94]">Location</div>
                       <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
-                        {hoveredAppointment.session_location || "To be confirmed"}
+                        {hoveredAppointment.session_location || "Not set yet"}
                       </div>
                     </div>
                     <div>

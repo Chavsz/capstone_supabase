@@ -212,13 +212,19 @@ const AppointmentModal = ({
               {formatTime(appointment.end_time)}
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Mode:</span>
-            <span className="text-gray-900">{appointment.mode_of_session}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Status:</span>
-            <span
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-700">Mode:</span>
+              <span className="text-gray-900">{appointment.mode_of_session}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-700">Location:</span>
+              <span className="text-gray-900">
+                {appointment.session_location || "Not set yet"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-700">Status:</span>
+              <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
                 appointment.status
               )}`}
@@ -519,6 +525,8 @@ const Schedule = () => {
   const [appointmentPages, setAppointmentPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
+  const autoEndTimersRef = useRef(new Map());
+  const autoWarnTimersRef = useRef(new Map());
 
   const getAppointments = useCallback(async () => {
     try {
@@ -782,6 +790,79 @@ const Schedule = () => {
       "Unable to update session location.",
       { rethrow: true }
     );
+
+  const getManilaEndAt = (dateValue, timeValue) => {
+    if (!dateValue || !timeValue) return null;
+    const [year, month, day] = dateValue.split("-").map(Number);
+    const [hour, minute] = timeValue.split(":").map(Number);
+    if (
+      Number.isNaN(year) ||
+      Number.isNaN(month) ||
+      Number.isNaN(day) ||
+      Number.isNaN(hour) ||
+      Number.isNaN(minute)
+    ) {
+      return null;
+    }
+    return new Date(Date.UTC(year, month - 1, day, hour - 8, minute));
+  };
+
+  const scheduleAutoEnd = useCallback(
+    (appointment) => {
+      if (!appointment?.appointment_id || appointment.status !== "started") return;
+      const endAt = getManilaEndAt(appointment.date, appointment.end_time);
+      if (!endAt || Number.isNaN(endAt.getTime())) return;
+      const delay = endAt.getTime() - Date.now();
+      const warnDelay = delay - 10 * 60 * 1000;
+      if (delay <= 0) {
+        guardedStatusUpdate(appointment.appointment_id, "awaiting_feedback");
+        return;
+      }
+
+      const existing = autoEndTimersRef.current.get(appointment.appointment_id);
+      if (existing) return;
+
+      const warnExisting = autoWarnTimersRef.current.get(appointment.appointment_id);
+      if (!warnExisting) {
+        if (warnDelay <= 0) {
+          toast("10 minutes left in this session.", { icon: "⏳" });
+          autoWarnTimersRef.current.set(appointment.appointment_id, "fired");
+        } else {
+          const warnTimeoutId = setTimeout(() => {
+            autoWarnTimersRef.current.delete(appointment.appointment_id);
+            toast("10 minutes left in this session.", { icon: "⏳" });
+            autoWarnTimersRef.current.set(appointment.appointment_id, "fired");
+          }, Math.min(warnDelay, 2147483647));
+          autoWarnTimersRef.current.set(appointment.appointment_id, warnTimeoutId);
+        }
+      }
+
+      const timeoutId = setTimeout(() => {
+        autoEndTimersRef.current.delete(appointment.appointment_id);
+        guardedStatusUpdate(appointment.appointment_id, "awaiting_feedback");
+      }, Math.min(delay, 2147483647));
+
+      autoEndTimersRef.current.set(appointment.appointment_id, timeoutId);
+    },
+    [guardedStatusUpdate]
+  );
+
+  useEffect(() => {
+    appointments.forEach((appointment) => {
+      if (appointment.status === "started") {
+        scheduleAutoEnd(appointment);
+      }
+    });
+
+    return () => {
+      autoEndTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+      autoEndTimersRef.current.clear();
+      autoWarnTimersRef.current.forEach((timerId) => {
+        if (typeof timerId === "number") clearTimeout(timerId);
+      });
+      autoWarnTimersRef.current.clear();
+    };
+  }, [appointments, scheduleAutoEnd]);
 
   const formatTime = (timeString) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {

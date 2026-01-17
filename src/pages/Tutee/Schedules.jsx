@@ -908,12 +908,12 @@ const AppointmentModal = ({
                     </span>
                   )}
                 </div>
-                {appointment.session_location && (
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-600">Session Location:</span>
-                    <span className="text-gray-900">{appointment.session_location}</span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-600">Session Location:</span>
+                  <span className="text-gray-900">
+                    {appointment.session_location || "Not set yet"}
+                  </span>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-gray-600">Number of Tutees:</span>
                   <span className="text-gray-900">

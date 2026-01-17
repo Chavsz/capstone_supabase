@@ -1302,12 +1302,16 @@ const Appointment = () => {
         return (
           <div className="space-y-4">
             <div className={listClass}>
-              {visibleTutors.map(({ tutor, availability }) => {
-                const details = tutorDetails[tutor.user_id] || {};
-                const isSelected = selectedTutor?.user_id === tutor.user_id;
-                const isDetailsOpen = detailsTutorId === tutor.user_id;
-                const isBooked = hasTimeRange && conflictTutorIds.has(tutor.user_id);
-                return (
+                {visibleTutors.map(({ tutor, availability }) => {
+                  const details = tutorDetails[tutor.user_id] || {};
+                  const isSelected = selectedTutor?.user_id === tutor.user_id;
+                  const isDetailsOpen = detailsTutorId === tutor.user_id;
+                  const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
+                  const isUnavailableDay =
+                    hasDate && unavailableEntries.some((entry) => entry.date === formData.date);
+                  const isBooked = hasTimeRange && conflictTutorIds.has(tutor.user_id);
+                  const disableSelect = isBooked || isUnavailableDay;
+                  return (
                   <div
                     key={tutor.user_id}
                     className={cardClass}
@@ -1358,25 +1362,31 @@ const Appointment = () => {
                       >
                         {isDetailsOpen ? "Hide Details" : "See Details"}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isBooked) {
-                            handleTutorSelect(tutor);
-                            openTutorDrawer();
-                          }
-                        }}
-                        disabled={isBooked}
-                        className={`${buttonClass} ${
-                          isBooked
-                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            : isSelected
-                              ? "bg-green-600 text-white"
-                              : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
-                        }`}
-                      >
-                        {isBooked ? "Booked" : isSelected ? "Selected" : "Select"}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!disableSelect) {
+                              handleTutorSelect(tutor);
+                              openTutorDrawer();
+                            }
+                          }}
+                          disabled={disableSelect}
+                          className={`${buttonClass} ${
+                            disableSelect
+                              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                              : isSelected
+                                ? "bg-green-600 text-white"
+                                : "bg-[#f9d31a] text-[#181718] hover:bg-[#fce15c]"
+                          }`}
+                        >
+                          {isUnavailableDay
+                            ? "Unavailable"
+                            : isBooked
+                              ? "Booked"
+                              : isSelected
+                                ? "Selected"
+                                : "Select"}
+                        </button>
                     </div>
                   </div>
                 );
