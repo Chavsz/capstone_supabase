@@ -1069,13 +1069,14 @@ const Appointment = () => {
       formData.start_time ||
       formData.end_time
     );
+    const shouldAutoOpen = Boolean(selectedSubject && hasTimeRange);
     const nextKey = `${selectedSubject}|${formData.date}|${formData.start_time}|${formData.end_time}`;
     if (!hasDetails || isLargeScreen) {
       setShowTutorDrawer(false);
       setDrawerDismissedKey("");
       return;
     }
-    if (drawerDismissedKey !== nextKey) {
+    if (shouldAutoOpen && drawerDismissedKey !== nextKey) {
       setShowTutorDrawer(true);
     }
   }, [
@@ -1083,6 +1084,7 @@ const Appointment = () => {
     formData.date,
     formData.start_time,
     formData.end_time,
+    hasTimeRange,
     drawerDismissedKey,
     isLargeScreen,
   ]);
