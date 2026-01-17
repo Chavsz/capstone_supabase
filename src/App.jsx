@@ -183,12 +183,18 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
         <Route
           path="classes"
           element={
-            <RoleRoute
-              allowedRoles={["student"]}
-              currentRole={currentRole}
-              loading={loading}
-              element={<TuteeMyClasses />}
-            />
+            loading
+              ? null
+              : currentRole === "tutor"
+                ? <Navigate to="/dashboard/tutor-classes" replace />
+                : (
+                    <RoleRoute
+                      allowedRoles={["student"]}
+                      currentRole={currentRole}
+                      loading={loading}
+                      element={<TuteeMyClasses />}
+                    />
+                  )
           }
         />
         <Route

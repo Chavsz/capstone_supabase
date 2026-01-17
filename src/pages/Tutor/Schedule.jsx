@@ -107,6 +107,7 @@ const AppointmentModal = ({
   const [isCancelling, setIsCancelling] = useState(false);
   const [confirmLocation, setConfirmLocation] = useState("");
   const [confirmError, setConfirmError] = useState("");
+  const [showConfirmPrompt, setShowConfirmPrompt] = useState(false);
   const [locationDraft, setLocationDraft] = useState("");
   const [locationError, setLocationError] = useState("");
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
@@ -122,6 +123,7 @@ const AppointmentModal = ({
     setIsCancelling(false);
     setConfirmLocation("");
     setConfirmError("");
+    setShowConfirmPrompt(false);
     setLocationDraft(appointment?.session_location || "");
     setLocationError("");
     setIsUpdatingLocation(false);
@@ -324,28 +326,8 @@ const AppointmentModal = ({
             <>
               {!declineMode ? (
                 <>
-                  <div className="w-full space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">
-                      Session Location
-                    </label>
-                    <input
-                      type="text"
-                      value={confirmLocation}
-                      onChange={(event) => {
-                        setConfirmLocation(event.target.value);
-                        if (confirmError) {
-                          setConfirmError("");
-                        }
-                      }}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#132c91]"
-                      placeholder="e.g., LAV Room 2, Library Study Area"
-                    />
-                    {confirmError && (
-                      <p className="text-xs text-red-600">{confirmError}</p>
-                    )}
-                  </div>
                   <button
-                    onClick={handleConfirm}
+                    onClick={() => setShowConfirmPrompt(true)}
                     className="bg-[#132c91] text-white rounded-md px-4 py-2 text-sm hover:bg-[#0f1f6b] flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isBusy || isDeclining}
                   >
@@ -471,6 +453,55 @@ const AppointmentModal = ({
           )}
         </div>
       </div>
+      {showConfirmPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
+            <h3 className="text-base font-bold text-[#132c91]">
+              Add Session Location
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Let the tutee know where to meet. You can change it later.
+            </p>
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                value={confirmLocation}
+                onChange={(event) => {
+                  setConfirmLocation(event.target.value);
+                  if (confirmError) {
+                    setConfirmError("");
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#132c91]"
+                placeholder="e.g., LAV Room 2, Library Study Area"
+              />
+              {confirmError && (
+                <p className="text-xs text-red-600">{confirmError}</p>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmPrompt(false)}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleConfirm();
+                  setShowConfirmPrompt(false);
+                }}
+                className="rounded-md bg-[#132c91] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0f1f6b] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isBusy || isDeclining}
+              >
+                Confirm Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
