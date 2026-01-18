@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { DemoContainer } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -13,9 +13,11 @@ import useActionGuard from "../../hooks/useActionGuard";
 import { useDataSync } from "../../contexts/DataSyncContext";
 
 const BOOKED_STATUSES = ["confirmed", "started", "awaiting_feedback"];
+const PROFILE_POPUP_STORAGE_KEY = "tuteeProfilePopupDismissed";
 
 const Appointment = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [tutors, setTutors] = useState([]);
   const [tutorDetails, setTutorDetails] = useState({});
   const [tutorSchedules, setTutorSchedules] = useState({});
@@ -43,6 +45,15 @@ const Appointment = () => {
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
   const [showBookingPopup, setShowBookingPopup] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [profilePopupDismissed, setProfilePopupDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(PROFILE_POPUP_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [draftTutorId, setDraftTutorId] = useState(null);
@@ -731,11 +742,30 @@ const Appointment = () => {
       tuteeProfile.year_level?.trim()
   );
 
+  const dismissProfilePopup = () => {
+    setShowProfilePopup(false);
+    setProfilePopupDismissed(true);
+    try {
+      localStorage.setItem(PROFILE_POPUP_STORAGE_KEY, "1");
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.).
+    }
+  };
+
+  useEffect(() => {
+    if (!loadingTuteeProfile && !profileComplete && !profilePopupDismissed) {
+      setShowProfilePopup(true);
+    }
+    if (profileComplete) {
+      setShowProfilePopup(false);
+    }
+  }, [loadingTuteeProfile, profileComplete, profilePopupDismissed]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     runAction(async () => {
       if (!profileComplete) {
-        toast.error("Complete your tutee profile (year level, program, and college) before booking an appointment.");
+        setShowProfilePopup(true);
         return;
       }
 
@@ -1500,6 +1530,38 @@ const Appointment = () => {
 
   return (
     <div className="py-3 px-6 bg-[#f8f9f0] min-h-screen">
+      {showProfilePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#e9f1ff] p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-[#1f3b94]">
+              Complete your tutee profile
+            </h2>
+            <p className="mt-3 text-sm text-[#2d3a6d]">
+              Please add your year level, program, and college before booking an
+              appointment.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={dismissProfilePopup}
+                className="rounded-full border border-[#c7d6f6] bg-white/80 px-4 py-2 text-sm font-semibold text-[#1f3b94] hover:bg-white"
+              >
+                Later
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dismissProfilePopup();
+                  navigate("/dashboard/profile");
+                }}
+                className="rounded-full bg-[#1f3b94] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d6d]"
+              >
+                Edit Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showBookingPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
           <div className="w-full max-w-md rounded-2xl bg-[#e9f1ff] p-6 shadow-2xl">

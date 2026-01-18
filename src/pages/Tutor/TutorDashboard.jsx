@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { capitalizeWords } from "../../utils/text";
 import {
@@ -29,14 +30,21 @@ import { Cards } from "../../components/cards";
 const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
 const isFinishedStatus = (status = "") =>
   FINISHED_STATUSES.has(String(status).toLowerCase());
+const PROFILE_POPUP_STORAGE_PREFIX = "tutorProfilePopupDismissed";
 
 const TutorDashboard = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [userId, setUserId] = useState("");
   const [announcement, setAnnouncement] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [areaRange, setAreaRange] = useState("7d");
+  const [tutorProfile, setTutorProfile] = useState(null);
+  const [loadingTutorProfile, setLoadingTutorProfile] = useState(true);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [profilePopupDismissed, setProfilePopupDismissed] = useState(false);
+  const [profilePopupKey, setProfilePopupKey] = useState("");
 
   async function getName() {
     try {
@@ -117,11 +125,86 @@ const TutorDashboard = () => {
     }
   }
 
+  const getTutorProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const accessToken = session.access_token || "session";
+      const popupKey = `${PROFILE_POPUP_STORAGE_PREFIX}:${session.user.id}:${accessToken}`;
+      setProfilePopupKey(popupKey);
+      if (typeof window !== "undefined") {
+        try {
+          const dismissed =
+            sessionStorage.getItem(popupKey) === "1";
+          setProfilePopupDismissed(dismissed);
+        } catch {
+          setProfilePopupDismissed(false);
+        }
+      }
+
+      const { data, error } = await supabase
+        .from("profile")
+        .select("program, college, year_level, subject, specialization, profile_image")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116" && error.status !== 406) {
+        throw error;
+      }
+
+      const profileData = data || {
+        program: "",
+        college: "",
+        year_level: "",
+        subject: "",
+        specialization: "",
+        profile_image: "",
+      };
+
+      setTutorProfile(profileData);
+    } catch (err) {
+      console.error("Unable to load tutor profile:", err.message);
+    } finally {
+      setLoadingTutorProfile(false);
+    }
+  };
+
+  const profileComplete = Boolean(
+    tutorProfile &&
+      tutorProfile.program?.trim() &&
+      tutorProfile.college?.trim() &&
+      tutorProfile.year_level?.trim() &&
+      tutorProfile.subject?.trim() &&
+      tutorProfile.specialization?.trim()
+  );
+
+  const dismissProfilePopup = () => {
+    setShowProfilePopup(false);
+    setProfilePopupDismissed(true);
+    if (!profilePopupKey || typeof window === "undefined") return;
+    try {
+      sessionStorage.setItem(profilePopupKey, "1");
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.).
+    }
+  };
+
   useEffect(() => {
     getName();
     getAnnouncement();
     getAppointments();
+    getTutorProfile();
   }, []);
+
+  useEffect(() => {
+    if (!loadingTutorProfile && !profileComplete && !profilePopupDismissed) {
+      setShowProfilePopup(true);
+    }
+    if (profileComplete) {
+      setShowProfilePopup(false);
+    }
+  }, [loadingTutorProfile, profileComplete, profilePopupDismissed]);
 
   // Helper: Filter appointments by date range
   function filterByRange(appts, range) {
@@ -224,6 +307,38 @@ const TutorDashboard = () => {
 
   return (
     <div className="flex-1 flex flex-col px-6 py-3">
+      {showProfilePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-[#e9f1ff] p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-[#1f3b94]">
+              Complete your tutor profile
+            </h2>
+            <p className="mt-3 text-sm text-[#2d3a6d]">
+              Please add your year level, program, college, subject, and specialization
+              before continuing.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={dismissProfilePopup}
+                className="rounded-full border border-[#c7d6f6] bg-white/80 px-4 py-2 text-sm font-semibold text-[#1f3b94] hover:bg-white"
+              >
+                Later
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dismissProfilePopup();
+                  navigate("/dashboard/profile");
+                }}
+                className="rounded-full bg-[#1f3b94] px-4 py-2 text-sm font-semibold text-white hover:bg-[#162d6d]"
+              >
+                Edit Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-600">Dashboard</h1>
 
