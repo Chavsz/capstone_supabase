@@ -13,6 +13,7 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
         to="/dashboard"
         Icon={mdIcons.MdOutlineDashboard}
         title="Dashboard"
+        end
         onClose={onClose}
       />
      
@@ -64,10 +65,11 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
   );
 };
 
-const Route = ({ to, Icon, title, onClose }) => {
+const Route = ({ to, Icon, title, onClose, end = false }) => {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) =>
         `flex items-center justify-start gap-3 w-full rounded px-2 py-2 md:py-1.5 md:text-sm text-1xl transition-colors duration-200 ${
           isActive
