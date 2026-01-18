@@ -330,7 +330,7 @@ const MyClasses = () => {
       <div className="bg-[#ffffff] rounded-lg border border-[#EBEDEF] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex items-center justify-end">
-            <div className="relative flex items-center gap-2">
+            <div className="flex flex-col items-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowWeekPicker((prev) => !prev)}
