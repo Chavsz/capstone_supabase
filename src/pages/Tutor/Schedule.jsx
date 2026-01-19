@@ -629,7 +629,7 @@ const Schedule = () => {
         updates.session_location = metadata.location?.trim() || null;
       }
       if (status === "declined" || status === "cancelled") {
-        updates.tutor_decline_reason = metadata.reason || null;
+        updates.tutor_decline_reason = metadata.reason?.trim() || null;
       }
       const { error } = await supabase
         .from("appointment")
@@ -659,13 +659,13 @@ const Schedule = () => {
           notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} on ${formattedDate} at ${formattedTime} has been confirmed.${locationText} [appointment_id:${appointmentData.appointment_id}]`;
         } else if (status === "declined") {
           notificationMessage = `Your appointment request for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been declined. [appointment_id:${appointmentData.appointment_id}]`;
-          if (metadata.reason) {
-            notificationMessage += ` Reason: ${metadata.reason}`;
+          if (metadata.reason?.trim()) {
+            notificationMessage += ` Reason: ${metadata.reason.trim()}`;
           }
         } else if (status === "cancelled") {
           notificationMessage = `Your appointment for ${appointmentData.subject}${appointmentData.topic ? ` - ${appointmentData.topic}` : ""} has been cancelled. [appointment_id:${appointmentData.appointment_id}]`;
-          if (metadata.reason) {
-            notificationMessage += ` Reason: ${metadata.reason}`;
+          if (metadata.reason?.trim()) {
+            notificationMessage += ` Reason: ${metadata.reason.trim()}`;
           }
         }
 

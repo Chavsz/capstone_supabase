@@ -512,6 +512,21 @@ const MyClasses = () => {
                                 {booking.number_of_tutees || 1}
                               </div>
                           </div>
+                          {(booking.status === "declined" ||
+                            booking.status === "cancelled") && (
+                            <div className="col-span-2 space-y-2">
+                              {booking.tutor_decline_reason && (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-[10px] text-red-700">
+                                  Tutor note: {booking.tutor_decline_reason}
+                                </div>
+                              )}
+                              {booking.tutee_decline_reason && (
+                                <div className="rounded-lg border border-orange-200 bg-orange-50 px-2 py-2 text-[10px] text-orange-700">
+                                  Tutee note: {booking.tutee_decline_reason}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

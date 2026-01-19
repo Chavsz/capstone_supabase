@@ -18,6 +18,7 @@ const TABLES = [
 ];
 
 const UPDATE_DEBOUNCE_MS = 300;
+const POLL_INTERVAL_MS = 60000;
 
 export const DataSyncProvider = ({ children }) => {
   const [version, setVersion] = useState(0);
@@ -26,14 +27,8 @@ export const DataSyncProvider = ({ children }) => {
   const queueRef = useRef(new Set());
   const timerRef = useRef(null);
 
-  const flushUpdates = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const tables = Array.from(queueRef.current);
-    queueRef.current.clear();
-    if (tables.length === 0) return;
+  const applyUpdates = useCallback((tables) => {
+    if (!tables || tables.length === 0) return;
     setVersion((prev) => prev + 1);
     setTableVersions((prev) => {
       const next = { ...prev };
@@ -43,6 +38,23 @@ export const DataSyncProvider = ({ children }) => {
       return next;
     });
   }, []);
+
+  const flushUpdates = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const tables = Array.from(queueRef.current);
+    queueRef.current.clear();
+    applyUpdates(tables);
+  }, [applyUpdates]);
+
+  const checkForUpdates = useCallback(
+    (tables = TABLES) => {
+      applyUpdates(tables);
+    },
+    [applyUpdates]
+  );
 
   const scheduleUpdate = useCallback(
     (table) => {
@@ -73,6 +85,13 @@ export const DataSyncProvider = ({ children }) => {
       }
     };
   }, [scheduleUpdate]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      checkForUpdates();
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [checkForUpdates]);
 
   const reportError = useCallback((key, message, retry) => {
     setErrors((prev) => {
@@ -114,8 +133,9 @@ export const DataSyncProvider = ({ children }) => {
       reportError,
       clearError,
       retryError,
+      checkForUpdates,
     }),
-    [version, tableVersions, errors, reportError, clearError, retryError]
+    [version, tableVersions, errors, reportError, clearError, retryError, checkForUpdates]
   );
 
   return <DataSyncContext.Provider value={value}>{children}</DataSyncContext.Provider>;

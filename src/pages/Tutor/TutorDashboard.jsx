@@ -18,14 +18,10 @@ import {
   Legend,
 } from "recharts";
 
-//icons
-import * as fiIcons from "react-icons/fi";
 import { PiSpeakerHigh } from "react-icons/pi";
 import { AiOutlineSchedule } from "react-icons/ai";
 import { LuChartLine } from "react-icons/lu";
-
-// Components
-import { Cards } from "../../components/cards";
+import { FaClipboardList, FaUserPlus, FaTimesCircle } from "react-icons/fa";
 
 const FINISHED_STATUSES = new Set(["awaiting_feedback", "completed"]);
 const isFinishedStatus = (status = "") =>
@@ -236,8 +232,22 @@ const TutorDashboard = () => {
   );
 
   const cancelledAppointments = appointments.filter(
-    (a) => a.status === "cancelled" || a.status === "declined"
+    (a) => a.status === "cancelled"
   );
+
+  const pendingAppointments = appointments.filter((a) => a.status === "pending");
+
+  const isSameDay = (value) => {
+    if (!value) return false;
+    const dateValue = new Date(value);
+    if (Number.isNaN(dateValue.getTime())) return false;
+    const today = new Date();
+    return (
+      dateValue.getFullYear() === today.getFullYear() &&
+      dateValue.getMonth() === today.getMonth() &&
+      dateValue.getDate() === today.getDate()
+    );
+  };
 
   // Prepare line chart data
   const filteredAppointments = filterByRange(appointments, areaRange);
@@ -300,6 +310,29 @@ const TutorDashboard = () => {
     month: "long",
     day: "numeric",
   });
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  const completedSessionsToday = completedAppointments.filter((a) =>
+    isSameDay(a.date)
+  );
+  const pendingRequestsToday = pendingAppointments.filter((a) =>
+    isSameDay(a.created_at)
+  );
+  const cancelledSessionsToday = cancelledAppointments.filter((a) =>
+    isSameDay(a.date)
+  );
+
+  const openTutorClassesFocus = (status) => {
+    navigate("/dashboard/tutor-classes", {
+      state: {
+        lavRoomFocus: {
+          date: todayKey,
+          status,
+          openFirst: true,
+        },
+      },
+    });
+  };
 
   const cardText = () => {
     return "text-white";
@@ -352,22 +385,75 @@ const TutorDashboard = () => {
         Welcome, {capitalizeWords(name)}!
       </h2>
 
-      <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-7 mt-6">
-        <Cards
-          title="Sessions"
-          icon={<fiIcons.FiCalendar />}
-          total={completedAppointments.length}
-        />
-        <Cards
-          title="Tutee Request"
-          icon={<fiIcons.FiUser />}
-          total={appointments.length}
-        />
-        <Cards
-          title="Cancellations"
-          icon={<fiIcons.FiCalendar />}
-          total={cancelledAppointments.length}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+          <div className="flex items-center justify-between">
+            <p className="text-[#1f3b94] font-semibold">Sessions</p>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+              <FaClipboardList />
+            </span>
+          </div>
+          <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+            {completedAppointments.length}
+          </p>
+          <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+          <button
+            type="button"
+            onClick={() => openTutorClassesFocus("finished")}
+            className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+          >
+            <span className="font-bold text-[#1f9e2c]">
+              {completedSessionsToday.length || 0}
+            </span>
+            <span>New Sessions Today!</span>
+          </button>
+        </div>
+
+        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+          <div className="flex items-center justify-between">
+            <p className="text-[#1f3b94] font-semibold">Tutee Request</p>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+              <FaUserPlus />
+            </span>
+          </div>
+          <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+            {pendingAppointments.length}
+          </p>
+          <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+          <button
+            type="button"
+            onClick={() => openTutorClassesFocus("pending")}
+            className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+          >
+            <span className="font-bold text-[#1f9e2c]">
+              {pendingRequestsToday.length || 0}
+            </span>
+            <span>New Booked Today!</span>
+          </button>
+        </div>
+
+        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+          <div className="flex items-center justify-between">
+            <p className="text-[#1f3b94] font-semibold">Cancellations</p>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+              <FaTimesCircle />
+            </span>
+          </div>
+          <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+            {cancelledAppointments.length}
+          </p>
+          <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
+          <button
+            type="button"
+            onClick={() => openTutorClassesFocus("cancelled")}
+            className="mt-2 flex items-center gap-2 text-xs text-[#7b8bb8] hover:text-[#1f3b94]"
+          >
+            <span className="font-bold text-[#b10f0f]">
+              {cancelledSessionsToday.length || 0}
+            </span>
+            <span>New Cancelled Today!</span>
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 grid lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 gap-7">
