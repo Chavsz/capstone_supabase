@@ -165,6 +165,26 @@ const AppointmentModal = ({
     }
   };
 
+  const handleCancelSubmit = async () => {
+    if (!cancelReason.trim()) {
+      setCancelError("Please share a brief reason.");
+      return;
+    }
+    if (!appointment) return;
+    setCancelError("");
+    setIsCancelling(true);
+    try {
+      await onStatusUpdate(appointment.appointment_id, "cancelled", {
+        reason: cancelReason.trim(),
+      });
+      onClose();
+    } catch (err) {
+      setCancelError(err?.message || "Unable to cancel this appointment.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   if (!isOpen || !appointment) return null;
 
   return (
@@ -754,26 +774,6 @@ const Schedule = () => {
       console.error(err.message);
       toast.error("Error updating session location.");
       throw err;
-    }
-  };
-
-  const handleCancelSubmit = async () => {
-    if (!cancelReason.trim()) {
-      setCancelError("Please share a brief reason.");
-      return;
-    }
-    if (!appointment) return;
-    setCancelError("");
-    setIsCancelling(true);
-    try {
-      await onStatusUpdate(appointment.appointment_id, "cancelled", {
-        reason: cancelReason.trim(),
-      });
-      onClose();
-    } catch (err) {
-      setCancelError(err?.message || "Unable to cancel this appointment.");
-    } finally {
-      setIsCancelling(false);
     }
   };
 
