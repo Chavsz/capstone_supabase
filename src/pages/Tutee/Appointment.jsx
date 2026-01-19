@@ -1568,7 +1568,7 @@ const Appointment = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-bold text-[#1f3b94]">
-                  Booking Confirmed! Waiting for Tutor&apos;s Confirmation...
+                  Booked Appointment! Waiting for Tutor&apos;s Confirmation...
                 </h2>
                 <p className="mt-3 text-sm text-[#2d3a6d]">
                   You&apos;ve successfully booked a session! Once the tutor confirms

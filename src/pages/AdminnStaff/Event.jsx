@@ -7,8 +7,10 @@ const Event = () => {
   const [formData, setFormData] = useState({
     event_title: "",
     event_description: "",
-    event_time: "",
-    event_date: "",
+    event_start_time: "",
+    event_start_date: "",
+    event_end_time: "",
+    event_end_date: "",
     event_location: "",
     event_image: null,
   });
@@ -28,7 +30,21 @@ const Event = () => {
 
       if (error) throw error;
 
-      setEvents(data || []);
+      const now = new Date();
+      const upcomingEvents = (data || []).filter((event) => {
+        const startDate = event.event_start_date || event.event_date;
+        const startTime = (event.event_start_time || event.event_time || "").slice(0, 5);
+        const endDate = event.event_end_date || startDate;
+        const endTime = (event.event_end_time || event.event_start_time || event.event_time || "")
+          .slice(0, 5);
+        if (!endDate) return false;
+        const endValue = endTime ? `${endDate}T${endTime}` : `${endDate}T23:59`;
+        const endAt = new Date(endValue);
+        if (Number.isNaN(endAt.getTime())) return true;
+        return endAt >= now;
+      });
+
+      setEvents(upcomingEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
       toast.error("Error loading events");
@@ -152,8 +168,12 @@ const Event = () => {
         const updateData = {
           event_title: formData.event_title,
           event_description: formData.event_description,
-          event_time: formData.event_time,
-          event_date: formData.event_date,
+          event_start_time: formData.event_start_time,
+          event_start_date: formData.event_start_date,
+          event_end_time: formData.event_end_time || null,
+          event_end_date: formData.event_end_date || null,
+          event_time: formData.event_start_time,
+          event_date: formData.event_start_date,
           event_location: formData.event_location,
           updated_at: new Date().toISOString(),
         };
@@ -191,8 +211,12 @@ const Event = () => {
               user_id: session.user.id,
               event_title: formData.event_title,
               event_description: formData.event_description,
-              event_time: formData.event_time,
-              event_date: formData.event_date,
+              event_start_time: formData.event_start_time,
+              event_start_date: formData.event_start_date,
+              event_end_time: formData.event_end_time || null,
+              event_end_date: formData.event_end_date || null,
+              event_time: formData.event_start_time,
+              event_date: formData.event_start_date,
               event_location: formData.event_location,
               event_image: imageUrl,
             },
@@ -209,8 +233,10 @@ const Event = () => {
       setFormData({
         event_title: "",
         event_description: "",
-        event_time: "",
-        event_date: "",
+        event_start_time: "",
+        event_start_date: "",
+        event_end_time: "",
+        event_end_date: "",
         event_location: "",
         event_image: null,
       });
@@ -228,8 +254,14 @@ const Event = () => {
     setFormData({
       event_title: event.event_title,
       event_description: event.event_description,
-      event_time: event.event_time.substring(0, 5),
-      event_date: new Date(event.event_date).toISOString().split("T")[0],
+      event_start_time: (event.event_start_time || event.event_time || "").substring(0, 5),
+      event_start_date: event.event_start_date
+        ? new Date(event.event_start_date).toISOString().split("T")[0]
+        : new Date(event.event_date).toISOString().split("T")[0],
+      event_end_time: (event.event_end_time || "").substring(0, 5),
+      event_end_date: event.event_end_date
+        ? new Date(event.event_end_date).toISOString().split("T")[0]
+        : "",
       event_location: event.event_location,
       event_image: null,
     });
@@ -315,16 +347,16 @@ const Event = () => {
               </div>
               <div>
                 <label
-                  htmlFor="event_time"
+                  htmlFor="event_start_time"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Event Time
+                  Event Start Time
                 </label>
                 <input
                   type="time"
-                  name="event_time"
-                  id="event_time"
-                  value={formData.event_time}
+                  name="event_start_time"
+                  id="event_start_time"
+                  value={formData.event_start_time}
                   onChange={handleChange}
                   className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
@@ -332,19 +364,51 @@ const Event = () => {
               </div>
               <div>
                 <label
-                  htmlFor="event_date"
+                  htmlFor="event_start_date"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Event Date
+                  Event Start Date
                 </label>
                 <input
                   type="date"
-                  name="event_date"
-                  id="event_date"
-                  value={formData.event_date}
+                  name="event_start_date"
+                  id="event_start_date"
+                  value={formData.event_start_date}
                   onChange={handleChange}
                   className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                   required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="event_end_time"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Event End Time
+                </label>
+                <input
+                  type="time"
+                  name="event_end_time"
+                  id="event_end_time"
+                  value={formData.event_end_time}
+                  onChange={handleChange}
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="event_end_date"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Event End Date
+                </label>
+                <input
+                  type="date"
+                  name="event_end_date"
+                  id="event_end_date"
+                  value={formData.event_end_date}
+                  onChange={handleChange}
+                  className="w-full p-2 md:p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
                 />
               </div>
               <div className="md:col-span-2">
@@ -404,8 +468,10 @@ const Event = () => {
                       setFormData({
                         event_title: "",
                         event_description: "",
-                        event_time: "",
-                        event_date: "",
+                        event_start_time: "",
+                        event_start_date: "",
+                        event_end_time: "",
+                        event_end_date: "",
                         event_location: "",
                         event_image: null,
                       });
@@ -466,15 +532,32 @@ const Event = () => {
                       {event.event_description}
                     </p>
                     <div className="text-gray-600 text-xs md:text-sm mb-1">
-                      <strong>Time:</strong> {event.event_time}
+                      <strong>Time:</strong>{" "}
+                      {event.event_start_time || event.event_time}
+                      {event.event_end_time ? ` - ${event.event_end_time}` : ""}
                     </div>
                     <div className="text-gray-600 text-xs md:text-sm mb-1">
                       <strong>Date:</strong>{" "}
-                      {new Date(event.event_date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      {(() => {
+                        const startValue = event.event_start_date || event.event_date;
+                        const endValue = event.event_end_date || startValue;
+                        const startLabel = startValue
+                          ? new Date(startValue).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "TBD";
+                        const endLabel =
+                          endValue && endValue !== startValue
+                            ? new Date(endValue).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            : "";
+                        return endLabel ? `${startLabel} - ${endLabel}` : startLabel;
+                      })()}
                     </div>
                     <div className="text-gray-600 text-xs md:text-sm mb-4">
                       <strong>Location:</strong> {event.event_location}

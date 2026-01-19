@@ -73,7 +73,6 @@ const Reports = () => {
   const [userId, setUserId] = useState(null);
   const { version, reportError, clearError } = useDataSync();
   const [showRangePicker, setShowRangePicker] = useState(false);
-  const [autoRange, setAutoRange] = useState(true);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
@@ -112,24 +111,16 @@ const Reports = () => {
     return `${year}-${month}-${day}`;
   };
 
-  useEffect(() => {
-    if (!autoRange) return;
-    if (!appointments.length) return;
-    const dates = appointments
-      .map((appointment) => normalizeDate(appointment.date))
-      .filter(Boolean);
-    if (!dates.length) return;
-    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-    const nextEnd = new Date(maxDate);
-    nextEnd.setDate(nextEnd.getDate() + 1);
-    if (rangeStart.getTime() !== minDate.getTime()) {
-      setRangeStart(minDate);
-    }
-    if (rangeEnd.getTime() !== nextEnd.getTime()) {
-      setRangeEnd(nextEnd);
-    }
-  }, [appointments, autoRange, rangeEnd, rangeStart]);
+  const resetRangeToMonth = () => {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    end.setHours(0, 0, 0, 0);
+    setRangeStart(start);
+    setRangeEnd(end);
+  };
 
   const fetchReportsData = useCallback(async (shouldUpdate) => {
     try {
@@ -316,7 +307,6 @@ const Reports = () => {
                           const nextStart = new Date(value);
                           nextStart.setHours(0, 0, 0, 0);
                           if (nextStart < rangeEnd) {
-                            setAutoRange(false);
                             setRangeStart(nextStart);
                           }
                         }}
@@ -334,12 +324,18 @@ const Reports = () => {
                           const nextEnd = new Date(value);
                           nextEnd.setHours(0, 0, 0, 0);
                           if (nextEnd > rangeStart) {
-                            setAutoRange(false);
                             setRangeEnd(nextEnd);
                           }
                         }}
                       />
                     </label>
+                    <button
+                      type="button"
+                      onClick={resetRangeToMonth}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-blue-400 hover:text-blue-600"
+                    >
+                      Reset Month
+                    </button>
                   </div>
                 </div>
               )}

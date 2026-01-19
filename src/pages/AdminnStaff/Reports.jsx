@@ -592,7 +592,14 @@ const Reports = () => {
     }, 0);
   }, [completedAppointmentsInPeriod]);
 
-  const totalSessionsBooked = appointmentsInPeriod.length;
+  const appointmentsBookedInPeriod = useMemo(() => {
+    return appointmentsInPeriod.filter((appointment) => {
+      const status = String(appointment.status || "").toLowerCase();
+      return status && status !== "pending";
+    });
+  }, [appointmentsInPeriod]);
+
+  const totalSessionsBooked = appointmentsBookedInPeriod.length;
   const totalSessionsCompleted = completedAppointmentsInPeriod.length;
   const totalTuteesServed = completedAppointmentsInPeriod.reduce((sum, appointment) => {
     const count =
@@ -602,7 +609,14 @@ const Reports = () => {
     return sum + count;
   }, 0);
 
-  const pdfTotalSessionsBooked = appointmentsInPdfRange.length;
+  const appointmentsBookedInPdfRange = useMemo(() => {
+    return appointmentsInPdfRange.filter((appointment) => {
+      const status = String(appointment.status || "").toLowerCase();
+      return status && status !== "pending";
+    });
+  }, [appointmentsInPdfRange]);
+
+  const pdfTotalSessionsBooked = appointmentsBookedInPdfRange.length;
   const pdfTotalSessionsCompleted = completedAppointmentsInPdfRange.length;
   const pdfTotalTuteesServed = completedAppointmentsInPdfRange.reduce((sum, appointment) => {
     const count =

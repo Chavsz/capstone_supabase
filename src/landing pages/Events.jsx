@@ -18,11 +18,19 @@ function Events() {
       }
 
       if (data && Array.isArray(data)) {
-        const today = new Date().toISOString().split("T")[0];
+        const now = new Date();
         const upcomingEvents = data
           .filter((event) => {
-            const eventDate = new Date(event.event_date).toISOString().split("T")[0];
-            return eventDate >= today;
+            const startDate = event.event_start_date || event.event_date;
+            const startTime = (event.event_start_time || event.event_time || "").slice(0, 5);
+            const endDate = event.event_end_date || startDate;
+            const endTime = (event.event_end_time || event.event_start_time || event.event_time || "")
+              .slice(0, 5);
+            if (!endDate) return false;
+            const endValue = endTime ? `${endDate}T${endTime}` : `${endDate}T23:59`;
+            const endAt = new Date(endValue);
+            if (Number.isNaN(endAt.getTime())) return true;
+            return endAt >= now;
           })
           .map((event) => ({
             ...event,
@@ -62,11 +70,23 @@ function Events() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.length > 0 ? (
             events.map((event, index) => {
-              const formattedDate = new Date(event.event_date).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              });
+              const startDate = event.event_start_date || event.event_date;
+              const endDate = event.event_end_date || startDate;
+              const formattedDate = startDate
+                ? new Date(startDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "";
+              const formattedEndDate =
+                endDate && endDate !== startDate
+                  ? new Date(endDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "";
 
               return (
                 <motion.div
@@ -98,7 +118,9 @@ function Events() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
-                        <div className="text-sm font-semibold text-gray-900">{formattedDate}</div>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formattedEndDate ? `${formattedDate} - ${formattedEndDate}` : formattedDate}
+                        </div>
                       </div>
                     </div>
 
@@ -197,7 +219,9 @@ function Events() {
                             </svg>
                           </div>
                           <span className="text-sm text-gray-600">
-                            <strong>Time:</strong> {event.event_time}
+                            <strong>Time:</strong>{" "}
+                            {event.event_start_time || event.event_time}
+                            {event.event_end_time ? ` - ${event.event_end_time}` : ""}
                           </span>
                         </div>
 

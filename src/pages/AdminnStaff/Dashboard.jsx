@@ -104,6 +104,11 @@ function Dashboard() {
     (a) => a.status === "cancelled"
   );
 
+  const bookedAppointments = appointments.filter((appointment) => {
+    const status = String(appointment.status || "").toLowerCase();
+    return status && status !== "pending";
+  });
+
   //Total number of completed appointments
   const completedAppointments = appointments.filter((a) =>
     isFinishedStatus(a.status)
@@ -139,7 +144,7 @@ function Dashboard() {
     });
   };
 
-  const completedSessionsToday = completedAppointments.filter(
+  const completedSessionsToday = bookedAppointments.filter(
     (a) => formatDate(a.date) === dateToday
   );
   const tuteeRequestsToday = tuteeRequests.filter((a) =>
@@ -192,7 +197,7 @@ function Dashboard() {
                 </span>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
-                {completedAppointments.length}
+                {bookedAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
               <button
