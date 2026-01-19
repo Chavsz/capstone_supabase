@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 // icons
 import { FaClipboardList, FaCheckCircle, FaUserPlus, FaTimesCircle } from "react-icons/fa";
@@ -22,6 +23,7 @@ function Dashboard() {
   const [collegeData, setCollegeData] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const navigate = useNavigate();
+  const { version } = useDataSync();
 
   async function getAppointments() {
     try {
@@ -95,7 +97,7 @@ function Dashboard() {
     getAppointments();
     getEvaluations();
     getCollegeData();
-  }, []);
+  }, [version]);
 
   // Total number of cancelled appointments
   const cancelledAppointments = appointments.filter(

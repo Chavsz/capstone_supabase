@@ -73,6 +73,7 @@ const Reports = () => {
   const [userId, setUserId] = useState(null);
   const { version, reportError, clearError } = useDataSync();
   const [showRangePicker, setShowRangePicker] = useState(false);
+  const [autoRange, setAutoRange] = useState(true);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
@@ -110,6 +111,25 @@ const Reports = () => {
     const day = `${date.getDate()}`.padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
+
+  useEffect(() => {
+    if (!autoRange) return;
+    if (!appointments.length) return;
+    const dates = appointments
+      .map((appointment) => normalizeDate(appointment.date))
+      .filter(Boolean);
+    if (!dates.length) return;
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+    const nextEnd = new Date(maxDate);
+    nextEnd.setDate(nextEnd.getDate() + 1);
+    if (rangeStart.getTime() !== minDate.getTime()) {
+      setRangeStart(minDate);
+    }
+    if (rangeEnd.getTime() !== nextEnd.getTime()) {
+      setRangeEnd(nextEnd);
+    }
+  }, [appointments, autoRange, rangeEnd, rangeStart]);
 
   const fetchReportsData = useCallback(async (shouldUpdate) => {
     try {
@@ -296,6 +316,7 @@ const Reports = () => {
                           const nextStart = new Date(value);
                           nextStart.setHours(0, 0, 0, 0);
                           if (nextStart < rangeEnd) {
+                            setAutoRange(false);
                             setRangeStart(nextStart);
                           }
                         }}
@@ -313,6 +334,7 @@ const Reports = () => {
                           const nextEnd = new Date(value);
                           nextEnd.setHours(0, 0, 0, 0);
                           if (nextEnd > rangeStart) {
+                            setAutoRange(false);
                             setRangeEnd(nextEnd);
                           }
                         }}

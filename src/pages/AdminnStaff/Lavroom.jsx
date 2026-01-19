@@ -3,6 +3,7 @@ import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
+import { useDataSync } from "../../contexts/DataSyncContext";
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
@@ -22,6 +23,7 @@ const Lavroom = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { run: runAction, busy: actionBusy } = useActionGuard();
+  const { version } = useDataSync();
 
   const getAppointments = async () => {
     try {
@@ -54,7 +56,7 @@ const Lavroom = () => {
 
   useEffect(() => {
     getAppointments();
-  }, []);
+  }, [version]);
 
   const formatDate = (dateString) =>
     new Date(dateString).toLocaleDateString("en-US", {

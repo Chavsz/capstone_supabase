@@ -141,13 +141,23 @@ const Header = () => {
     } catch (err) {
       // Ignore storage errors (private mode, full storage).
     }
+    const wantsPending = /pending appointment|pending request|appointment request/i.test(
+      notification.notification_content || ""
+    );
+    const focusState = wantsPending
+      ? {
+          lavRoomFocus: {
+            date: new Date().toISOString().slice(0, 10),
+            status: "pending",
+            openFirst: true,
+          },
+        }
+      : {};
     const targetPath = "/dashboard/schedule";
     if (window.location.pathname === targetPath) {
-      window.dispatchEvent(
-        new CustomEvent("lav.notification.tutor", { detail: notification })
-      );
+      navigate(targetPath, { replace: true, state: { notification, ...focusState } });
     } else {
-      navigate(targetPath, { state: { notification } });
+      navigate(targetPath, { state: { notification, ...focusState } });
     }
   };
 
@@ -167,11 +177,28 @@ const Header = () => {
     }
     const targetPath = "/dashboard/schedule";
     if (window.location.pathname === targetPath) {
-      window.dispatchEvent(
-        new CustomEvent("lav.notification.tutor", { detail: notification })
-      );
+      navigate(targetPath, {
+        replace: true,
+        state: {
+          notification,
+          lavRoomFocus: {
+            date: new Date().toISOString().slice(0, 10),
+            status: "pending",
+            openFirst: true,
+          },
+        },
+      });
     } else {
-      navigate(targetPath, { state: { notification } });
+      navigate(targetPath, {
+        state: {
+          notification,
+          lavRoomFocus: {
+            date: new Date().toISOString().slice(0, 10),
+            status: "pending",
+            openFirst: true,
+          },
+        },
+      });
     }
   };
 

@@ -544,6 +544,7 @@ const Schedule = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [appointmentPages, setAppointmentPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
+  const [pendingFocus, setPendingFocus] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
   const autoEndTimersRef = useRef(new Map());
   const autoWarnTimersRef = useRef(new Map());
@@ -952,6 +953,36 @@ const Schedule = () => {
     setIsModalOpen(false);
     setSelectedAppointment(null);
   };
+
+  useEffect(() => {
+    const focus = location.state?.lavRoomFocus || null;
+    if (focus) {
+      setPendingFocus(focus);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!pendingFocus) return;
+    const focusDate = pendingFocus.date || null;
+    const status = pendingFocus.status || "all";
+    setStatusFilter(status);
+    if (pendingFocus.openFirst && appointments.length > 0) {
+      const matches = appointments.filter((appointment) => {
+        if (focusDate && appointment.date !== focusDate) return false;
+        if (status !== "all" && appointment.status !== status) return false;
+        return true;
+      });
+      if (matches.length > 0) {
+        matches.sort((a, b) => {
+          const aTime = new Date(`${a.date}T${a.start_time || "00:00"}`).getTime();
+          const bTime = new Date(`${b.date}T${b.start_time || "00:00"}`).getTime();
+          return bTime - aTime;
+        });
+        openModal(matches[0]);
+      }
+    }
+    setPendingFocus(null);
+  }, [appointments, pendingFocus]);
 
   const handleIncomingNotification = useCallback(
     (notification) => {
