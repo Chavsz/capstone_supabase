@@ -771,7 +771,6 @@ const AppointmentModal = ({
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "--";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -780,22 +779,11 @@ const AppointmentModal = ({
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return "--";
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
-
-  const formatTimeLower = (timeString) => {
-    const formatted = formatTime(timeString);
-    return formatted === "--" ? formatted : formatted.toLowerCase();
-  };
-
-  const formatDateTime = (dateString, timeString) => {
-    if (!dateString || !timeString) return "--";
-    return `${formatDate(dateString)} - ${formatTimeLower(timeString)}`;
   };
 
   return (
@@ -845,50 +833,40 @@ const AppointmentModal = ({
           >
             <div className="space-y-3 pt-2">
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">Start:</span>
+                <span className="font-semibold text-gray-600">Date:</span>
                 {appointment.status === "pending" && isEditing ? (
-                  <div className="flex items-center gap-2">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <DatePicker
-                        value={formData.date ? dayjs(formData.date) : null}
-                        onChange={(value) => {
-                          if (!value || !value.isValid()) {
-                            return;
-                          }
-                          setFormData((prev) => ({
-                            ...prev,
-                            date: value.format("YYYY-MM-DD"),
-                          }));
-                        }}
-                        format="MM/DD/YYYY"
-                        slotProps={{
-                          textField: {
-                            size: "small",
-                            className:
-                              "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
-                          },
-                        }}
-                      />
-                    </LocalizationProvider>
-                    <input
-                      type="time"
-                      name="start_time"
-                      value={formData.start_time}
-                      onChange={handleInputChange}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900"
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      value={formData.date ? dayjs(formData.date) : null}
+                      onChange={(value) => {
+                        if (!value || !value.isValid()) {
+                          return;
+                        }
+                        setFormData((prev) => ({
+                          ...prev,
+                          date: value.format("YYYY-MM-DD"),
+                        }));
+                      }}
+                      format="MM/DD/YYYY"
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          className: "border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900",
+                        },
+                      }}
                     />
-                  </div>
+                  </LocalizationProvider>
                 ) : (
                   <span className="text-gray-900">
-                    {formatDateTime(appointment.date, appointment.start_time)}
+                    {formatDateTime(appointment.date)}
                   </span>
                 )}
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-600">End:</span>
+                <span className="font-semibold text-gray-600">Time:</span>
                 {appointment.status === "pending" && isEditing ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
+                   <span className="text-xs text-gray-500">
                       {formData.date ? formatDate(formData.date) : "--"}
                     </span>
                     <input
@@ -901,7 +879,7 @@ const AppointmentModal = ({
                   </div>
                 ) : (
                   <span className="text-gray-900">
-                    {formatDateTime(appointment.date, appointment.end_time)}
+                    {formatDateTime(appointment.date)}
                   </span>
                 )}
               </div>

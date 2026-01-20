@@ -82,7 +82,6 @@ const AppointmentModal = ({
   isBusy,
 }) => {
   const formatDate = (dateString) => {
-    if (!dateString) return "--";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -91,22 +90,11 @@ const AppointmentModal = ({
   };
 
   const formatTime = (timeString) => {
-    if (!timeString) return "--";
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
-
-  const formatTimeLower = (timeString) => {
-    const formatted = formatTime(timeString);
-    return formatted === "--" ? formatted : formatted.toLowerCase();
-  };
-
-  const formatDateTime = (dateString, timeString) => {
-    if (!dateString || !timeString) return "--";
-    return `${formatDate(dateString)} - ${formatTimeLower(timeString)}`;
   };
 
   const [declineMode, setDeclineMode] = useState(false);
@@ -231,16 +219,17 @@ const AppointmentModal = ({
               {capitalizeWords(appointment.student_name)}
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">Start:</span>
+           <div className="flex justify-between items-center">
+            <span className="font-semibold text-gray-700">Date:</span>
             <span className="text-gray-900">
-              {formatDateTime(appointment.date, appointment.start_time)}
+              {formatDate(appointment.date)}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-700">End:</span>
+            <span className="font-semibold text-gray-700">Time:</span>
             <span className="text-gray-900">
-              {formatDateTime(appointment.date, appointment.end_time)}
+              {formatTime(appointment.start_time)} -{" "}
+              {formatTime(appointment.end_time)}
             </span>
           </div>
             <div className="flex justify-between items-center">
