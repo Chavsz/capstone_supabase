@@ -142,7 +142,9 @@ function Events() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
                         <div className="text-sm font-semibold text-gray-900">
-                          {formattedEndDate ? `${formattedDate} - ${formattedEndDate}` : formattedDate}
+                          {formattedEndDate
+                            ? `${formattedStartDate} - ${formattedEndDate}`
+                            : formattedStartDate}
                         </div>
                       </div>
                     </div>
