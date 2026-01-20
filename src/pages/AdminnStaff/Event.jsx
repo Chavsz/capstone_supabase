@@ -25,26 +25,26 @@ const Event = () => {
       const { data, error } = await supabase
         .from("event")
         .select("*")
-        .order("event_date", { ascending: true })
-        .order("event_time", { ascending: true });
+        .order("event_end_date", { ascending: false })
+        .order("event_end_time", { ascending: false });
 
       if (error) throw error;
 
       const now = new Date();
-      const upcomingEvents = (data || []).filter((event) => {
-        const startDate = event.event_start_date || event.event_date;
-        const startTime = (event.event_start_time || event.event_time || "").slice(0, 5);
+      const pastEvents = (data || []).filter((event) => {
+        const startDate = event.event_start_date;
+        const startTime = (event.event_start_time || "").slice(0, 5);
         const endDate = event.event_end_date || startDate;
-        const endTime = (event.event_end_time || event.event_start_time || event.event_time || "")
+        const endTime = (event.event_end_time || event.event_start_time || "")
           .slice(0, 5);
         if (!endDate) return false;
         const endValue = endTime ? `${endDate}T${endTime}` : `${endDate}T23:59`;
         const endAt = new Date(endValue);
-        if (Number.isNaN(endAt.getTime())) return true;
-        return endAt >= now;
+        if (Number.isNaN(endAt.getTime())) return false;
+        return endAt < now;
       });
 
-      setEvents(upcomingEvents);
+      setEvents(pastEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
       toast.error("Error loading events");
@@ -172,8 +172,6 @@ const Event = () => {
           event_start_date: formData.event_start_date,
           event_end_time: formData.event_end_time || null,
           event_end_date: formData.event_end_date || null,
-          event_time: formData.event_start_time,
-          event_date: formData.event_start_date,
           event_location: formData.event_location,
           updated_at: new Date().toISOString(),
         };
@@ -215,8 +213,6 @@ const Event = () => {
               event_start_date: formData.event_start_date,
               event_end_time: formData.event_end_time || null,
               event_end_date: formData.event_end_date || null,
-              event_time: formData.event_start_time,
-              event_date: formData.event_start_date,
               event_location: formData.event_location,
               event_image: imageUrl,
             },
@@ -254,10 +250,10 @@ const Event = () => {
     setFormData({
       event_title: event.event_title,
       event_description: event.event_description,
-      event_start_time: (event.event_start_time || event.event_time || "").substring(0, 5),
+      event_start_time: (event.event_start_time || "").substring(0, 5),
       event_start_date: event.event_start_date
         ? new Date(event.event_start_date).toISOString().split("T")[0]
-        : new Date(event.event_date).toISOString().split("T")[0],
+        : "",
       event_end_time: (event.event_end_time || "").substring(0, 5),
       event_end_date: event.event_end_date
         ? new Date(event.event_end_date).toISOString().split("T")[0]
@@ -533,13 +529,13 @@ const Event = () => {
                     </p>
                     <div className="text-gray-600 text-xs md:text-sm mb-1">
                       <strong>Time:</strong>{" "}
-                      {event.event_start_time || event.event_time}
+                      {event.event_start_time || ""}
                       {event.event_end_time ? ` - ${event.event_end_time}` : ""}
                     </div>
                     <div className="text-gray-600 text-xs md:text-sm mb-1">
                       <strong>Date:</strong>{" "}
                       {(() => {
-                        const startValue = event.event_start_date || event.event_date;
+                        const startValue = event.event_start_date;
                         const endValue = event.event_end_date || startValue;
                         const startLabel = startValue
                           ? new Date(startValue).toLocaleDateString("en-US", {

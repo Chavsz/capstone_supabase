@@ -10,8 +10,8 @@ function Events() {
       const { data, error } = await supabase
         .from("event")
         .select("*")
-        .order("event_date", { ascending: true })
-        .order("event_time", { ascending: true });
+        .order("event_start_date", { ascending: true })
+        .order("event_start_time", { ascending: true });
 
       if (error) {
         throw error;
@@ -21,10 +21,10 @@ function Events() {
         const now = new Date();
         const upcomingEvents = data
           .filter((event) => {
-            const startDate = event.event_start_date || event.event_date;
-            const startTime = (event.event_start_time || event.event_time || "").slice(0, 5);
+            const startDate = event.event_start_date;
+            const startTime = (event.event_start_time || "").slice(0, 5);
             const endDate = event.event_end_date || startDate;
-            const endTime = (event.event_end_time || event.event_start_time || event.event_time || "")
+            const endTime = (event.event_end_time || event.event_start_time || "")
               .slice(0, 5);
             if (!endDate) return false;
             const endValue = endTime ? `${endDate}T${endTime}` : `${endDate}T23:59`;
@@ -50,6 +50,37 @@ function Events() {
     fetchEvents();
   }, []);
 
+  const formatDateLong = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatDateShort = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatTimeLower = (timeString) => {
+    if (!timeString) return "";
+    const normalized = timeString.slice(0, 5);
+    const formatted = new Date(`2000-01-01T${normalized}`).toLocaleTimeString(
+      "en-US",
+      {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }
+    );
+    return formatted.toLowerCase();
+  };
+
   return (
     <section className="py-20 bg-white relative overflow-hidden">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,23 +101,15 @@ function Events() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {events.length > 0 ? (
             events.map((event, index) => {
-              const startDate = event.event_start_date || event.event_date;
+              const startDate = event.event_start_date;
               const endDate = event.event_end_date || startDate;
-              const formattedDate = startDate
-                ? new Date(startDate).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "";
+              const startTime = event.event_start_time || "";
+              const endTime = event.event_end_time || event.event_start_time || "";
+              const formattedStartDate = formatDateLong(startDate);
               const formattedEndDate =
                 endDate && endDate !== startDate
-                  ? new Date(endDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : "";
+                  ? formatDateShort(endDate)
+                  : formatDateShort(startDate);
 
               return (
                 <motion.div
@@ -219,9 +242,32 @@ function Events() {
                             </svg>
                           </div>
                           <span className="text-sm text-gray-600">
-                            <strong>Time:</strong>{" "}
-                            {event.event_start_time || event.event_time}
-                            {event.event_end_time ? ` - ${event.event_end_time}` : ""}
+                            <strong>Start:</strong>{" "}
+                            {formattedStartDate}
+                            {startTime ? ` - ${formatTimeLower(startTime)}` : ""}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-4 h-4 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            <strong>End:</strong>{" "}
+                            {formattedEndDate}
+                            {endTime ? ` - ${formatTimeLower(endTime)}` : ""}
                           </span>
                         </div>
 
