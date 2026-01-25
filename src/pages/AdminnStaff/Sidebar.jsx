@@ -236,7 +236,7 @@ const Sidebar = ({ setAuth, onClose }) => {
       </div>
 
       {/* Logout Button - Always Visible at Bottom */}
-      <div className="flex-shrink-0 mt-auto pt-4 mb-10">
+      <div className="flex-shrink-0 mt-auto pt-2 mb-5 border-t border-gray-300">
         
         <button
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none disabled:opacity-50 disabled:cursor-not-allowed"

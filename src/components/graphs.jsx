@@ -130,11 +130,11 @@ export const SessionBarChart = ({ appointmentsData }) => {
     count: weekdayCounts[day] || 0,
   }));
   const weekdayColors = [
-    "#ffe533",
-    "#8f7e18",
-    "#8c6542",
-    "#f7591f",
-    "#ffd88a",
+    "#4F46E5",
+    "#06B6D4",
+    "#22C55E",
+    "#F59E0B",
+    "#EF4444",
   ];
   return (
     <div>
