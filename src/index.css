@@ -147,7 +147,7 @@ h6 {
 .lav-card {
   background: white;
   border: 1px solid #e3e6ef;
-  border-radius: 1.25rem;
+  border-radius: 0.5rem;
   box-shadow: 0 12px 32px rgba(19, 44, 145, 0.08);
 }
 

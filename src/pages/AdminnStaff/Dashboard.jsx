@@ -189,14 +189,14 @@ function Dashboard() {
           {/* Admin Dashboard Cards  */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 md:mt-6">
             {/* Sessions */}
-            <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+            <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
-                <p className="text-[#1f3b94] font-semibold">Sessions</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                <p className="text-blue-600 font-semibold">Sessions</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
                   <FaClipboardList />
                 </span>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {bookedAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
@@ -213,14 +213,14 @@ function Dashboard() {
             </div>
 
             {/* Evaluations */}
-            <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+            <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
-                <p className="text-[#1f3b94] font-semibold">Evaluations</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                <p className="text-blue-600 font-semibold">Evaluations</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
                   <FaCheckCircle />
                 </span>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {evaluationDone} / {evaluationTotal}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
@@ -237,14 +237,14 @@ function Dashboard() {
             </div>
 
             {/* Tutee Request */}
-            <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+            <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
-                <p className="text-[#1f3b94] font-semibold">Tutee Request</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                <p className="text-blue-600 font-semibold">Tutee Request</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
                   <FaUserPlus />
                 </span>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {tuteeRequests.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
@@ -261,14 +261,14 @@ function Dashboard() {
             </div>
 
             {/* Cancellations */}
-            <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+            <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
-                <p className="text-[#1f3b94] font-semibold">Cancellations</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94]">
+                <p className="text-blue-600 font-semibold">Cancellations</p>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
                   <FaTimesCircle />
                 </span>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-3">
+              <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {cancelledAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
