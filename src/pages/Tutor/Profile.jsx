@@ -29,7 +29,8 @@ const Profile = () => {
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [profileId, setProfileId] = useState(null);
   const [unavailableDays, setUnavailableDays] = useState([]);
-  const [newUnavailableDate, setNewUnavailableDate] = useState("");
+  const [newUnavailableStartDate, setNewUnavailableStartDate] = useState("");
+  const [newUnavailableEndDate, setNewUnavailableEndDate] = useState("");
   const [newUnavailableReason, setNewUnavailableReason] = useState("");
   const [loadingUnavailable, setLoadingUnavailable] = useState(false);
   const { run: runAction, busy: actionBusy } = useActionGuard();
@@ -93,6 +94,27 @@ const Profile = () => {
     }
 
     return true;
+  };
+
+  const normalizeDateValue = (value) => {
+    if (!value) return "";
+    const parsed = dayjs(value);
+    if (!parsed.isValid()) return "";
+    return parsed.format("YYYY-MM-DD");
+  };
+
+  const buildDateRange = (startValue, endValue) => {
+    const startDate = dayjs(startValue);
+    const endDate = dayjs(endValue || startValue);
+    if (!startDate.isValid() || !endDate.isValid()) return [];
+    if (endDate.isBefore(startDate, "day")) return [];
+    const dates = [];
+    let cursor = startDate;
+    while (cursor.isBefore(endDate, "day") || cursor.isSame(endDate, "day")) {
+      dates.push(cursor.format("YYYY-MM-DD"));
+      cursor = cursor.add(1, "day");
+    }
+    return dates;
   };
 
   const handleScheduleTimeSelect = (field, value) => {
@@ -393,20 +415,35 @@ const Profile = () => {
 
   const handleAddUnavailableDay = () => {
     runAction(async () => {
-      if (!newUnavailableDate) return;
+      if (!newUnavailableStartDate) return;
       const trimmedReason = newUnavailableReason.trim();
       if (!trimmedReason) {
         alert("Please provide a reason for this unavailable day.");
+        return;
+      }
+      const normalizedStartDate = normalizeDateValue(newUnavailableStartDate);
+      const normalizedEndDate = normalizeDateValue(newUnavailableEndDate);
+      if (!normalizedStartDate) {
+        alert("Please provide a valid start date.");
+        return;
+      }
+      if (normalizedEndDate && dayjs(normalizedEndDate).isBefore(normalizedStartDate, "day")) {
+        alert("End date must be the same as or after the start date.");
         return;
       }
       if (!profileId) {
         alert("Please save your profile first.");
         return;
       }
-      const exists = unavailableDays.some(
-        (entry) => entry.date === newUnavailableDate
+      const dateRange = buildDateRange(normalizedStartDate, normalizedEndDate);
+      if (dateRange.length === 0) {
+        alert("Please provide a valid date range.");
+        return;
+      }
+      const hasConflict = unavailableDays.some((entry) =>
+        dateRange.includes(entry.date)
       );
-      if (exists) {
+      if (hasConflict) {
         alert("That date is already marked as unavailable.");
         return;
       }
@@ -416,25 +453,40 @@ const Profile = () => {
       } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error } = await supabase.from("tutor_unavailable_days").insert([
-        {
-          profile_id: profileId,
-          date: newUnavailableDate,
-          reason: trimmedReason,
-        },
-      ]);
+      const payload = dateRange.map((date) => ({
+        profile_id: profileId,
+        date,
+        reason: trimmedReason,
+      }));
+
+      const { error } = await supabase.from("tutor_unavailable_days").insert(payload);
 
       if (error) throw error;
 
-      setNewUnavailableDate("");
+      setNewUnavailableStartDate("");
+      setNewUnavailableEndDate("");
       setNewUnavailableReason("");
-      await autoUpdateAppointmentsForUnavailableDay(
+      await autoUpdateAppointmentsForUnavailableRange(
         session.user.id,
-        newUnavailableDate,
+        dateRange,
         trimmedReason
       );
       getUnavailableDays();
     }, "Unable to add unavailable day.");
+  };
+
+  const autoUpdateAppointmentsForUnavailableRange = async (
+    tutorId,
+    dates,
+    reason
+  ) => {
+    for (const date of dates) {
+      await autoUpdateAppointmentsForUnavailableDay(
+        tutorId,
+        date,
+        reason
+      );
+    }
   };
 
   const autoUpdateAppointmentsForUnavailableDay = async (
@@ -761,7 +813,6 @@ const Profile = () => {
       }
 
       setProfile(form);
-      setShowEditModal(false);
 
       // Dispatch event to notify Header component to refresh profile
       window.dispatchEvent(new CustomEvent("profileUpdated"));
@@ -1009,29 +1060,42 @@ const Profile = () => {
             </h2>
           </div>
           <p className="text-xs text-gray-500 mb-4">
-            Mark whole days you are unavailable so tutees cannot book sessions.
+            Block dates so tutees cannot book within the selected range.
           </p>
-          <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center">
-            <input
-              type="date"
-              value={newUnavailableDate}
-              onChange={(e) => setNewUnavailableDate(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
-            />
-            <input
-              type="text"
-              value={newUnavailableReason}
-              onChange={(e) => setNewUnavailableReason(e.target.value)}
-              placeholder="Reason (required)"
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
-            />
-            <button
-              onClick={handleAddUnavailableDay}
-              disabled={actionBusy}
-              className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Add
-            </button>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                type="date"
+                value={newUnavailableStartDate}
+                onChange={(e) => setNewUnavailableStartDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
+              />
+              <input
+                type="date"
+                value={newUnavailableEndDate}
+                onChange={(e) => setNewUnavailableEndDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
+              />
+            </div>
+            <p className="text-xs text-gray-400">
+              Leave the end date empty to block a single day.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                type="text"
+                value={newUnavailableReason}
+                onChange={(e) => setNewUnavailableReason(e.target.value)}
+                placeholder="Reason (required)"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
+              />
+              <button
+                onClick={handleAddUnavailableDay}
+                disabled={actionBusy}
+                className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
+            </div>
           </div>
           {loadingUnavailable && (
             <div className="text-gray-500 text-sm">Loading dates...</div>

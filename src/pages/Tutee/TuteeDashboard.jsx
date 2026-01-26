@@ -59,14 +59,16 @@ const TuteeDashboard = () => {
       }
 
       // Check if user can switch to tutor (has tutor profile)
-      const { data: tutorProfile } = await supabase
+      const { data: tutorProfiles, error: tutorProfileError } = await supabase
         .from("profile")
         .select("profile_id")
         .eq("user_id", session.user.id)
-        .single();
+        .limit(1);
+
+      if (tutorProfileError) throw tutorProfileError;
 
       if (typeof window !== "undefined") {
-        const can = tutorProfile ? true : false;
+        const can = Boolean(tutorProfiles && tutorProfiles.length > 0);
         window.dispatchEvent(new CustomEvent("canSwitchUpdated", { detail: { value: can } }));
       }
     } catch (err) {
