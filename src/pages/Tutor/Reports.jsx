@@ -161,7 +161,7 @@ const Reports = () => {
 
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointment")
-        .select("appointment_id, tutor_id, date, start_time, end_time, number_of_tutees, status")
+        .select("appointment_id, tutor_id, date, created_at, start_time, end_time, number_of_tutees, status")
         .eq("tutor_id", session.user.id)
         .order("date", { ascending: false });
 
@@ -250,8 +250,9 @@ const Reports = () => {
 
   const appointmentsInPeriod = useMemo(() => {
     return appointments.filter((appointment) => {
-      if (!appointment.date) return false;
-      const date = normalizeDate(appointment.date);
+      const baseDate = appointment.date || appointment.created_at;
+      if (!baseDate) return false;
+      const date = normalizeDate(baseDate);
       if (!date) return false;
       return date >= rangeStart && date < rangeEnd;
     });

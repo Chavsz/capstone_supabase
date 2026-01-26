@@ -148,9 +148,11 @@ function Dashboard() {
   const cancelledSessionsToday = cancelledAppointments.filter(
     (a) => formatDate(a.date) === dateToday
   );
-  const evaluationsToday = evaluations.filter((e) => isSameDay(e.created_at));
-  const evaluationTotal = completedAppointments.length;
-  const evaluationDone = evaluations.length;
+  const evaluationsToday = completedAppointments.filter((a) => isSameDay(a.date));
+  const evaluationTotal = completedAppointments.length + appointments.filter(
+    (a) => String(a.status || "").toLowerCase() === "awaiting_feedback"
+  ).length;
+  const evaluationDone = completedAppointments.length;
   const evaluationRate = evaluationTotal
     ? (evaluationDone / evaluationTotal) * 100
     : 0;

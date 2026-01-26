@@ -43,7 +43,6 @@ const Reports = () => {
   const [landingImage, setLandingImage] = useState("");
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [rangeTouched, setRangeTouched] = useState(false);
   const { version, reportError, clearError } = useDataSync();
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
@@ -147,19 +146,6 @@ const Reports = () => {
       setAppointments(appointmentData || []);
       setEvaluations(evaluationData || []);
       setSchedules(scheduleEntries);
-      if (!rangeTouched) {
-        const dateValues = (appointmentData || [])
-          .map((appointment) => appointment.date)
-          .filter(Boolean)
-          .map((date) => normalizeDate(date))
-          .filter(Boolean);
-        if (dateValues.length > 0) {
-          const minDate = new Date(Math.min(...dateValues.map((date) => date.getTime())));
-          const maxDate = new Date(Math.max(...dateValues.map((date) => date.getTime())));
-          setRangeStart(minDate);
-          setRangeEnd(maxDate);
-        }
-      }
       clearError("admin-reports");
 
       const { data: landingData, error: landingError } = await supabase
@@ -253,7 +239,6 @@ const Reports = () => {
     end.setHours(0, 0, 0, 0);
     setRangeStart(start);
     setRangeEnd(end);
-    setRangeTouched(true);
   };
 
   const appointmentsById = useMemo(() => {
@@ -1273,7 +1258,6 @@ const Reports = () => {
                     if (rangeEnd && next > rangeEnd) {
                       setRangeEnd(next);
                     }
-                    setRangeTouched(true);
                   }}
                 />
               </label>
@@ -1292,7 +1276,6 @@ const Reports = () => {
                     if (rangeStart && next < rangeStart) {
                       setRangeStart(next);
                     }
-                    setRangeTouched(true);
                   }}
                 />
               </label>
