@@ -181,7 +181,6 @@ const EvaluationModal = ({
 
     try {
       await onEvaluate(appointment.appointment_id, evaluationData);
-      onClose();
     } catch (err) {
       setError("Failed to submit evaluation. Please try again.");
     } finally {
@@ -610,7 +609,6 @@ const AppointmentModal = ({
         reason: declineReason.trim(),
       });
       setDeclineReason("");
-      onClose();
     } catch (err) {
       setDeclineError(
         err?.message || "Unable to decline this appointment. Please try again."
@@ -1329,6 +1327,16 @@ const Schedules = () => {
   }, [getAppointments, fetchNotificationCount]);
 
   useEffect(() => {
+    if (!selectedAppointment) return;
+    const nextAppointment = appointments.find(
+      (item) => item.appointment_id === selectedAppointment.appointment_id
+    );
+    if (nextAppointment) {
+      setSelectedAppointment(nextAppointment);
+    }
+  }, [appointments, selectedAppointment]);
+
+  useEffect(() => {
     if (!currentUserId) return;
     const channel = supabase
       .channel(`tutee-appointments-${currentUserId}`)
@@ -1360,8 +1368,6 @@ const Schedules = () => {
 
       toast.success("Appointment updated successfully");
       await getAppointments();
-      setIsModalOpen(false);
-      setSelectedAppointment(null);
       return true;
     } catch (err) {
       console.error(err.message);
@@ -1390,8 +1396,6 @@ const Schedules = () => {
 
       toast.success("Appointment deleted");
       await getAppointments();
-      setIsModalOpen(false);
-      setSelectedAppointment(null);
       return true;
     } catch (err) {
       console.error(err.message);

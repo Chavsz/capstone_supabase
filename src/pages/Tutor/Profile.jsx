@@ -33,6 +33,7 @@ const Profile = () => {
   const [newUnavailableEndDate, setNewUnavailableEndDate] = useState("");
   const [newUnavailableReason, setNewUnavailableReason] = useState("");
   const [loadingUnavailable, setLoadingUnavailable] = useState(false);
+  const [showAllUnavailable, setShowAllUnavailable] = useState(false);
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const ALLOWED_TIME_BLOCKS = [
@@ -1104,34 +1105,45 @@ const Profile = () => {
             <div className="text-sm text-gray-400">No blocked days.</div>
           )}
           <div className="space-y-2">
-            {unavailableDays.map((entry) => (
-              <div
-                key={entry.unavailable_id}
-                className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 text-sm"
-              >
-                <div className="flex flex-col">
-                  <span>
-                    {new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                  {entry.reason && (
-                    <span className="text-xs text-gray-500">Reason: {entry.reason}</span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleRemoveUnavailableDay(entry)}
-                  disabled={actionBusy}
-                  className="text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Remove"
+            {(showAllUnavailable ? unavailableDays : unavailableDays.slice(0, 1)).map(
+              (entry) => (
+                <div
+                  key={entry.unavailable_id}
+                  className="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2 text-sm"
                 >
-                  <FaTrash size={12} />
-                </button>
-              </div>
-            ))}
+                  <div className="flex flex-col">
+                    <span>
+                      {new Date(`${entry.date}T00:00:00`).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                    {entry.reason && (
+                      <span className="text-xs text-gray-500">Reason: {entry.reason}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveUnavailableDay(entry)}
+                    disabled={actionBusy}
+                    className="text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove"
+                  >
+                    <FaTrash size={12} />
+                  </button>
+                </div>
+              )
+            )}
           </div>
+          {unavailableDays.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setShowAllUnavailable((prev) => !prev)}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 mt-2"
+            >
+              {showAllUnavailable ? "View less" : "View more"}
+            </button>
+          )}
         </div>
         </div>
 

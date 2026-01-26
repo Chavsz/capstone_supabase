@@ -173,6 +173,7 @@ const MyClasses = () => {
           start_time,
           end_time,
           mode_of_session,
+          session_location,
           number_of_tutees,
           resource_link,
           resource_note,
@@ -608,6 +609,12 @@ const MyClasses = () => {
                             </div>
                           </div>
                           <div>
+                            <div className="font-semibold text-[#1f3b94]">Location</div>
+                            <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
+                              {booking.session_location || "Not set yet"}
+                            </div>
+                          </div>
+                          <div>
                             <div className="font-semibold text-[#1f3b94]">Tutees</div>
                             <div className="mt-1 rounded-full bg-[#e7e3d9] px-2 py-1 text-[#20315f]">
                               {booking.number_of_tutees || 1}
@@ -794,6 +801,12 @@ const MyClasses = () => {
                     <div className="font-semibold text-[#1f3b94]">Mode</div>
                     <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
                       {hoveredAppointment.mode_of_session || "N/A"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#1f3b94]">Location</div>
+                    <div className="mt-1 rounded-full bg-[#e7e3d9] px-3 py-1 text-[#20315f]">
+                      {hoveredAppointment.session_location || "Not set yet"}
                     </div>
                   </div>
                   <div>

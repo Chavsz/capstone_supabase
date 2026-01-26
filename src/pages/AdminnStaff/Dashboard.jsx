@@ -192,9 +192,14 @@ function Dashboard() {
             <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
                 <p className="text-blue-600 font-semibold">Sessions</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
+                <button
+                  type="button"
+                  onClick={() => openLavRoomFocus("finished")}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600 hover:bg-[#f2f7ff] cursor-pointer"
+                  aria-label="View completed sessions"
+                >
                   <FaClipboardList />
-                </span>
+                </button>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {bookedAppointments.length}
@@ -216,9 +221,14 @@ function Dashboard() {
             <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
                 <p className="text-blue-600 font-semibold">Evaluations</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
+                <button
+                  type="button"
+                  onClick={() => openLavRoomFocus("completed")}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600 hover:bg-[#f2f7ff] cursor-pointer"
+                  aria-label="View evaluated sessions"
+                >
                   <FaCheckCircle />
-                </span>
+                </button>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {evaluationDone} / {evaluationTotal}
@@ -240,9 +250,14 @@ function Dashboard() {
             <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
                 <p className="text-blue-600 font-semibold">Tutee Request</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
+                <button
+                  type="button"
+                  onClick={() => openLavRoomFocus("pending")}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600 hover:bg-[#f2f7ff] cursor-pointer"
+                  aria-label="View pending requests"
+                >
                   <FaUserPlus />
-                </span>
+                </button>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {tuteeRequests.length}
@@ -264,9 +279,14 @@ function Dashboard() {
             <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
               <div className="flex items-center justify-between">
                 <p className="text-blue-600 font-semibold">Cancellations</p>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600">
+                <button
+                  type="button"
+                  onClick={() => openLavRoomFocus("cancelled")}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-blue-600 hover:bg-[#f2f7ff] cursor-pointer"
+                  aria-label="View cancelled sessions"
+                >
                   <FaTimesCircle />
-                </span>
+                </button>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
                 {cancelledAppointments.length}
