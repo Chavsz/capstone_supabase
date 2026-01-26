@@ -146,6 +146,7 @@ const Reports = () => {
       setAppointments(appointmentData || []);
       setEvaluations(evaluationData || []);
       setSchedules(scheduleEntries);
+      resetRangeToMonth();
       clearError("admin-reports");
 
       const { data: landingData, error: landingError } = await supabase

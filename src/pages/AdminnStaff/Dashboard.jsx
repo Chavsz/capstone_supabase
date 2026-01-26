@@ -104,9 +104,14 @@ function Dashboard() {
     (a) => a.status === "cancelled"
   );
 
-  //Total number of completed appointments
-  const completedAppointments = appointments.filter((a) =>
+  const finishedAppointments = appointments.filter((a) =>
     isFinishedStatus(a.status)
+  );
+  const awaitingFeedbackAppointments = appointments.filter(
+    (a) => String(a.status || "").toLowerCase() === "awaiting_feedback"
+  );
+  const completedAppointments = appointments.filter(
+    (a) => String(a.status || "").toLowerCase() === "completed"
   );
 
   const tuteeRequests = appointments.filter((a) => a.status);
@@ -139,7 +144,7 @@ function Dashboard() {
     });
   };
 
-  const completedSessionsToday = completedAppointments.filter(
+  const completedSessionsToday = finishedAppointments.filter(
     (a) => formatDate(a.date) === dateToday
   );
   const tuteeRequestsToday = tuteeRequests.filter((a) =>
@@ -149,9 +154,8 @@ function Dashboard() {
     (a) => formatDate(a.date) === dateToday
   );
   const evaluationsToday = completedAppointments.filter((a) => isSameDay(a.date));
-  const evaluationTotal = completedAppointments.length + appointments.filter(
-    (a) => String(a.status || "").toLowerCase() === "awaiting_feedback"
-  ).length;
+  const evaluationTotal =
+    completedAppointments.length + awaitingFeedbackAppointments.length;
   const evaluationDone = completedAppointments.length;
   const evaluationRate = evaluationTotal
     ? (evaluationDone / evaluationTotal) * 100
@@ -199,7 +203,7 @@ function Dashboard() {
                 </button>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-[#0d2c8c] mt-2">
-                {completedAppointments.length}
+                {finishedAppointments.length}
               </p>
               <div className="mt-3 border-b border-dotted border-[#8ea3ff]" />
               <button
