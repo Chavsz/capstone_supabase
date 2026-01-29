@@ -28,6 +28,7 @@ const MyLearningJourney = () => {
   const [loading, setLoading] = useState(true);
   const [tutors, setTutors] = useState([]);
   const [notesModal, setNotesModal] = useState(null);
+  const [sessionsModal, setSessionsModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutor");
   const [currentPage, setCurrentPage] = useState(1);
@@ -319,6 +320,16 @@ const MyLearningJourney = () => {
                       );
                     })()}
                   </div>
+
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSessionsModal(tutor)}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      View all sessions
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -384,6 +395,91 @@ const MyLearningJourney = () => {
               <button
                 type="button"
                 onClick={() => setNotesModal(null)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sessionsModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">All Sessions</h3>
+                <p className="text-xs text-gray-500">
+                  {sessionsModal.tutor_name} · {sessionsModal.tutor_subject}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSessionsModal(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close sessions"
+              >
+                x
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {sessionsModal.sessions.map((session) => {
+                const improvement = formatImprovement(
+                  session.pre_test_score,
+                  session.post_test_score
+                );
+                return (
+                  <div
+                    key={session.appointment_id}
+                    className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700"
+                  >
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{formatDate(session.date)}</span>
+                      <span>{session.start_time ? session.start_time.slice(0, 5) : ""}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800">
+                          {session.subject}
+                        </p>
+                        <p className="text-xs text-gray-500">{session.topic}</p>
+                      </div>
+                      <div className="text-right text-xs">
+                        <p>Pre: {session.pre_test_score ?? "-"}</p>
+                        <p>Post: {session.post_test_score ?? "-"}</p>
+                        <p
+                          className={`font-semibold ${
+                            improvement === null
+                              ? "text-gray-400"
+                              : improvement >= 0
+                                ? "text-green-600"
+                                : "text-orange-600"
+                          }`}
+                        >
+                          {improvement === null
+                            ? "-"
+                            : `${improvement >= 0 ? "↑" : "↓"} ${Math.abs(improvement).toFixed(1)}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setNotesModal({ ...session, tutor_name: sessionsModal.tutor_name })}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        View tutor notes
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSessionsModal(null)}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
               >
                 Close
