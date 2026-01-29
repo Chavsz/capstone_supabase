@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const Event = () => {
   const [formData, setFormData] = useState({
@@ -470,13 +471,15 @@ const Event = () => {
                   )}
               </div>
               <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0 mt-4">
-                <button
+                <LoadingButton
                   type="submit"
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText={editingEvent ? "Updating..." : "Adding..."}
                   className="flex-1 py-2 md:py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingEvent ? "Update Event" : "Add Event"}
-                </button>
+                </LoadingButton>
                 {editingEvent && (
                   <button
                     type="button"
@@ -587,13 +590,15 @@ const Event = () => {
                       >
                         Edit
                       </button>
-                      <button
+                      <LoadingButton
                         onClick={() => handleEventDelete(event.event_id)}
                         disabled={actionBusy}
+                        isLoading={actionBusy}
+                        loadingText="Deleting..."
                         className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Delete
-                      </button>
+                      </LoadingButton>
                     </div>
                   </div>
                 </article>

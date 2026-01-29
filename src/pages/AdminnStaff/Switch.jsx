@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const Switch = () => {
   const [loginPhoto, setLoginPhoto] = useState(null);
@@ -171,22 +172,26 @@ const Switch = () => {
                 )}
               </div>
               {canSwitchToTutor && (
-                <button
+                <LoadingButton
                   onClick={() => handleSwitchToRole("tutor")}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Switching..."
                   className="mt-6 w-full rounded-xl bg-[#f7d53a] text-gray-900 font-semibold py-2.5 shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Tutor
-                </button>
+                </LoadingButton>
               )}
               {canSwitchToStudent && (
-                <button
+                <LoadingButton
                   onClick={() => handleSwitchToRole("student")}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Switching..."
                   className="mt-3 w-full rounded-xl border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Switch to Student
-                </button>
+                </LoadingButton>
               )}
             </div>
           </div>

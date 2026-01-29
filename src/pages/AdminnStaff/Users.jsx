@@ -5,6 +5,7 @@ import { MdDelete, MdAdd, MdPersonRemove, MdAdminPanelSettings, MdMoreHoriz, MdC
 import { FaUserTie, FaChalkboardTeacher, FaUserAlt } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -594,44 +595,52 @@ const Users = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 {canPromoteSelected && (
-                  <button
+                  <LoadingButton
                     type="button"
                     onClick={bulkPromoteToTutor}
                     className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={selectedIds.size === 0 || actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Promoting..."
                   >
                     Promote to Tutor
-                  </button>
+                  </LoadingButton>
                 )}
                 {canDemoteSelected && (
-                  <button
+                  <LoadingButton
                     type="button"
                     onClick={bulkMoveToStudent}
                     className="px-3 py-1.5 text-xs rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={selectedIds.size === 0 || actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Moving..."
                   >
                     Move to Student
-                  </button>
+                  </LoadingButton>
                 )}
                 {isSuperAdmin && canAddAdminSelected && (
-                  <button
+                  <LoadingButton
                     type="button"
                     onClick={bulkAddAdmin}
                     className="px-3 py-1.5 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={selectedIds.size === 0 || actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Updating..."
                   >
                     Add as Admin
-                  </button>
+                  </LoadingButton>
                 )}
                 {isSuperAdmin && selectedIds.size > 0 && (
-                  <button
+                  <LoadingButton
                     type="button"
                     onClick={bulkDeleteUsers}
                     className="px-3 py-1.5 text-xs rounded-md bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={selectedIds.size === 0 || actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Deleting..."
                   >
                     Delete
-                  </button>
+                  </LoadingButton>
                 )}
               </div>
             </div>
@@ -784,53 +793,63 @@ const Users = () => {
 
             <div className="p-4 border-t border-gray-100 flex flex-wrap gap-2 justify-end">
               {normalizeRole(selectedUser.role) === "student" && (
-                <button
+                <LoadingButton
                   className="px-3 py-1.5 text-sm rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100"
                   onClick={() => handlePromoteToTutor(selectedUser)}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Promoting..."
                 >
                   Promote to Tutor
-                </button>
+                </LoadingButton>
               )}
               {normalizeRole(selectedUser.role) === "tutor" && (
-                <button
+                <LoadingButton
                   className="px-3 py-1.5 text-sm rounded-md bg-orange-50 text-orange-700 hover:bg-orange-100"
                   onClick={() => handleDemoteToStudent(selectedUser)}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Moving..."
                 >
                   Move to Student
-                </button>
+                </LoadingButton>
               )}
                 {isSuperAdmin && !selectedUser.is_admin && !selectedUser.is_superadmin && (
-                  <button
+                  <LoadingButton
                     className={`px-3 py-1.5 text-sm rounded-md ${
                       "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     } ${selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""}`}
                     onClick={() => handleUpdateAdminStatus(selectedUser, true)}
                     disabled={selectedUser.is_superadmin || actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Updating..."
                   >
                     Add as Admin
-                  </button>
+                  </LoadingButton>
                 )}
                 {isSuperAdmin && selectedUser.is_admin && !selectedUser.is_superadmin && (
-                  <button
+                  <LoadingButton
                     className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
                     onClick={() => handleUpdateAdminStatus(selectedUser, false)}
                     disabled={actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Updating..."
                   >
                     Remove as Admin
-                  </button>
+                  </LoadingButton>
                 )}
               {isSuperAdmin && (
-                <button
+                <LoadingButton
                   className={`px-3 py-1.5 text-sm rounded-md bg-red-50 text-red-700 hover:bg-red-100 ${
                     selectedUser.is_superadmin ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                   onClick={() => handleDeleteUser(selectedUser.user_id)}
                   disabled={selectedUser.is_superadmin || actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Deleting..."
                 >
                   Delete User
-                </button>
+                </LoadingButton>
               )}
             </div>
           </div>

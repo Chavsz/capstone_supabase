@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const Switch = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -307,13 +308,15 @@ const Switch = () => {
               </div>
               <div className="mt-6 flex flex-col gap-3">
                 {canSwitchTutor && currentViewRole !== "tutor" && (
-                  <button
+                  <LoadingButton
                     onClick={handleSwitchToTutor}
                     disabled={actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Switching..."
                     className="w-full rounded-lg border border-white/60 text-white/90 py-2 hover:bg-white/10 transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     Switch to Tutor
-                  </button>
+                  </LoadingButton>
                 )}
                 {canSwitchStudent && currentViewRole !== "student" && (
                   <button

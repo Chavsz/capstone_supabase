@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -369,22 +370,26 @@ const Header = () => {
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>{unreadCount} unread</span>
                   <div className="flex gap-2">
-                    <button
+                    <LoadingButton
                       type="button"
                       onClick={handleMarkAllClick}
                       className="text-blue-600 hover:text-blue-800 font-semibold disabled:opacity-50"
                       disabled={actionBusy}
+                      isLoading={actionBusy}
+                      loadingText="Working..."
                     >
                       Read All
-                    </button>
-                    <button
+                    </LoadingButton>
+                    <LoadingButton
                       type="button"
                       onClick={handleDeleteAllClick}
                       className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
                       disabled={actionBusy}
+                      isLoading={actionBusy}
+                      loadingText="Working..."
                     >
                       Delete All
-                    </button>
+                    </LoadingButton>
                   </div>
                 </div>
                 

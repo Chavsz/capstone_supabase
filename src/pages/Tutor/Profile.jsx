@@ -4,6 +4,7 @@ import { FaEdit, FaPlus, FaTrash, FaTimes, FaCalendarAlt } from "react-icons/fa"
 import dayjs from "dayjs";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
@@ -956,14 +957,16 @@ const Profile = () => {
                           {slot.start_time.slice(0, 5)} -{" "}
                           {slot.end_time.slice(0, 5)}
                         </span>
-                        <button
+                        <LoadingButton
                           onClick={() => handleDeleteTime(slot.schedule_id)}
                           disabled={actionBusy}
+                          isLoading={actionBusy}
+                          loadingText=""
                           className="text-[#c2c2c2] disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Delete"
                         >
                           <FaTrash size={12} />
-                        </button>
+                        </LoadingButton>
                       </div>
                     ))
                   ) : (
@@ -1015,14 +1018,16 @@ const Profile = () => {
                         ))}
                       </select>
                       <div className="flex items-center gap-3 pt-1 sm:pt-0">
-                        <button
+                        <LoadingButton
                           onClick={() => handleAddTime(day)}
                           disabled={actionBusy}
+                          isLoading={actionBusy}
+                          loadingText="Adding..."
                           className="text-green-600 hover:text-green-700 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Confirm"
                         >
                           Enter
-                        </button>
+                        </LoadingButton>
                         <button
                           onClick={() => {
                             setScheduleEditDay(null);
@@ -1089,13 +1094,15 @@ const Profile = () => {
                 placeholder="Reason (required)"
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full sm:flex-1"
               />
-              <button
+              <LoadingButton
                 onClick={handleAddUnavailableDay}
                 disabled={actionBusy}
+                isLoading={actionBusy}
+                loadingText="Adding..."
                 className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add
-              </button>
+              </LoadingButton>
             </div>
           </div>
           {loadingUnavailable && (
@@ -1122,14 +1129,16 @@ const Profile = () => {
                     <span className="text-xs text-gray-500">Reason: {entry.reason}</span>
                   )}
                 </div>
-                <button
+                <LoadingButton
                   onClick={() => handleRemoveUnavailableDay(entry)}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText=""
                   className="text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Remove"
                 >
                   <FaTrash size={12} />
-                </button>
+                </LoadingButton>
               </div>
             ))}
           </div>
@@ -1174,14 +1183,16 @@ const Profile = () => {
                           <span className="text-xs text-gray-500">Reason: {entry.reason}</span>
                         )}
                       </div>
-                      <button
+                      <LoadingButton
                         onClick={() => handleRemoveUnavailableDay(entry)}
                         disabled={actionBusy}
+                        isLoading={actionBusy}
+                        loadingText=""
                         className="text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Remove"
                       >
                         <FaTrash size={12} />
-                      </button>
+                      </LoadingButton>
                     </div>
                   ))}
                 </div>
@@ -1242,14 +1253,16 @@ const Profile = () => {
                         Upload a new profile picture
                       </p>
                       {form.profile_image && (
-                        <button
+                        <LoadingButton
                           onClick={handleRemoveImage}
                           disabled={actionBusy}
+                          isLoading={actionBusy}
+                          loadingText="Removing..."
                           className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaTrash size={12} />
                           <span>Remove</span>
-                        </button>
+                        </LoadingButton>
                       )}
                     </div>
                   </div>
@@ -1393,13 +1406,15 @@ const Profile = () => {
 
               {/* Save Button */}
               <div className="flex justify-end sm:justify-end">
-                <button
+                <LoadingButton
                   onClick={handleSave}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Saving..."
                   className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </div>

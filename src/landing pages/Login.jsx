@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../supabase-client";
 import { FcGoogle } from "react-icons/fc";
 import LAVLogo from "../assets/LAV_image.png";
+import LoadingButton from "../components/LoadingButton";
 
 const Login = ({ setAuth }) => {
   const [inputs, setInputs] = useState({
@@ -12,6 +13,8 @@ const Login = ({ setAuth }) => {
   const [message, setMessage] = useState("");
   const [loginPhoto, setLoginPhoto] = useState(null);
   const [sidebarLogo, setSidebarLogo] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const onChange = (e) => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
@@ -22,6 +25,8 @@ const Login = ({ setAuth }) => {
   const onSubmitForm = async (e) => {
     e.preventDefault();
     setMessage("");
+    if (isSubmitting || isGoogleLoading) return;
+    setIsSubmitting(true);
 
     try {
       const normalizedInput = email.trim().toLowerCase();
@@ -102,11 +107,15 @@ const Login = ({ setAuth }) => {
     } catch (err) {
       console.error(err.message);
       setMessage("Incorrect email or password");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     setMessage("");
+    if (isSubmitting || isGoogleLoading) return;
+    setIsGoogleLoading(true);
 
     try {
       // Get the current origin (works for both localhost and production)
@@ -132,6 +141,8 @@ const Login = ({ setAuth }) => {
       } else {
         setMessage("Unable to continue with Google right now. Please try again.");
       }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -227,14 +238,17 @@ const Login = ({ setAuth }) => {
           )}
 
           {/* Google Sign-In Button */}
-          <button
+          <LoadingButton
             type="button"
             onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+            isLoading={isGoogleLoading}
+            loadingText="Connecting..."
+            disabled={isSubmitting}
           >
             <FcGoogle className="w-5 h-5" />
             <span>Sign in with <strong>My.IIT</strong> Google</span>
-          </button>
+          </LoadingButton>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
@@ -279,12 +293,15 @@ const Login = ({ setAuth }) => {
             </div>
 
             {/* Log In Button */}
-            <button
+            <LoadingButton
               className="lav-btn lav-btn-primary w-full text-base"
               type="submit"
+              isLoading={isSubmitting}
+              loadingText="Signing in..."
+              disabled={isGoogleLoading}
             >
               Log in
-            </button>
+            </LoadingButton>
           </form>
 
           {/* Sign Up Link */}

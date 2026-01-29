@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase-client";
 import { FcGoogle } from "react-icons/fc";
 import LAVLogo from "../assets/LAV_image.png";
+import LoadingButton from "../components/LoadingButton";
 
 const Register = ({ setAuth }) => {
   const [inputs, setInputs] = useState({
@@ -14,6 +15,8 @@ const Register = ({ setAuth }) => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("error");
   const [loginPhoto, setLoginPhoto] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
   const { name, email, password, role } = inputs;
@@ -24,6 +27,7 @@ const Register = ({ setAuth }) => {
 
   const onSubmitForm = async (e) => {
     e.preventDefault();
+    if (isSubmitting || isGoogleLoading) return;
     
     // Validate email domain and format
     const allowedDomain = "@g.msuiit.edu.ph";
@@ -44,6 +48,7 @@ const Register = ({ setAuth }) => {
     }
     
     try {
+      setIsSubmitting(true);
       // Sign up with Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -105,12 +110,16 @@ const Register = ({ setAuth }) => {
         setMessage(err.message || "Registration failed. Please try again.");
         setMessageType("error");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
     setMessage("");
     setMessageType("error");
+    if (isSubmitting || isGoogleLoading) return;
+    setIsGoogleLoading(true);
 
     try {
       const redirectUrl = `${window.location.origin}/dashboard`;
@@ -135,6 +144,8 @@ const Register = ({ setAuth }) => {
       } else {
         setMessage("Unable to continue with Google right now. Please try again.");
       }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -224,14 +235,17 @@ const Register = ({ setAuth }) => {
           <p className="text-sm text-gray-500 mb-3">
             Sign up with your <strong>My.IIT</strong> Google account.
           </p>
-          <button
+          <LoadingButton
             type="button"
             onClick={handleGoogleSignUp}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+            isLoading={isGoogleLoading}
+            loadingText="Connecting..."
+            disabled={isSubmitting}
           >
             <FcGoogle className="w-5 h-5" />
             <span>Sign up with <strong>My.IIT</strong> Google</span>
-          </button>
+          </LoadingButton>
 
           <div className="flex items-center gap-3 my-6">
             <span className="flex-1 h-px bg-gray-200" />
@@ -292,12 +306,15 @@ const Register = ({ setAuth }) => {
             </div>
             
             {/* Sign Up Button */}
-            <button
+            <LoadingButton
               className="lav-btn lav-btn-primary w-full text-base"
               type="submit"
+              isLoading={isSubmitting}
+              loadingText="Signing up..."
+              disabled={isGoogleLoading}
             >
               Sign up
-            </button>
+            </LoadingButton>
           </form>
 
           {/* Login Link */}

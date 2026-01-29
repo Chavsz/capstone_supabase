@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
 import { useDataSync } from "../../contexts/DataSyncContext";
+import LoadingButton from "../../components/LoadingButton";
 
 const STATUS_META = {
   pending: { label: "Pending", badge: "bg-[#c9c7c9] text-[#323335]" },
@@ -240,13 +241,15 @@ const Lavroom = () => {
                 </div>
 
                 <div className="p-4 pt-0">
-                  <button
+                  <LoadingButton
                     onClick={() => handleDelete(appointment.appointment_id)}
                     disabled={actionBusy}
+                    isLoading={actionBusy}
+                    loadingText="Deleting..."
                     className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Delete Appointment
-                  </button>
+                  </LoadingButton>
                 </div>
               </article>
             );

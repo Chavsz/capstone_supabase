@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 //icons
 import { IoIosNotifications } from "react-icons/io";
@@ -607,17 +608,19 @@ const Header = () => {
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>{unreadCount} unread</span>
                   <div className="flex gap-2">
-                    <button
+                    <LoadingButton
                       type="button"
                       onClick={() =>
                         runAction(markAllAsRead, "Unable to mark all as read.")
                       }
                       className="text-[#4c4ba2] hover:text-[#323335] font-semibold disabled:opacity-50"
                       disabled={actionBusy || unreadCount === 0}
+                      isLoading={actionBusy}
+                      loadingText="Working..."
                     >
                       Read All
-                    </button>
-                    <button
+                    </LoadingButton>
+                    <LoadingButton
                       type="button"
                       onClick={() => {
                         if (!window.confirm("Delete all notifications?")) return;
@@ -625,9 +628,11 @@ const Header = () => {
                       }}
                       className="text-red-600 hover:text-red-700 font-semibold disabled:opacity-50"
                       disabled={actionBusy || notifications.length === 0}
+                      isLoading={actionBusy}
+                      loadingText="Working..."
                     >
                       Delete All
-                    </button>
+                    </LoadingButton>
                   </div>
                 </div>
 

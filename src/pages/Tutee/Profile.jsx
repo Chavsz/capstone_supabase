@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../supabase-client";
 import { FaEdit, FaTimes, FaTrash } from "react-icons/fa";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 const Profile = () => {
   const [name, setName] = useState("");
@@ -326,14 +327,16 @@ const Profile = () => {
                         Upload a new profile picture
                       </p>
                       {form.profile_image && (
-                        <button
+                        <LoadingButton
                           onClick={handleRemoveImage}
                           disabled={actionBusy}
+                          isLoading={actionBusy}
+                          loadingText="Removing..."
                           className="flex items-center gap-1 px-3 py-1 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <FaTrash size={12} />
                           <span>Remove</span>
-                        </button>
+                        </LoadingButton>
                       )}
                     </div>
                   </div>
@@ -428,13 +431,15 @@ const Profile = () => {
                 >
                   Cancel
                 </button>
-                <button
+                <LoadingButton
                   onClick={handleSave}
                   disabled={actionBusy}
+                  isLoading={actionBusy}
+                  loadingText="Saving..."
                   className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Save Changes
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </div>

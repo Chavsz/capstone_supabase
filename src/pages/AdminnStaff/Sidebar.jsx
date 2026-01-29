@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 import RouteSelect from "./RouteSelect";
 import useActionGuard from "../../hooks/useActionGuard";
+import LoadingButton from "../../components/LoadingButton";
 
 import * as fiIcons from "react-icons/fi";
 
@@ -238,13 +239,15 @@ const Sidebar = ({ setAuth, onClose }) => {
       {/* Logout Button - Always Visible at Bottom */}
       <div className="flex-shrink-0 mt-auto pt-2 mb-5 border-t border-gray-300">
         
-        <button
+        <LoadingButton
           className="flex items-center md:justify-start justify-center gap-2 w-full rounded px-2 py-1.5 md:text-sm text-1xl hover:bg-gray-200 text-[#696969] shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={(e) => logout(e)}
           disabled={actionBusy}
+          isLoading={actionBusy}
+          loadingText="Signing out..."
         >
           <fiIcons.FiLogOut /> <p className="text-md font-semibold">Log out</p>
-        </button>
+        </LoadingButton>
       </div>
     </div>
   );
