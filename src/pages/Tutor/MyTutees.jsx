@@ -16,12 +16,15 @@ const formatImprovement = (preScore, postScore) => {
 const MyTutees = () => {
   const { version } = useDataSync();
   const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState([]);
+  const [tutees, setTutees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [notesDrawer, setNotesDrawer] = useState(null);
+  const [sessionsModal, setSessionsModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutee");
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 4;
 
   const loadRows = async () => {
     setLoading(true);
@@ -52,6 +55,9 @@ const MyTutees = () => {
 
       const appointmentList = appointments || [];
       const appointmentIds = appointmentList.map((item) => item.appointment_id);
+      const tuteeIds = Array.from(
+        new Set(appointmentList.map((item) => item.user_id).filter(Boolean))
+      );
 
       let evaluationMap = {};
       if (appointmentIds.length) {
@@ -66,22 +72,57 @@ const MyTutees = () => {
         }, {});
       }
 
-      const merged = appointmentList.map((appointment) => {
+      let profileMap = {};
+      if (tuteeIds.length) {
+        const { data: profiles, error: profileError } = await supabase
+          .from("student_profile")
+          .select("user_id, program, college, year_level, profile_image")
+          .in("user_id", tuteeIds);
+        if (profileError && profileError.code !== "PGRST116") throw profileError;
+        profileMap = (profiles || []).reduce((acc, item) => {
+          acc[item.user_id] = item;
+          return acc;
+        }, {});
+      }
+
+      const grouped = new Map();
+      appointmentList.forEach((appointment) => {
         const evaluation = evaluationMap[appointment.appointment_id] || {};
-        return {
+        const tuteeId = appointment.user_id || "unknown";
+        if (!grouped.has(tuteeId)) {
+          const profile = profileMap[tuteeId] || {};
+          grouped.set(tuteeId, {
+            tutee_id: tuteeId,
+            tutee_name: appointment.student?.name || "Unknown",
+            tutee_program: profile.program || "Program not set",
+            tutee_profile_image: profile.profile_image || "",
+            sessions: [],
+          });
+        }
+        grouped.get(tuteeId).sessions.push({
           appointment_id: appointment.appointment_id,
           user_id: appointment.user_id,
           tutor_id: appointment.tutor_id,
-          student_name: appointment.student?.name || "Unknown",
           subject: appointment.subject || "-",
           topic: appointment.topic || "-",
+          date: appointment.date || "",
+          start_time: appointment.start_time || "",
+          end_time: appointment.end_time || "",
           pre_test_score: evaluation.pre_test_score ?? null,
           post_test_score: evaluation.post_test_score ?? null,
           tutor_notes: evaluation.tutor_notes ?? "",
-        };
+        });
       });
 
-      setRows(merged);
+      const result = Array.from(grouped.values()).map((tutee) => {
+        const sessions = [...tutee.sessions].sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+        const lastSession = sessions[sessions.length - 1] || null;
+        return { ...tutee, sessions, lastSession };
+      });
+
+      setTutees(result);
     } catch (err) {
       console.error("Error loading tutees:", err.message);
     } finally {
@@ -95,30 +136,51 @@ const MyTutees = () => {
 
   const filteredRows = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return rows;
-    return rows.filter((row) => {
-      const haystack = `${row.student_name} ${row.subject} ${row.topic} ${row.tutor_notes || ""}`.toLowerCase();
+    if (!normalized) return tutees;
+    return tutees.filter((tutee) => {
+      const sessionText = tutee.sessions
+        .map((session) => `${session.subject} ${session.topic} ${session.tutor_notes || ""}`)
+        .join(" ")
+        .toLowerCase();
+      const haystack = `${tutee.tutee_name} ${tutee.tutee_program} ${sessionText}`.toLowerCase();
       return haystack.includes(normalized);
     });
-  }, [rows, searchQuery]);
+  }, [tutees, searchQuery]);
 
   const sortedRows = useMemo(() => {
     const list = [...filteredRows];
     list.sort((a, b) => {
-      if (sortKey === "course") return a.subject.localeCompare(b.subject);
-      if (sortKey === "topic") return a.topic.localeCompare(b.topic);
+      if (sortKey === "course") return String(a.tutee_program).localeCompare(String(b.tutee_program));
       if (sortKey === "improvement") {
-        const aImp = formatImprovement(a.pre_test_score, a.post_test_score);
-        const bImp = formatImprovement(b.pre_test_score, b.post_test_score);
-        if (aImp == null && bImp == null) return 0;
-        if (aImp == null) return 1;
-        if (bImp == null) return -1;
-        return bImp - aImp;
+        const avg = (sessions) => {
+          const values = sessions
+            .map((session) => formatImprovement(session.pre_test_score, session.post_test_score))
+            .filter((value) => value !== null);
+          if (!values.length) return null;
+          return values.reduce((sum, value) => sum + value, 0) / values.length;
+        };
+        const aAvg = avg(a.sessions);
+        const bAvg = avg(b.sessions);
+        if (aAvg == null && bAvg == null) return 0;
+        if (aAvg == null) return 1;
+        if (bAvg == null) return -1;
+        return bAvg - aAvg;
       }
-      return a.student_name.localeCompare(b.student_name);
+      return a.tutee_name.localeCompare(b.tutee_name);
     });
     return list;
   }, [filteredRows, sortKey]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortKey]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / cardsPerPage));
+  const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
+  const pagedTutees = sortedRows.slice(
+    (currentPageSafe - 1) * cardsPerPage,
+    currentPageSafe * cardsPerPage
+  );
 
   const handleSaveScores = async (values) => {
     if (!selected) return;
@@ -186,7 +248,7 @@ const MyTutees = () => {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search tutee, course, topic, or notes"
+          placeholder="Search tutee, program, or session details"
           className="w-full sm:max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -197,8 +259,7 @@ const MyTutees = () => {
             className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
           >
             <option value="tutee">Tutee</option>
-            <option value="course">Course</option>
-            <option value="topic">Topic</option>
+            <option value="course">Program</option>
             <option value="improvement">Avg Improvement</option>
           </select>
         </div>
@@ -207,77 +268,150 @@ const MyTutees = () => {
       {loading ? (
         <div className="text-center text-gray-500">Loading tutees...</div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-[1.2fr_0.9fr_1fr_0.8fr_0.9fr_0.9fr_1.1fr_140px] gap-2 px-4 py-3 text-xs font-semibold uppercase text-gray-500 bg-gray-50">
-            <span>Tutee</span>
-            <span>Course</span>
-            <span>Topic</span>
-            <span>Pre Test</span>
-            <span>Post Test</span>
-            <span>Avg Improvement</span>
-            <span>Tutor Notes</span>
-            <span className="text-right">Actions</span>
-          </div>
-          {sortedRows.length === 0 ? (
-            <div className="px-4 py-10 text-center text-sm text-gray-500">
+        <div className="grid gap-4 md:grid-cols-2">
+          {pagedTutees.length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
               No tutees yet. End a session to add scores.
             </div>
           ) : (
-            sortedRows.map((row) => {
+            pagedTutees.map((tutee) => {
+              const session = tutee.lastSession;
+              if (!session) return null;
               const improvement = formatImprovement(
-                row.pre_test_score,
-                row.post_test_score
+                session.pre_test_score,
+                session.post_test_score
               );
               return (
                 <div
-                  key={row.appointment_id}
-                  className="grid grid-cols-[1.2fr_0.9fr_1fr_0.8fr_0.9fr_0.9fr_1.1fr_140px] gap-2 px-4 py-3 text-sm text-gray-700 border-t border-gray-100 items-center"
+                  key={tutee.tutee_id}
+                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                 >
-                  <span className="font-semibold text-gray-800">
-                    {row.student_name}
-                  </span>
-                  <span>{row.subject}</span>
-                  <span>{row.topic}</span>
-                  <span>{row.pre_test_score ?? "-"}</span>
-                  <span>{row.post_test_score ?? "-"}</span>
-                  <span
-                    className={`font-semibold ${
-                      improvement === null
-                        ? "text-gray-400"
-                        : improvement >= 0
-                          ? "text-green-600"
-                          : "text-orange-600"
-                    }`}
-                  >
-                    {improvement === null
-                      ? "-"
-                      : `${improvement >= 0 ? "↑" : "↓"} ${Math.abs(improvement).toFixed(1)}%`}
-                  </span>
-                  <span className="text-xs text-gray-500 line-clamp-2">
-                    {row.tutor_notes ? row.tutor_notes : "â€”"}
-                  </span>
-                  <div className="text-right flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                      {tutee.tutee_profile_image ? (
+                        <img
+                          src={tutee.tutee_profile_image}
+                          alt={tutee.tutee_name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-blue-700 font-bold">
+                          {(tutee.tutee_name || "T").charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-base font-semibold text-gray-800">
+                        {tutee.tutee_name}
+                      </h2>
+                      <p className="text-xs text-gray-500">{tutee.tutee_program}</p>
+                    </div>
+                    <div className="text-xs text-gray-500 text-right">
+                      <span className="text-sm font-semibold text-gray-800">
+                        {tutee.sessions.length}
+                      </span>{" "}
+                      sessions
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{session.date || "-"}</span>
+                      <span>{session.start_time ? session.start_time.slice(0, 5) : ""}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800">{session.subject}</p>
+                        <p className="text-xs text-gray-500">{session.topic}</p>
+                      </div>
+                      <div className="text-right text-xs">
+                        <p>Pre: {session.pre_test_score ?? "-"}</p>
+                        <p>Post: {session.post_test_score ?? "-"}</p>
+                        <p
+                          className={`font-semibold ${
+                            improvement === null
+                              ? "text-gray-400"
+                              : improvement >= 0
+                                ? "text-green-600"
+                                : "text-orange-600"
+                          }`}
+                        >
+                          {improvement === null
+                            ? "-"
+                            : `${improvement >= 0 ? "↑" : "↓"} ${Math.abs(improvement).toFixed(1)}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelected({
+                            ...session,
+                            student_name: tutee.tutee_name,
+                          })
+                        }
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        {session.pre_test_score == null && session.post_test_score == null
+                          ? "Add scores"
+                          : "Edit scores"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNotesDrawer({ ...session, student_name: tutee.tutee_name })}
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                      >
+                        View notes
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => setSelected(row)}
+                      onClick={() => setSessionsModal(tutee)}
                       className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                     >
-                      {row.pre_test_score == null && row.post_test_score == null
-                        ? "Add scores"
-                        : "Edit scores"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNotesDrawer(row)}
-                      className="text-[11px] font-semibold text-gray-500 hover:text-gray-700"
-                    >
-                      View notes
+                      View all sessions
                     </button>
                   </div>
                 </div>
               );
             })
           )}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+          <button
+            type="button"
+            className={`px-3 py-1 rounded border ${
+              currentPageSafe === 1
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+            }`}
+            disabled={currentPageSafe === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          >
+            Previous
+          </button>
+          <span className="text-xs text-gray-500">
+            Page {currentPageSafe} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={`px-3 py-1 rounded border ${
+              currentPageSafe === totalPages
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+            }`}
+            disabled={currentPageSafe === totalPages}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          >
+            Next
+          </button>
         </div>
       )}
 
@@ -308,16 +442,115 @@ const MyTutees = () => {
               className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
               aria-label="Close notes drawer"
             >
-              ×
+              x
             </button>
             <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
             <p className="mt-2 text-xs text-gray-500">
-              {notesDrawer.student_name} · {notesDrawer.subject} · {notesDrawer.topic}
+              {notesDrawer.student_name} - {notesDrawer.subject} - {notesDrawer.topic}
             </p>
             <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
               {notesDrawer.tutor_notes
                 ? notesDrawer.tutor_notes
                 : "No notes provided yet."}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sessionsModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">All Sessions</h3>
+                <p className="text-xs text-gray-500">
+                  {sessionsModal.tutee_name} - {sessionsModal.tutee_program}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSessionsModal(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close sessions"
+              >
+                x
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {sessionsModal.sessions.map((session) => {
+                const improvement = formatImprovement(
+                  session.pre_test_score,
+                  session.post_test_score
+                );
+                return (
+                  <div
+                    key={session.appointment_id}
+                    className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700"
+                  >
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{session.date || "-"}</span>
+                      <span>{session.start_time ? session.start_time.slice(0, 5) : ""}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800">{session.subject}</p>
+                        <p className="text-xs text-gray-500">{session.topic}</p>
+                      </div>
+                      <div className="text-right text-xs">
+                        <p>Pre: {session.pre_test_score ?? "-"}</p>
+                        <p>Post: {session.post_test_score ?? "-"}</p>
+                        <p
+                          className={`font-semibold ${
+                            improvement === null
+                              ? "text-gray-400"
+                              : improvement >= 0
+                                ? "text-green-600"
+                                : "text-orange-600"
+                          }`}
+                        >
+                          {improvement === null
+                            ? "-"
+                            : `${improvement >= 0 ? "↑" : "↓"} ${Math.abs(improvement).toFixed(1)}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelected({
+                            ...session,
+                            student_name: sessionsModal.tutee_name,
+                          })
+                        }
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        {session.pre_test_score == null && session.post_test_score == null
+                          ? "Add scores"
+                          : "Edit scores"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setNotesDrawer({ ...session, student_name: sessionsModal.tutee_name })
+                        }
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                      >
+                        View notes
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSessionsModal(null)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
