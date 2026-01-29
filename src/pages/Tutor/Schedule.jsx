@@ -4,6 +4,7 @@ import { supabase } from "../../supabase-client";
 import { toast } from "react-hot-toast";
 import { capitalizeWords } from "../../utils/text";
 import useActionGuard from "../../hooks/useActionGuard";
+import AssessmentModal from "../../components/AssessmentModal";
 
 const FINISHED_STATUSES = ["awaiting_feedback", "completed"];
 const STATUS_META = {
@@ -80,6 +81,7 @@ const AppointmentModal = ({
   onLocationUpdate,
   feedbacks,
   isBusy,
+  onEndSession,
 }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -465,8 +467,9 @@ const AppointmentModal = ({
           {appointment.status === "started" && (
             <button
               onClick={() => {
-                onStatusUpdate(appointment.appointment_id, "awaiting_feedback");
-                onClose();
+                if (onEndSession) {
+                  onEndSession(appointment);
+                }
               }}
               className="bg-[#16a34a] text-white rounded-md px-4 py-2 text-sm hover:bg-[#166534] w-full disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isBusy}
@@ -542,6 +545,8 @@ const Schedule = () => {
   const [appointmentPages, setAppointmentPages] = useState({});
   const [handledNotificationId, setHandledNotificationId] = useState(null);
   const [pendingFocus, setPendingFocus] = useState(null);
+  const [assessmentAppointment, setAssessmentAppointment] = useState(null);
+  const [isAssessmentSaving, setIsAssessmentSaving] = useState(false);
   const { run: runAction, busy: actionBusy } = useActionGuard();
   const autoEndTimersRef = useRef(new Map());
   const autoWarnTimersRef = useRef(new Map());
@@ -788,6 +793,64 @@ const Schedule = () => {
       "Unable to update session location.",
       { rethrow: true }
     );
+
+  const openAssessmentModal = (appointment) => {
+    if (!appointment) return;
+    setAssessmentAppointment(appointment);
+  };
+
+  const closeAssessmentModal = () => {
+    setAssessmentAppointment(null);
+  };
+
+  const saveAssessmentScores = async (appointment, values) => {
+    if (!appointment) return;
+    setIsAssessmentSaving(true);
+    try {
+      const { data: existing, error: existingError } = await supabase
+        .from("evaluation")
+        .select("evaluation_id")
+        .eq("appointment_id", appointment.appointment_id)
+        .maybeSingle();
+
+      if (existingError && existingError.code !== "PGRST116") {
+        throw existingError;
+      }
+
+      const payload = {
+        pre_test_score: values.preScore,
+        post_test_score: values.postScore,
+        tutor_notes: values.notes,
+      };
+
+      if (existing?.evaluation_id) {
+        const { error: updateError } = await supabase
+          .from("evaluation")
+          .update(payload)
+          .eq("evaluation_id", existing.evaluation_id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase.from("evaluation").insert([
+          {
+            appointment_id: appointment.appointment_id,
+            tutor_id: appointment.tutor_id,
+            user_id: appointment.user_id,
+            ...payload,
+          },
+        ]);
+        if (insertError) throw insertError;
+      }
+
+      await guardedStatusUpdate(appointment.appointment_id, "awaiting_feedback");
+      toast.success("Scores submitted.");
+      closeAssessmentModal();
+    } catch (err) {
+      console.error(err.message);
+      toast.error("Unable to submit scores.");
+    } finally {
+      setIsAssessmentSaving(false);
+    }
+  };
 
   const getManilaEndAt = (dateValue, timeValue) => {
     if (!dateValue || !timeValue) return null;
@@ -1292,6 +1355,32 @@ const Schedule = () => {
         onStatusUpdate={guardedStatusUpdate}
         onLocationUpdate={guardedLocationUpdate}
         isBusy={actionBusy}
+        onEndSession={(appointment) => {
+          closeModal();
+          openAssessmentModal(appointment);
+        }}
+      />
+
+      <AssessmentModal
+        isOpen={Boolean(assessmentAppointment)}
+        appointment={assessmentAppointment}
+        isBusy={isAssessmentSaving}
+        defaultValues={{
+          preScore: "",
+          postScore: "",
+          notes: "",
+        }}
+        onClose={closeAssessmentModal}
+        onLater={async () => {
+          if (!assessmentAppointment) return;
+          await guardedStatusUpdate(
+            assessmentAppointment.appointment_id,
+            "awaiting_feedback"
+          );
+          toast.success("Session ended. Scores can be added later.");
+          closeAssessmentModal();
+        }}
+        onSubmit={(values) => saveAssessmentScores(assessmentAppointment, values)}
       />
     </div>
   );

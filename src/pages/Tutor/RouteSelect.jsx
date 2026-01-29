@@ -32,6 +32,12 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/my-tutees"
+        Icon={mdIcons.MdPeopleAlt}
+        title="My Tutees"
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/reports"
         Icon={fiIcons.FiBarChart2}
         title="Reports"

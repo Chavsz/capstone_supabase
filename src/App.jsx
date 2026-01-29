@@ -21,6 +21,7 @@ import TuteeSchedules from "./pages/Tutee/Schedules";
 import TuteeAppointment from "./pages/Tutee/Appointment";
 import TuteeMyClasses from "./pages/Tutee/MyClasses";
 import TuteeSwitch from "./pages/Tutee/Switch";
+import TuteeMyLearningJourney from "./pages/Tutee/MyLearningJourney";
 
 // Tutor Pages
 import TutorDashboard from "./pages/Tutor/TutorDashboard";
@@ -30,6 +31,7 @@ import TutorSwitch from "./pages/Tutor/Switch";
 import TutorComments from "./pages/Tutor/Comments";
 import TutorReports from "./pages/Tutor/Reports";
 import TutorMyClasses from "./pages/Tutor/MyClasses";
+import TutorMyTutees from "./pages/Tutor/MyTutees";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminnStaff/Dashboard";
@@ -209,6 +211,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
           }
         />
         <Route
+          path="my-learning-journey"
+          element={
+            <RoleRoute
+              allowedRoles={["student"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TuteeMyLearningJourney />}
+            />
+          }
+        />
+        <Route
           path="switch"
           element={
             <RoleRoute
@@ -242,6 +255,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<TutorMyClasses />}
+            />
+          }
+        />
+        <Route
+          path="my-tutees"
+          element={
+            <RoleRoute
+              allowedRoles={["tutor"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<TutorMyTutees />}
             />
           }
         />

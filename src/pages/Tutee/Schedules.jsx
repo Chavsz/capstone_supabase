@@ -1750,6 +1750,15 @@ const Schedules = () => {
       await getAppointments(); // Refresh appointments
     } catch (err) {
       console.error(err.message);
+      const message = String(err?.message || "").toLowerCase();
+      const isDuplicate =
+        err?.code === "23505" ||
+        message.includes("duplicate") ||
+        message.includes("already exists");
+      if (isDuplicate) {
+        toast("You already submitted this evaluation.");
+        return;
+      }
       toast.error("Error submitting evaluation");
       throw err;
     }
