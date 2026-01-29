@@ -28,6 +28,7 @@ const SessionAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
+  const [detailOrder, setDetailOrder] = useState("first");
 
   const loadData = async () => {
     setLoading(true);
@@ -113,12 +114,15 @@ const SessionAnalytics = () => {
 
   const chartData = useMemo(() => {
     if (!selectedTutor) return [];
-    return selectedTutor.sessions.map((session, index) => ({
+    const sessions = detailOrder === "last"
+      ? [...selectedTutor.sessions].slice().reverse()
+      : selectedTutor.sessions;
+    return sessions.map((session, index) => ({
       name: `Session ${index + 1}`,
       pre: Number(session.pre_test_score) || 0,
       post: Number(session.post_test_score) || 0,
     }));
-  }, [selectedTutor]);
+  }, [selectedTutor, detailOrder]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -175,7 +179,10 @@ const SessionAnalytics = () => {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setSelectedTutor(row)}
+                        onClick={() => {
+                          setSelectedTutor(row);
+                          setDetailOrder("first");
+                        }}
                         className="text-xs font-semibold px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700"
                       >
                         View Details
@@ -188,32 +195,71 @@ const SessionAnalytics = () => {
           </div>
 
           {selectedTutor && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
-              <h2 className="text-sm font-semibold text-gray-700 mb-4">
-                ADMIN: DETAILED IMPACT ANALYSIS
-              </h2>
-              <p className="text-xs text-gray-500 mb-3">
-                {selectedTutor.tutor_name}: Pre vs. Post Comparison
-              </p>
-              {chartData.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  No sessions available for this tutor.
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+              <div className="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700">
+                      ADMIN: DETAILED IMPACT ANALYSIS
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      {selectedTutor.tutor_name}: Pre vs. Post Comparison
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTutor(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close details"
+                  >
+                    ×
+                  </button>
                 </div>
-              ) : (
-                <div className="h-[260px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
-                      <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                    </BarChart>
-                  </ResponsiveContainer>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Order</span>
+                  <select
+                    value={detailOrder}
+                    onChange={(e) => setDetailOrder(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                  >
+                    <option value="first">First → Last</option>
+                    <option value="last">Last → First</option>
+                  </select>
                 </div>
-              )}
+
+                <div className="mt-4">
+                  {chartData.length === 0 ? (
+                    <div className="text-sm text-gray-500">
+                      No sessions available for this tutor.
+                    </div>
+                  ) : (
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
+                          <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTutor(null)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
