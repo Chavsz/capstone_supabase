@@ -30,7 +30,8 @@ const MyLearningJourney = () => {
   const [notesModal, setNotesModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutor");
-  const [expandedTutors, setExpandedTutors] = useState(() => new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 4;
 
   const loadRows = async () => {
     setLoading(true);
@@ -123,7 +124,8 @@ const MyLearningJourney = () => {
         const sessions = [...tutor.sessions].sort((a, b) =>
           String(a.date).localeCompare(String(b.date))
         );
-        return { ...tutor, sessions };
+        const lastSession = sessions[sessions.length - 1] || null;
+        return { ...tutor, sessions, lastSession };
       });
 
       setTutors(result);
@@ -151,6 +153,10 @@ const MyLearningJourney = () => {
     });
   }, [tutors, searchQuery]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortKey]);
+
   const sortedTutors = useMemo(() => {
     const list = [...filteredTutors];
     list.sort((a, b) => {
@@ -174,13 +180,13 @@ const MyLearningJourney = () => {
     });
     return list;
   }, [filteredTutors, sortKey]);
-
-  const visibleSessions = (sessions, expanded) => {
-    if (sessions.length <= 4 || expanded) return sessions;
-    const firstTwo = sessions.slice(0, 2);
-    const lastTwo = sessions.slice(-2);
-    return [...firstTwo, ...lastTwo];
-  };
+  
+  const totalPages = Math.max(1, Math.ceil(sortedTutors.length / cardsPerPage));
+  const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
+  const pagedTutors = sortedTutors.slice(
+    (currentPageSafe - 1) * cardsPerPage,
+    currentPageSafe * cardsPerPage
+  );
 
   return (
     <div className="min-h-screen px-6 py-4">
@@ -217,14 +223,14 @@ const MyLearningJourney = () => {
         <div className="text-center text-gray-500">Loading journey...</div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {sortedTutors.length === 0 ? (
+          {pagedTutors.length === 0 ? (
             <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
               No records yet.
             </div>
           ) : (
-            sortedTutors.map((tutor) => {
-              const expanded = expandedTutors.has(tutor.tutor_id);
-              const sessions = visibleSessions(tutor.sessions, expanded);
+            pagedTutors.map((tutor) => {
+              const session = tutor.lastSession;
+              if (!session) return null;
               return (
                 <div
                   key={tutor.tutor_id}
@@ -263,17 +269,14 @@ const MyLearningJourney = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-2">
-                    {sessions.map((session) => {
+                  <div className="mt-4">
+                    {(() => {
                       const improvement = formatImprovement(
                         session.pre_test_score,
                         session.post_test_score
                       );
                       return (
-                        <div
-                          key={session.appointment_id}
-                          className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700"
-                        >
+                        <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
                           <div className="flex items-center justify-between text-xs text-gray-500">
                             <span>{formatDate(session.date)}</span>
                             <span>{session.start_time ? session.start_time.slice(0, 5) : ""}</span>
@@ -314,32 +317,44 @@ const MyLearningJourney = () => {
                           </div>
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
-
-                  {tutor.sessions.length > 4 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setExpandedTutors((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(tutor.tutor_id)) {
-                            next.delete(tutor.tutor_id);
-                          } else {
-                            next.add(tutor.tutor_id);
-                          }
-                          return next;
-                        });
-                      }}
-                      className="mt-3 text-xs font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                      {expanded ? "View less" : "View more"}
-                    </button>
-                  )}
                 </div>
               );
             })
           )}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+          <button
+            type="button"
+            className={`px-3 py-1 rounded border ${
+              currentPageSafe === 1
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+            }`}
+            disabled={currentPageSafe === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          >
+            Previous
+          </button>
+          <span className="text-xs text-gray-500">
+            Page {currentPageSafe} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={`px-3 py-1 rounded border ${
+              currentPageSafe === totalPages
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+            }`}
+            disabled={currentPageSafe === totalPages}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          >
+            Next
+          </button>
         </div>
       )}
 
