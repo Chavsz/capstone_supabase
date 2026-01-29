@@ -181,7 +181,6 @@ const EvaluationModal = ({
 
     try {
       await onEvaluate(appointment.appointment_id, evaluationData);
-      onClose();
     } catch (err) {
       setError("Failed to submit evaluation. Please try again.");
     } finally {
@@ -435,6 +434,14 @@ const AppointmentModal = ({
     return hours * 60 + minutes;
   };
 
+  const getUnavailableMatch = (entries, targetDate) => {
+    if (!targetDate) return null;
+    return (entries || []).find((entry) => {
+      if (entry.date !== targetDate) return false;
+      return true;
+    });
+  };
+
   const getDayName = (dateString) => {
     if (!dateString) return null;
     const date = new Date(`${dateString}T00:00:00`);
@@ -602,7 +609,6 @@ const AppointmentModal = ({
         reason: declineReason.trim(),
       });
       setDeclineReason("");
-      onClose();
     } catch (err) {
       setDeclineError(
         err?.message || "Unable to decline this appointment. Please try again."
@@ -642,9 +648,7 @@ const AppointmentModal = ({
     }
 
     const unavailableEntries = tutorUnavailableDays[appointment.tutor_id] || [];
-    const unavailableEntry = unavailableEntries.find(
-      (entry) => entry.date === formData.date
-    );
+    const unavailableEntry = getUnavailableMatch(unavailableEntries, formData.date);
     if (unavailableEntry) {
       setError(
         unavailableEntry.reason
@@ -858,7 +862,7 @@ const AppointmentModal = ({
                   </LocalizationProvider>
                 ) : (
                   <span className="text-gray-900">
-                    {formatDateTime(appointment.date)}
+                    {appointment.date ? formatDate(appointment.date) : "--"}
                   </span>
                 )}
               </div>
@@ -879,7 +883,7 @@ const AppointmentModal = ({
                   </div>
                 ) : (
                   <span className="text-gray-900">
-                    {formatDateTime(appointment.date)}
+                    {appointment.start_time ? formatTime(appointment.start_time) : "--"}
                   </span>
                 )}
               </div>
@@ -1323,6 +1327,16 @@ const Schedules = () => {
   }, [getAppointments, fetchNotificationCount]);
 
   useEffect(() => {
+    if (!selectedAppointment) return;
+    const nextAppointment = appointments.find(
+      (item) => item.appointment_id === selectedAppointment.appointment_id
+    );
+    if (nextAppointment) {
+      setSelectedAppointment(nextAppointment);
+    }
+  }, [appointments, selectedAppointment]);
+
+  useEffect(() => {
     if (!currentUserId) return;
     const channel = supabase
       .channel(`tutee-appointments-${currentUserId}`)
@@ -1354,8 +1368,6 @@ const Schedules = () => {
 
       toast.success("Appointment updated successfully");
       await getAppointments();
-      setIsModalOpen(false);
-      setSelectedAppointment(null);
       return true;
     } catch (err) {
       console.error(err.message);
@@ -1384,8 +1396,6 @@ const Schedules = () => {
 
       toast.success("Appointment deleted");
       await getAppointments();
-      setIsModalOpen(false);
-      setSelectedAppointment(null);
       return true;
     } catch (err) {
       console.error(err.message);

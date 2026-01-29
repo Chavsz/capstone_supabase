@@ -194,7 +194,24 @@ const Event = () => {
             event.event_id === editingEvent.event_id ? data : event
           )
         );
-        setEditingEvent(null);
+        setEditingEvent(data);
+        setFormData({
+          event_title: data.event_title || "",
+          event_description: data.event_description || "",
+          event_start_time: (data.event_start_time || "").substring(0, 5),
+          event_start_date: data.event_start_date
+            ? new Date(data.event_start_date).toISOString().split("T")[0]
+            : "",
+          event_end_time: (data.event_end_time || "").substring(0, 5),
+          event_end_date: data.event_end_date
+            ? new Date(data.event_end_date).toISOString().split("T")[0]
+            : "",
+          event_location: data.event_location || "",
+          event_image: null,
+        });
+        const imageInput = document.getElementById("eventImageInput");
+        if (imageInput) imageInput.value = "";
+        await fetchEvents();
         toast.success("Event updated successfully.");
       } else {
         if (!imageUrl) {
@@ -224,19 +241,23 @@ const Event = () => {
 
         setEvents([...events, data]);
         toast.success("Event added successfully.");
+        await fetchEvents();
       }
 
-      setFormData({
-        event_title: "",
-        event_description: "",
-        event_start_time: "",
-        event_start_date: "",
-        event_end_time: "",
-        event_end_date: "",
-        event_location: "",
-        event_image: null,
-      });
-      document.getElementById("eventImageInput").value = "";
+      if (!editingEvent) {
+        setFormData({
+          event_title: "",
+          event_description: "",
+          event_start_time: "",
+          event_start_date: "",
+          event_end_time: "",
+          event_end_date: "",
+          event_location: "",
+          event_image: null,
+        });
+        const imageInput = document.getElementById("eventImageInput");
+        if (imageInput) imageInput.value = "";
+      }
       } catch (error) {
         console.error("Error submitting event:", error);
         toast.error(`Failed to submit event: ${error.message}`);

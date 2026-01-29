@@ -73,6 +73,7 @@ const Reports = () => {
   const [userId, setUserId] = useState(null);
   const { version, reportError, clearError } = useDataSync();
   const [showRangePicker, setShowRangePicker] = useState(false);
+  const [rangeTouched, setRangeTouched] = useState(false);
   const [rangeStart, setRangeStart] = useState(() => {
     const start = new Date();
     start.setDate(1);
@@ -120,6 +121,7 @@ const Reports = () => {
     end.setHours(0, 0, 0, 0);
     setRangeStart(start);
     setRangeEnd(end);
+    setRangeTouched(true);
   };
 
   const fetchReportsData = useCallback(async (shouldUpdate) => {
@@ -159,7 +161,7 @@ const Reports = () => {
 
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointment")
-        .select("appointment_id, tutor_id, date, start_time, end_time, number_of_tutees, status")
+        .select("appointment_id, tutor_id, date, created_at, start_time, end_time, number_of_tutees, status")
         .eq("tutor_id", session.user.id)
         .order("date", { ascending: false });
 
@@ -168,6 +170,21 @@ const Reports = () => {
       if (!shouldUpdate()) return;
       setEvaluations(data || []);
       setAppointments(appointmentData || []);
+      if (!rangeTouched) {
+        const dateValues = (appointmentData || [])
+          .map((appointment) => appointment.date)
+          .filter(Boolean)
+          .map((date) => normalizeDate(date))
+          .filter(Boolean);
+        if (dateValues.length > 0) {
+          const minDate = new Date(Math.min(...dateValues.map((date) => date.getTime())));
+          const maxDate = new Date(Math.max(...dateValues.map((date) => date.getTime())));
+          const nextEnd = new Date(maxDate);
+          nextEnd.setDate(nextEnd.getDate() + 1);
+          setRangeStart(minDate);
+          setRangeEnd(nextEnd);
+        }
+      }
       clearError("tutor-reports");
     } catch (err) {
       console.error("Unable to load reports:", err.message);
@@ -233,8 +250,9 @@ const Reports = () => {
 
   const appointmentsInPeriod = useMemo(() => {
     return appointments.filter((appointment) => {
-      if (!appointment.date) return false;
-      const date = normalizeDate(appointment.date);
+      const baseDate = appointment.date || appointment.created_at;
+      if (!baseDate) return false;
+      const date = normalizeDate(baseDate);
       if (!date) return false;
       return date >= rangeStart && date < rangeEnd;
     });
@@ -308,6 +326,7 @@ const Reports = () => {
                           nextStart.setHours(0, 0, 0, 0);
                           if (nextStart < rangeEnd) {
                             setRangeStart(nextStart);
+                            setRangeTouched(true);
                           }
                         }}
                       />
@@ -325,6 +344,7 @@ const Reports = () => {
                           nextEnd.setHours(0, 0, 0, 0);
                           if (nextEnd > rangeStart) {
                             setRangeEnd(nextEnd);
+                            setRangeTouched(true);
                           }
                         }}
                       />

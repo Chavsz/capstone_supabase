@@ -501,6 +501,19 @@ const Appointment = () => {
     return hours * 60 + minutes;
   };
 
+  const formatTimeLabel = (timeValue) => {
+    if (!timeValue) return "";
+    return dayjs(`2000-01-01T${timeValue}`).format("h:mm A");
+  };
+
+  const getUnavailableMatch = (entries, targetDate) => {
+    if (!targetDate) return null;
+    return (entries || []).find((entry) => {
+      if (entry.date !== targetDate) return false;
+      return true;
+    });
+  };
+
   const getAvailabilityForTutor = useCallback(
     (tutorId) => {
       const startMinutes = getMinutesFromStored(formData.start_time);
@@ -516,14 +529,12 @@ const Appointment = () => {
 
       if (!hasSlot) return { available: false, label: "Select date & time" };
       const unavailableEntries = tutorUnavailableDays[tutorId] || [];
-      const unavailableEntry = unavailableEntries.find(
-        (entry) => entry.date === formData.date
-      );
+      const unavailableEntry = getUnavailableMatch(unavailableEntries, formData.date);
       if (hasDate && unavailableEntry) {
         return {
           available: false,
           label: unavailableEntry.reason
-            ? `Not available: ${unavailableEntry.reason}`
+            ? `Not available on selected date. Reason: ${unavailableEntry.reason}`
             : "Not available on selected date",
         };
       }
@@ -540,7 +551,14 @@ const Appointment = () => {
       const schedules = tutorSchedules[tutorId] || [];
       const daySchedules = schedules.filter((s) => s.day === dayName);
       if (daySchedules.length === 0) {
-        return { available: false, label: `Not available on ${dayName}` };
+        const timeLabel =
+          formData.start_time && formData.end_time
+            ? `${formatTimeLabel(formData.start_time)} - ${formatTimeLabel(formData.end_time)}`
+            : "the selected time";
+        return {
+          available: false,
+          label: `Not available on ${dayName} for ${timeLabel}`,
+        };
       }
 
       const match = daySchedules.some((s) => {
@@ -553,7 +571,11 @@ const Appointment = () => {
       if (match) {
         return { available: true, label: "Available now" };
       }
-      return { available: false, label: "Not available at selected time" };
+      const timeLabel =
+        formData.start_time && formData.end_time
+          ? `${formatTimeLabel(formData.start_time)} - ${formatTimeLabel(formData.end_time)}`
+          : "the selected time";
+      return { available: false, label: `Not available for ${timeLabel}` };
     },
     [
       appointmentsForDate,
@@ -655,9 +677,7 @@ const Appointment = () => {
     });
 
     const unavailableEntries = tutorUnavailableDays[selectedTutor.user_id] || [];
-    const unavailableEntry = unavailableEntries.find(
-      (entry) => entry.date === formData.date
-    );
+    const unavailableEntry = getUnavailableMatch(unavailableEntries, formData.date);
     if (unavailableEntry) {
       return {
         valid: false,
@@ -672,9 +692,13 @@ const Appointment = () => {
     );
 
     if (daySchedules.length === 0) {
+      const timeLabel =
+        formData.start_time && formData.end_time
+          ? `${formatTimeLabel(formData.start_time)} - ${formatTimeLabel(formData.end_time)}`
+          : "the selected time";
       return {
         valid: false,
-        message: `Tutor is not available on ${dayName}. Please choose another date.`,
+        message: `Tutor is not available on ${dayName} for ${timeLabel}. Select another tutor or time.`,
       };
     }
 
@@ -698,10 +722,13 @@ const Appointment = () => {
     });
 
     if (!withinSchedule) {
+      const timeLabel =
+        formData.start_time && formData.end_time
+          ? `${formatTimeLabel(formData.start_time)} - ${formatTimeLabel(formData.end_time)}`
+          : "the selected time";
       return {
         valid: false,
-        message:
-          "Selected time does not match the tutor's available hours for that day.",
+        message: `Tutor is not available for ${timeLabel}. Select another tutor or time.`,
       };
     }
 
@@ -1122,9 +1149,8 @@ const Appointment = () => {
       .filter((tutor) => {
         if (!hasDate || showAllSubjectTutors) return true;
         const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
-        if (unavailableEntries.some((entry) => entry.date === formData.date)) {
-          return false;
-        }
+        const blockedEntry = getUnavailableMatch(unavailableEntries, formData.date);
+        if (blockedEntry) return false;
         const schedules = tutorSchedules[tutor.user_id] || [];
         const daySchedules = schedules.filter((s) => s.day === dayName);
         if (daySchedules.length === 0) return false;
@@ -1338,7 +1364,7 @@ const Appointment = () => {
                   const isDetailsOpen = detailsTutorId === tutor.user_id;
                   const unavailableEntries = tutorUnavailableDays[tutor.user_id] || [];
                   const isUnavailableDay =
-                    hasDate && unavailableEntries.some((entry) => entry.date === formData.date);
+                    hasDate && Boolean(getUnavailableMatch(unavailableEntries, formData.date));
                   const isBooked = hasTimeRange && conflictTutorIds.has(tutor.user_id);
                   const disableSelect = isBooked || isUnavailableDay;
                   return (

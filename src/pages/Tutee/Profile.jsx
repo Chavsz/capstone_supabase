@@ -137,7 +137,6 @@ const Profile = () => {
       }
 
       setProfile(form);
-      setShowEditModal(false);
     }, "Unable to save profile.");
   };
 

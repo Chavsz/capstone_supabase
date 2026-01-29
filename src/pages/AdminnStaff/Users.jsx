@@ -110,7 +110,6 @@ const Users = () => {
 
       await getAllUsers();
       alert("User deleted successfully.");
-      closeUserDetails();
     } catch (err) {
       console.error(err);
       alert("Error deleting user. Please remove related records first or contact support.");
@@ -125,6 +124,14 @@ const Users = () => {
     getAllUsers();
     getCurrentUserPermissions();
   }, []);
+
+  useEffect(() => {
+    if (!isDetailsOpen || !selectedUser) return;
+    const updated = allUsers.find((user) => user.user_id === selectedUser.user_id);
+    if (updated) {
+      setSelectedUser(updated);
+    }
+  }, [allUsers, isDetailsOpen, selectedUser]);
 
   // Filter users based on selected filter
   const getFilteredUsers = () => {
@@ -182,7 +189,6 @@ const Users = () => {
         );
       }
       await getAllUsers();
-      closeUserDetails();
     } catch (err) {
       console.error(err.message);
       alert(`Error updating admin access: ${err.message}`);
@@ -258,7 +264,6 @@ const Users = () => {
       }
 
       await getAllUsers();
-      closeUserDetails();
       const verify = await verifyUserUpdate(user.user_id, "Unable to verify tutor update.");
       if (verify && normalizeRole(verify.role) !== "tutor") {
         alert("Update did not apply. Check your users table RLS policies.");
@@ -293,7 +298,6 @@ const Users = () => {
       }
 
       await getAllUsers();
-      closeUserDetails();
       const verify = await verifyUserUpdate(user.user_id, "Unable to verify student update.");
       if (verify && normalizeRole(verify.role) !== "student") {
         alert("Update did not apply. Check your users table RLS policies.");
@@ -384,7 +388,6 @@ const Users = () => {
       if (error) throw error;
       await getAllUsers();
       setSelectedIds(new Set());
-      closeUserDetails();
     }, "Unable to move users to student.");
   };
 
@@ -403,7 +406,6 @@ const Users = () => {
       if (error) throw error;
       await getAllUsers();
       setSelectedIds(new Set());
-      closeUserDetails();
     }, "Unable to promote users to tutor.");
   };
 
@@ -426,7 +428,6 @@ const Users = () => {
       if (error) throw error;
       await getAllUsers();
       setSelectedIds(new Set());
-      closeUserDetails();
     }, "Unable to add admin access.");
   };
 

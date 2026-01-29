@@ -84,6 +84,13 @@ const RouteSelect = ({ onClose }) => {
         isActive={location.pathname === "/dashboard/schedules"}
         onClose={onClose}
       />
+      <Route
+        to="/dashboard/profile"
+        Icon={mdIcons.MdPersonOutline}
+        title="Profile"
+        isActive={location.pathname === "/dashboard/profile"}
+        onClose={onClose}
+      />
       {canShowSwitch && (
         <Route
           to="/dashboard/switch"
