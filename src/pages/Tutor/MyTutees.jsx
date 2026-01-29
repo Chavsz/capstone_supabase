@@ -19,7 +19,7 @@ const MyTutees = () => {
   const [tutees, setTutees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [notesDrawer, setNotesDrawer] = useState(null);
+  const [notesModal, setNotesModal] = useState(null);
   const [sessionsModal, setSessionsModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutee");
@@ -359,7 +359,7 @@ const MyTutees = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setNotesDrawer({ ...session, student_name: tutee.tutee_name })}
+                        onClick={() => setNotesModal({ ...session, student_name: tutee.tutee_name })}
                         className="text-xs font-semibold text-gray-500 hover:text-gray-700"
                       >
                         View notes
@@ -429,29 +429,36 @@ const MyTutees = () => {
         onLater={() => setSelected(null)}
       />
 
-      {notesDrawer && (
-        <div className="fixed inset-0 z-[70] flex">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setNotesDrawer(null)}
-          />
-          <div className="ml-auto h-full w-full max-w-sm bg-white shadow-2xl border-l border-gray-200 p-5 relative">
-            <button
-              type="button"
-              onClick={() => setNotesDrawer(null)}
-              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
-              aria-label="Close notes drawer"
-            >
-              x
-            </button>
-            <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
+      {notesModal && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
+              <button
+                type="button"
+                onClick={() => setNotesModal(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close notes"
+              >
+                x
+              </button>
+            </div>
             <p className="mt-2 text-xs text-gray-500">
-              {notesDrawer.student_name} - {notesDrawer.subject} - {notesDrawer.topic}
+              {notesModal.student_name} - {notesModal.subject} - {notesModal.topic}
             </p>
             <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
-              {notesDrawer.tutor_notes
-                ? notesDrawer.tutor_notes
+              {notesModal.tutor_notes
+                ? notesModal.tutor_notes
                 : "No notes provided yet."}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNotesModal(null)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -532,7 +539,7 @@ const MyTutees = () => {
                       <button
                         type="button"
                         onClick={() =>
-                          setNotesDrawer({ ...session, student_name: sessionsModal.tutee_name })
+                          setNotesModal({ ...session, student_name: sessionsModal.tutee_name })
                         }
                         className="text-xs font-semibold text-gray-500 hover:text-gray-700"
                       >
