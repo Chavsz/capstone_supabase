@@ -370,7 +370,7 @@ const MyLearningJourney = () => {
       )}
 
       {notesModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>

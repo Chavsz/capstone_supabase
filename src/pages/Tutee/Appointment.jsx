@@ -45,6 +45,8 @@ const Appointment = () => {
   const [drawerDismissedKey, setDrawerDismissedKey] = useState("");
   const [appointmentsForDate, setAppointmentsForDate] = useState([]);
   const [showBookingPopup, setShowBookingPopup] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmPayload, setConfirmPayload] = useState(null);
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [profilePopupDismissed, setProfilePopupDismissed] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -936,8 +938,6 @@ const Appointment = () => {
         return;
       }
 
-      setLoading(true);
-
       const startLabel = new Date(`2000-01-01T${formData.start_time}`).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
@@ -946,37 +946,57 @@ const Appointment = () => {
         hour: "2-digit",
         minute: "2-digit",
       });
-      const confirmMessage = `Confirm appointment on ${formData.date} from ${startLabel} to ${endLabel}?`;
-      if (!window.confirm(confirmMessage)) {
-        setLoading(false);
+      setConfirmPayload({
+        session,
+        tuteeCount,
+        startLabel,
+        endLabel,
+        formData: { ...formData },
+        selectedTutor: { ...selectedTutor },
+      });
+      setShowConfirmModal(true);
+      return;
+
+    }, "Unable to create appointment.");
+  };
+
+  const handleConfirmAppointment = async () => {
+    if (!confirmPayload) return;
+    setShowConfirmModal(false);
+    setLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session || confirmPayload.session;
+      if (!session) {
+        toast.error("Please re-login to confirm your appointment.");
         return;
       }
 
-      try {
-        const { error } = await supabase
-          .from("appointment")
-          .insert([
-            {
-              user_id: session.user.id,
-              tutor_id: selectedTutor.user_id,
-              subject: formData.subject,
-              topic: formData.topic,
-              mode_of_session: formData.mode_of_session,
-              date: formData.date,
-              start_time: formData.start_time,
-              end_time: formData.end_time,
-              number_of_tutees: tuteeCount,
-              status: "pending",
-            },
-          ]);
+      const { formData: payloadForm, selectedTutor: payloadTutor, tuteeCount } = confirmPayload;
+      const { error } = await supabase
+        .from("appointment")
+        .insert([
+          {
+            user_id: session.user.id,
+            tutor_id: payloadTutor.user_id,
+            subject: payloadForm.subject,
+            topic: payloadForm.topic,
+            mode_of_session: payloadForm.mode_of_session,
+            date: payloadForm.date,
+            start_time: payloadForm.start_time,
+            end_time: payloadForm.end_time,
+            number_of_tutees: tuteeCount,
+            status: "pending",
+          },
+        ]);
 
       if (error) throw error;
 
-        toast.success("Appointment created successfully!");
-        setShowBookingPopup(true);
-        if (typeof window !== "undefined" && currentUserId) {
-          window.localStorage.removeItem(`appointmentDraft:${currentUserId}`);
-        }
+      toast.success("Appointment created successfully!");
+      setShowBookingPopup(true);
+      if (typeof window !== "undefined" && currentUserId) {
+        window.localStorage.removeItem(`appointmentDraft:${currentUserId}`);
+      }
       setDraftTutorId(null);
       setFormData({
         subject: "",
@@ -985,17 +1005,17 @@ const Appointment = () => {
         date: "",
         start_time: "",
         end_time: "",
-          number_of_tutees: "",
-        });
-        setSelectedTutor(null);
-        setSelectedSubject("");
-      } catch (err) {
-        console.error(err.message);
-        toast.error(`Error creating appointment: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    }, "Unable to create appointment.");
+        number_of_tutees: "",
+      });
+      setSelectedTutor(null);
+      setSelectedSubject("");
+    } catch (err) {
+      console.error(err.message);
+      toast.error(`Error creating appointment: ${err.message}`);
+    } finally {
+      setLoading(false);
+      setConfirmPayload(null);
+    }
   };
 
   useEffect(() => {
@@ -1916,7 +1936,7 @@ const Appointment = () => {
         )}
 
         {/* Mobile Tutor Details Drawer */}
-        {!isLargeScreen && showTutorDrawer && (
+      {!isLargeScreen && showTutorDrawer && (
             <div className="fixed inset-0 z-40 flex items-end pointer-events-none">
               <div className="absolute inset-0 bg-black/40 pointer-events-none" />
               <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-6 pointer-events-auto">
@@ -1933,6 +1953,41 @@ const Appointment = () => {
                 {renderTutorDetails({ compact: true, showHeading: false })}
               </div>
             </div>
+        )}
+
+        {showConfirmModal && confirmPayload && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800">Confirm Appointment</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Confirm appointment on {confirmPayload.formData.date} from{" "}
+                {confirmPayload.startLabel} to {confirmPayload.endLabel}?
+              </p>
+              <p className="mt-3 text-xs text-gray-500">
+                Note: appointments are auto-declined after 14 hours. Please re-login
+                to check the latest status.
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setConfirmPayload(null);
+                  }}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAppointment}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Confirm Appointment
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
