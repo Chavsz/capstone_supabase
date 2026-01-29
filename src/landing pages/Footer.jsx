@@ -146,32 +146,6 @@ const Footer = () => {
           </motion.div>
         </div>
 
-        {/* Newsletter Signup */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="bg-transparent p-0 mb-12"
-        >
-          <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4 text-white" style={{ color: "#fff" }}>
-              Stay Updated
-            </h3>
-            <p className="text-white mb-6">Subscribe to our newsletter for the latest updates and educational content.</p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-xl border border-white/30 bg-white/10 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-white/60"
-              />
-              <button className="bg-white/20 hover:bg-white/30 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg shadow-[#132c91]/20">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
       </div>
       {/* Bottom Bar */}
       <motion.div
