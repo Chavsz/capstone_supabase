@@ -149,6 +149,7 @@ const Footer = () => {
       </div>
       {/* Bottom Bar */}
       <motion.div
+      
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.5 }}
