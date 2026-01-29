@@ -42,6 +42,7 @@ import AdminEvent from "./pages/AdminnStaff/Event";
 import AdminAnnouncments from "./pages/AdminnStaff/Announcments";
 import AdminUsers from "./pages/AdminnStaff/Users";
 import AdminSwitch from "./pages/AdminnStaff/Switch";
+import AdminSessionAnalytics from "./pages/AdminnStaff/SessionAnalytics";
 
 // Role-based dashboard component
 function RoleBasedLayout({ setAuth, currentRole, loading }) {
@@ -311,6 +312,17 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<AdminLavRoomCalendar />}
+            />
+          }
+        />
+        <Route
+          path="session-analytics"
+          element={
+            <RoleRoute
+              allowedRoles={["admin"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={<AdminSessionAnalytics />}
             />
           }
         />

@@ -59,7 +59,7 @@ const AssessmentModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
           <div>

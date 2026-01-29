@@ -24,6 +24,12 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/session-analytics"
+        Icon={mdIcons.MdQueryStats}
+        title="Session Analytics"
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/reports"
         Icon={fiIcons.FiBarChart2}
         title="Reports"
