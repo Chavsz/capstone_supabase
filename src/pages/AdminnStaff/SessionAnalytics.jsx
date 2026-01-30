@@ -23,15 +23,30 @@ const computeImprovement = (pre, post) => {
   return ((postNum - preNum) / preNum) * 100;
 };
 
+const compareSessionsByDate = (a, b) => {
+  const dateA = a?.date ? new Date(a.date) : null;
+  const dateB = b?.date ? new Date(b.date) : null;
+  if (dateA && dateB && !Number.isNaN(dateA.getTime()) && !Number.isNaN(dateB.getTime())) {
+    return dateA - dateB;
+  }
+  const createdA = a?.created_at ? new Date(a.created_at) : null;
+  const createdB = b?.created_at ? new Date(b.created_at) : null;
+  if (createdA && createdB && !Number.isNaN(createdA.getTime()) && !Number.isNaN(createdB.getTime())) {
+    return createdA - createdB;
+  }
+  return String(a?.date || "").localeCompare(String(b?.date || ""));
+};
+
 const SessionAnalytics = () => {
   const { version } = useDataSync();
   const [loading, setLoading] = useState(true);
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
-  const [detailOrder, setDetailOrder] = useState("first");
+  const [detailStartIndex, setDetailStartIndex] = useState(1);
   const [activeSubject, setActiveSubject] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 4;
+  const [subjectTabs, setSubjectTabs] = useState(["all"]);
 
   const loadData = async () => {
     setLoading(true);
@@ -45,25 +60,24 @@ const SessionAnalytics = () => {
 
       if (error) throw error;
 
+      const { data: tutors, error: tutorError } = await supabase
+        .from("users")
+        .select("user_id, name")
+        .eq("role", "tutor");
+      if (tutorError && tutorError.code !== "PGRST116") throw tutorError;
+
       const tutorIds = Array.from(
-        new Set((evaluations || []).map((item) => item.tutor_id).filter(Boolean))
+        new Set((tutors || []).map((item) => item.user_id).filter(Boolean))
       );
       const appointmentIds = Array.from(
         new Set((evaluations || []).map((item) => item.appointment_id).filter(Boolean))
       );
 
       let tutorMap = {};
-      if (tutorIds.length) {
-        const { data: tutors, error: tutorError } = await supabase
-          .from("users")
-          .select("user_id, name")
-          .in("user_id", tutorIds);
-        if (tutorError && tutorError.code !== "PGRST116") throw tutorError;
-        tutorMap = (tutors || []).reduce((acc, item) => {
-          acc[item.user_id] = item.name || "Unknown";
-          return acc;
-        }, {});
-      }
+      tutorMap = (tutors || []).reduce((acc, item) => {
+        acc[item.user_id] = item.name || "Unknown";
+        return acc;
+      }, {});
 
       let appointmentMetaMap = {};
       if (appointmentIds.length) {
@@ -82,6 +96,13 @@ const SessionAnalytics = () => {
       }
 
       const grouped = new Map();
+      tutorIds.forEach((tutorId) => {
+        grouped.set(tutorId, {
+          tutor_id: tutorId,
+          tutor_name: tutorMap[tutorId] || "Unknown",
+          sessions: [],
+        });
+      });
       (evaluations || []).forEach((item) => {
         const tutorId = item.tutor_id || "unknown";
         if (!grouped.has(tutorId)) {
@@ -100,9 +121,7 @@ const SessionAnalytics = () => {
       });
 
       const rows = Array.from(grouped.values()).map((tutor) => {
-        const sortedSessions = [...tutor.sessions].sort((a, b) =>
-          String(a.date || "").localeCompare(String(b.date || ""))
-        );
+        const sortedSessions = [...tutor.sessions].sort(compareSessionsByDate);
         const improvements = tutor.sessions
           .map((session) =>
             computeImprovement(session.pre_test_score, session.post_test_score)
@@ -143,19 +162,32 @@ const SessionAnalytics = () => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
   }, [tutorRows]);
 
-  const subjects = useMemo(() => {
-    const set = new Set(["all"]);
-    tutorRows.forEach((row) => {
-      row.sessions.forEach((session) => {
-        set.add(session.subject || "Unknown");
-      });
-    });
-    return Array.from(set);
-  }, [tutorRows]);
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const { data: appointments, error } = await supabase
+          .from("appointment")
+          .select("subject");
+        if (error && error.code !== "PGRST116") throw error;
+        const set = new Set(["all"]);
+        (appointments || []).forEach((item) => {
+          if (item.subject) set.add(item.subject);
+        });
+        setSubjectTabs(Array.from(set));
+      } catch (err) {
+        setSubjectTabs(["all"]);
+      }
+    };
+    loadSubjects();
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [activeSubject]);
+
+  useEffect(() => {
+    setDetailStartIndex(1);
+  }, [selectedTutor, activeSubject]);
 
   const filteredLeaderboard = useMemo(() => {
     const withStats = leaderboard.map((row) => {
@@ -163,6 +195,7 @@ const SessionAnalytics = () => {
         activeSubject === "all"
           ? row.sessions
           : row.sessions.filter((session) => session.subject === activeSubject);
+      const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
       const improvements = subjectSessions
         .map((session) =>
           computeImprovement(session.pre_test_score, session.post_test_score)
@@ -177,34 +210,41 @@ const SessionAnalytics = () => {
         ...row,
         effectiveSessions: subjectSessions.length,
         effectiveAverageGain: averageGain,
-        effectiveLastSession: subjectSessions[subjectSessions.length - 1] || null,
+        effectiveLastSession:
+          sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
       };
     });
-    const filtered = activeSubject === "all"
-      ? withStats
-      : withStats.filter((row) => row.effectiveSessions > 0);
-    filtered.sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
-    return filtered;
+    const sorted = [...withStats].sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
+    return sorted;
   }, [leaderboard, activeSubject]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeaderboard.length / cardsPerPage));
   const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
+  const pageStartIndex = (currentPageSafe - 1) * cardsPerPage;
   const pagedLeaderboard = filteredLeaderboard.slice(
-    (currentPageSafe - 1) * cardsPerPage,
+    pageStartIndex,
     currentPageSafe * cardsPerPage
   );
 
-  const chartData = useMemo(() => {
+  const detailSessions = useMemo(() => {
     if (!selectedTutor) return [];
-    const sessions = detailOrder === "last"
-      ? [...selectedTutor.sessions].slice().reverse()
-      : selectedTutor.sessions;
-    return sessions.map((session, index) => ({
-      name: `Session ${index + 1}`,
+    const sessions =
+      activeSubject === "all"
+        ? selectedTutor.sessions
+        : selectedTutor.sessions.filter((session) => session.subject === activeSubject);
+    return [...sessions].sort(compareSessionsByDate);
+  }, [selectedTutor, activeSubject]);
+
+  const chartData = useMemo(() => {
+    if (!detailSessions.length) return [];
+    const startIndex = Math.max(1, Math.min(detailStartIndex, detailSessions.length));
+    const sliced = detailSessions.slice(startIndex - 1);
+    return sliced.map((session, index) => ({
+      name: `Session ${startIndex + index}`,
       pre: Number(session.pre_test_score) || 0,
       post: Number(session.post_test_score) || 0,
     }));
-  }, [selectedTutor, detailOrder]);
+  }, [detailSessions, detailStartIndex]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -226,7 +266,7 @@ const SessionAnalytics = () => {
               ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
             </h2>
             <div className="flex flex-wrap gap-2 mb-4">
-              {subjects.map((subject) => (
+              {subjectTabs.map((subject) => (
                 <button
                   key={subject}
                   type="button"
@@ -241,9 +281,44 @@ const SessionAnalytics = () => {
                 </button>
               ))}
             </div>
-            <div className="space-y-3">
+
+            <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <div className="text-xs font-semibold text-gray-600">
+                Top tutors by avg effectiveness
+              </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                {filteredLeaderboard.slice(0, 3).map((row, index) => (
+                  <div
+                    key={`${row.tutor_id}-rank-${index}`}
+                    className="rounded-lg border border-gray-200 bg-white p-3"
+                  >
+                    <div className="text-xs font-semibold text-gray-500">
+                      #{index + 1}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-gray-700">
+                      {row.tutor_name}
+                    </div>
+                    {activeSubject === "all" && row.effectiveLastSession?.subject && (
+                      <div className="mt-1 text-[10px] font-semibold text-blue-700">
+                        {row.effectiveLastSession.subject}
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-gray-500">
+                      {formatPercent(row.effectiveAverageGain)} avg gain
+                    </div>
+                  </div>
+                ))}
+                {filteredLeaderboard.length === 0 && (
+                  <div className="text-xs text-gray-500">No tutors available.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               {pagedLeaderboard.length === 0 ? (
-                <div className="text-sm text-gray-500">No evaluation data yet.</div>
+                <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+                  No tutors available.
+                </div>
               ) : (
                 pagedLeaderboard.map((row, index) => {
                   const percentage = Math.min(Math.max(row.effectiveAverageGain, 0), 100);
@@ -257,51 +332,51 @@ const SessionAnalytics = () => {
                   return (
                     <div
                       key={row.tutor_id}
-                      className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                      className="rounded-xl border border-gray-100 bg-gray-50 p-4"
                     >
-                      <div className="text-xs font-semibold text-gray-500 w-6">
-                        {((currentPageSafe - 1) * cardsPerPage) + index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
-                          <span className="flex items-center gap-2">
-                            {row.tutor_name}
-                            {activeSubject === "all" && lastSession?.subject && (
-                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                {lastSession.subject}
-                              </span>
-                            )}
+                      <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-400">
+                            #{pageStartIndex + index + 1}
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {row.effectiveSessions} sessions
-                          </span>
-                        </div>
-                        <div className="mt-2 h-2 rounded-full bg-gray-200">
-                          <div
-                            className={`h-2 rounded-full ${barColor}`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <div className="mt-2 text-xs text-gray-500">
-                          Last session:{" "}
-                          {lastSession
-                            ? `${lastSession.subject} (Pre ${lastSession.pre_test_score ?? "-"} / Post ${lastSession.post_test_score ?? "-"})`
-                            : "None"}
-                        </div>
+                          {row.tutor_name}
+                          {activeSubject === "all" && lastSession?.subject && (
+                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                              {lastSession.subject}
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {row.effectiveSessions} sessions
+                        </span>
                       </div>
-                      <div className="text-xs text-gray-600 w-12 text-right">
-                        {formatPercent(row.effectiveAverageGain)}
+                      <div className="mt-3 h-2 rounded-full bg-gray-200">
+                        <div
+                          className={`h-2 rounded-full ${barColor}`}
+                          style={{ width: `${percentage}%` }}
+                        />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedTutor(row);
-                          setDetailOrder("first");
-                        }}
-                        className="text-xs font-semibold px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700"
-                      >
-                        View Details
-                      </button>
+                      <div className="mt-2 text-xs text-gray-500">
+                        {formatPercent(row.effectiveAverageGain)} avg gain
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Last session:{" "}
+                        {lastSession
+                          ? `${lastSession.subject} (Pre ${lastSession.pre_test_score ?? "-"} / Post ${lastSession.post_test_score ?? "-"})`
+                          : "No session at the moment"}
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTutor(row);
+                            setDetailStartIndex(1);
+                          }}
+                          className="text-xs font-semibold px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700"
+                        >
+                          View more
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -358,19 +433,24 @@ const SessionAnalytics = () => {
                     className="text-gray-500 hover:text-gray-700"
                     aria-label="Close details"
                   >
-                    ×
+                    x
                   </button>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Order</span>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="text-xs text-gray-500">
+                    Start at session
+                  </div>
                   <select
-                    value={detailOrder}
-                    onChange={(e) => setDetailOrder(e.target.value)}
+                    value={detailStartIndex}
+                    onChange={(e) => setDetailStartIndex(Number(e.target.value))}
                     className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
                   >
-                    <option value="first">First → Last</option>
-                    <option value="last">Last → First</option>
+                    {detailSessions.map((_, index) => (
+                      <option key={`session-start-${index + 1}`} value={index + 1}>
+                        Session {index + 1}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -415,3 +495,4 @@ const SessionAnalytics = () => {
 };
 
 export default SessionAnalytics;
+
