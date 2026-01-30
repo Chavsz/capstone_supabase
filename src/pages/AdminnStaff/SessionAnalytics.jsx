@@ -29,6 +29,9 @@ const SessionAnalytics = () => {
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [detailOrder, setDetailOrder] = useState("first");
+  const [activeSubject, setActiveSubject] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 4;
 
   const loadData = async () => {
     setLoading(true);
@@ -45,6 +48,9 @@ const SessionAnalytics = () => {
       const tutorIds = Array.from(
         new Set((evaluations || []).map((item) => item.tutor_id).filter(Boolean))
       );
+      const appointmentIds = Array.from(
+        new Set((evaluations || []).map((item) => item.appointment_id).filter(Boolean))
+      );
 
       let tutorMap = {};
       if (tutorIds.length) {
@@ -59,6 +65,22 @@ const SessionAnalytics = () => {
         }, {});
       }
 
+      let appointmentMetaMap = {};
+      if (appointmentIds.length) {
+        const { data: appointments, error: appointmentError } = await supabase
+          .from("appointment")
+          .select("appointment_id, subject, date")
+          .in("appointment_id", appointmentIds);
+        if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
+        appointmentMetaMap = (appointments || []).reduce((acc, item) => {
+          acc[item.appointment_id] = {
+            subject: item.subject || "Unknown",
+            date: item.date || null,
+          };
+          return acc;
+        }, {});
+      }
+
       const grouped = new Map();
       (evaluations || []).forEach((item) => {
         const tutorId = item.tutor_id || "unknown";
@@ -69,10 +91,18 @@ const SessionAnalytics = () => {
             sessions: [],
           });
         }
-        grouped.get(tutorId).sessions.push(item);
+        const meta = appointmentMetaMap[item.appointment_id] || {};
+        grouped.get(tutorId).sessions.push({
+          ...item,
+          subject: meta.subject || "Unknown",
+          date: meta.date || null,
+        });
       });
 
       const rows = Array.from(grouped.values()).map((tutor) => {
+        const sortedSessions = [...tutor.sessions].sort((a, b) =>
+          String(a.date || "").localeCompare(String(b.date || ""))
+        );
         const improvements = tutor.sessions
           .map((session) =>
             computeImprovement(session.pre_test_score, session.post_test_score)
@@ -85,6 +115,7 @@ const SessionAnalytics = () => {
             : 0;
         return {
           ...tutor,
+          sessions: sortedSessions,
           totalSessions: tutor.sessions.length,
           averageGain,
         };
@@ -111,6 +142,57 @@ const SessionAnalytics = () => {
   const leaderboard = useMemo(() => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
   }, [tutorRows]);
+
+  const subjects = useMemo(() => {
+    const set = new Set(["all"]);
+    tutorRows.forEach((row) => {
+      row.sessions.forEach((session) => {
+        set.add(session.subject || "Unknown");
+      });
+    });
+    return Array.from(set);
+  }, [tutorRows]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSubject]);
+
+  const filteredLeaderboard = useMemo(() => {
+    const withStats = leaderboard.map((row) => {
+      const subjectSessions =
+        activeSubject === "all"
+          ? row.sessions
+          : row.sessions.filter((session) => session.subject === activeSubject);
+      const improvements = subjectSessions
+        .map((session) =>
+          computeImprovement(session.pre_test_score, session.post_test_score)
+        )
+        .filter((value) => value !== null);
+      const averageGain =
+        improvements.length > 0
+          ? improvements.reduce((sum, value) => sum + value, 0) /
+            improvements.length
+          : 0;
+      return {
+        ...row,
+        effectiveSessions: subjectSessions.length,
+        effectiveAverageGain: averageGain,
+        effectiveLastSession: subjectSessions[subjectSessions.length - 1] || null,
+      };
+    });
+    const filtered = activeSubject === "all"
+      ? withStats
+      : withStats.filter((row) => row.effectiveSessions > 0);
+    filtered.sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
+    return filtered;
+  }, [leaderboard, activeSubject]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLeaderboard.length / cardsPerPage));
+  const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
+  const pagedLeaderboard = filteredLeaderboard.slice(
+    (currentPageSafe - 1) * cardsPerPage,
+    currentPageSafe * cardsPerPage
+  );
 
   const chartData = useMemo(() => {
     if (!selectedTutor) return [];
@@ -143,28 +225,55 @@ const SessionAnalytics = () => {
             <h2 className="text-sm font-semibold text-gray-700 mb-4">
               ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
             </h2>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {subjects.map((subject) => (
+                <button
+                  key={subject}
+                  type="button"
+                  onClick={() => setActiveSubject(subject)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    activeSubject === subject
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {subject}
+                </button>
+              ))}
+            </div>
             <div className="space-y-3">
-              {leaderboard.length === 0 ? (
+              {pagedLeaderboard.length === 0 ? (
                 <div className="text-sm text-gray-500">No evaluation data yet.</div>
               ) : (
-                leaderboard.map((row) => {
-                  const percentage = Math.min(Math.max(row.averageGain, 0), 100);
+                pagedLeaderboard.map((row, index) => {
+                  const percentage = Math.min(Math.max(row.effectiveAverageGain, 0), 100);
                   const barColor =
                     percentage >= 70
                       ? "bg-green-500"
                       : percentage >= 40
                         ? "bg-yellow-400"
                         : "bg-red-400";
+                  const lastSession = row.effectiveLastSession;
                   return (
                     <div
                       key={row.tutor_id}
                       className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
                     >
+                      <div className="text-xs font-semibold text-gray-500 w-6">
+                        {((currentPageSafe - 1) * cardsPerPage) + index + 1}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
-                          <span>{row.tutor_name}</span>
+                          <span className="flex items-center gap-2">
+                            {row.tutor_name}
+                            {activeSubject === "all" && lastSession?.subject && (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                {lastSession.subject}
+                              </span>
+                            )}
+                          </span>
                           <span className="text-xs text-gray-500">
-                            {row.totalSessions} sessions
+                            {row.effectiveSessions} sessions
                           </span>
                         </div>
                         <div className="mt-2 h-2 rounded-full bg-gray-200">
@@ -173,9 +282,15 @@ const SessionAnalytics = () => {
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          Last session:{" "}
+                          {lastSession
+                            ? `${lastSession.subject} (Pre ${lastSession.pre_test_score ?? "-"} / Post ${lastSession.post_test_score ?? "-"})`
+                            : "None"}
+                        </div>
                       </div>
                       <div className="text-xs text-gray-600 w-12 text-right">
-                        {formatPercent(row.averageGain)}
+                        {formatPercent(row.effectiveAverageGain)}
                       </div>
                       <button
                         type="button"
@@ -193,6 +308,37 @@ const SessionAnalytics = () => {
               )}
             </div>
           </div>
+          {!loading && totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+              <button
+                type="button"
+                className={`px-3 py-1 rounded border ${
+                  currentPageSafe === 1
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                }`}
+                disabled={currentPageSafe === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              >
+                Previous
+              </button>
+              <span className="text-xs text-gray-500">
+                Page {currentPageSafe} of {totalPages}
+              </span>
+              <button
+                type="button"
+                className={`px-3 py-1 rounded border ${
+                  currentPageSafe === totalPages
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                }`}
+                disabled={currentPageSafe === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              >
+                Next
+              </button>
+            </div>
+          )}
 
           {selectedTutor && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
