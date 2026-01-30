@@ -1,16 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0%";
@@ -42,7 +32,7 @@ const SessionAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
-  const [detailStartIndex, setDetailStartIndex] = useState(1);
+  const [notesModal, setNotesModal] = useState(null);
   const [activeSubject, setActiveSubject] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 4;
@@ -63,7 +53,7 @@ const SessionAnalytics = () => {
       const { data: evaluations, error } = await supabase
         .from("evaluation")
         .select(
-          "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, created_at"
+          "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, tutor_notes, created_at"
         )
         .order("created_at", { ascending: true });
 
@@ -108,13 +98,25 @@ const SessionAnalytics = () => {
       if (appointmentIds.length) {
         const { data: appointments, error: appointmentError } = await supabase
           .from("appointment")
-          .select("appointment_id, subject, date")
+          .select(
+            `
+            appointment_id,
+            user_id,
+            subject,
+            topic,
+            date,
+            student:users!appointment_user_id_fkey(name)
+          `
+          )
           .in("appointment_id", appointmentIds);
         if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
         appointmentMetaMap = (appointments || []).reduce((acc, item) => {
           acc[item.appointment_id] = {
+            user_id: item.user_id || "",
             subject: item.subject || "Unknown",
+            topic: item.topic || "-",
             date: item.date || null,
+            student_name: item.student?.name || "Unknown",
           };
           return acc;
         }, {});
@@ -144,8 +146,12 @@ const SessionAnalytics = () => {
         const meta = appointmentMetaMap[item.appointment_id] || {};
         grouped.get(tutorId).sessions.push({
           ...item,
+          appointment_id: item.appointment_id,
+          user_id: meta.user_id,
           subject: meta.subject || "Unknown",
+          topic: meta.topic || "-",
           date: meta.date || null,
+          student_name: meta.student_name || "Unknown",
         });
       });
 
@@ -170,12 +176,6 @@ const SessionAnalytics = () => {
       });
 
       setTutorRows(rows);
-      if (!selectedTutor && rows.length) {
-        setSelectedTutor(rows[0]);
-      } else if (selectedTutor) {
-        const next = rows.find((row) => row.tutor_id === selectedTutor.tutor_id);
-        setSelectedTutor(next || rows[0] || null);
-      }
     } catch (err) {
       console.error("Error loading session analytics:", err.message);
     } finally {
@@ -187,6 +187,16 @@ const SessionAnalytics = () => {
     loadData();
   }, [version]);
 
+  useEffect(() => {
+    if (!selectedTutor) return;
+    const updated = tutorRows.find((row) => row.tutor_id === selectedTutor.tutor_id);
+    if (updated) {
+      setSelectedTutor(updated);
+    } else {
+      setSelectedTutor(null);
+    }
+  }, [tutorRows, selectedTutor]);
+
   const leaderboard = useMemo(() => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
   }, [tutorRows]);
@@ -194,10 +204,6 @@ const SessionAnalytics = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [activeSubject]);
-
-  useEffect(() => {
-    setDetailStartIndex(1);
-  }, [selectedTutor, activeSubject]);
 
   const filteredLeaderboard = useMemo(() => {
     const scopedRows =
@@ -240,7 +246,7 @@ const SessionAnalytics = () => {
     currentPageSafe * cardsPerPage
   );
 
-  const detailSessions = useMemo(() => {
+  const selectedSessions = useMemo(() => {
     if (!selectedTutor) return [];
     const sessions =
       activeSubject === "All"
@@ -248,17 +254,6 @@ const SessionAnalytics = () => {
         : selectedTutor.sessions.filter((session) => session.subject === activeSubject);
     return [...sessions].sort(compareSessionsByDate);
   }, [selectedTutor, activeSubject]);
-
-  const chartData = useMemo(() => {
-    if (!detailSessions.length) return [];
-    const startIndex = Math.max(1, Math.min(detailStartIndex, detailSessions.length));
-    const sliced = detailSessions.slice(startIndex - 1);
-    return sliced.map((session, index) => ({
-      name: `Session ${startIndex + index}`,
-      pre: Number(session.pre_test_score) || 0,
-      post: Number(session.post_test_score) || 0,
-    }));
-  }, [detailSessions, detailStartIndex]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -361,13 +356,10 @@ const SessionAnalytics = () => {
                       <div className="mt-3 flex justify-end">
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedTutor(row);
-                            setDetailStartIndex(1);
-                          }}
-                          className="text-xs font-semibold px-2 py-1 rounded-md border border-gray-200 text-gray-500 hover:text-gray-700"
+                          onClick={() => setSelectedTutor(row)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                         >
-                          View more
+                          View sessions
                         </button>
                       </div>
                     </div>
@@ -410,60 +402,112 @@ const SessionAnalytics = () => {
 
           {selectedTutor && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+              <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <div>
+                    <h3 className="text-lg font-bold text-gray-800">
+                      {selectedTutor.tutor_name} Sessions
+                    </h3>
                     <p className="text-xs text-gray-500">
-                      {selectedTutor.tutor_name}: Pre vs. Post Comparison
+                      {activeSubject === "All" ? "All subjects" : activeSubject}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedTutor(null)}
                     className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close details"
+                    aria-label="Close sessions"
                   >
                     x
                   </button>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <div className="text-xs text-gray-500">
-                    Start at session
-                  </div>
-                  <select
-                    value={detailStartIndex}
-                    onChange={(e) => setDetailStartIndex(Number(e.target.value))}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                  >
-                    {detailSessions.map((_, index) => (
-                      <option key={`session-start-${index + 1}`} value={index + 1}>
-                        Session {index + 1}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <div className="mt-4">
-                  {chartData.length === 0 ? (
-                    <div className="text-sm text-gray-500">
-                      No sessions available for this tutor.
-                    </div>
-                  ) : (
-                    <div className="h-[280px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
-                          <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-sm min-w-[640px] sm:min-w-0">
+                      <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                        <tr>
+                          <th className="text-left px-4 py-3">Date</th>
+                          <th className="text-left px-4 py-3">Subject</th>
+                          <th className="text-left px-4 py-3">Topic</th>
+                          <th className="text-center px-4 py-3">Pre</th>
+                          <th className="text-center px-4 py-3">Post</th>
+                          <th className="text-center px-4 py-3">Avg Gain</th>
+                          <th className="text-center px-4 py-3">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedSessions.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              className="px-4 py-6 text-center text-sm text-gray-500"
+                            >
+                              No sessions available for this tutor.
+                            </td>
+                          </tr>
+                        ) : (
+                          selectedSessions.map((session) => {
+                            const improvement = computeImprovement(
+                              session.pre_test_score,
+                              session.post_test_score
+                            );
+                            return (
+                              <tr
+                                key={session.appointment_id || session.evaluation_id}
+                                className="border-t border-gray-100"
+                              >
+                                <td className="px-4 py-3 text-left text-gray-600">
+                                  {session.date || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-left text-gray-700">
+                                  {session.subject}
+                                </td>
+                                <td className="px-4 py-3 text-left text-gray-600">
+                                  {session.topic || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-600">
+                                  {session.pre_test_score ?? "-"}
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-600">
+                                  {session.post_test_score ?? "-"}
+                                </td>
+                                <td
+                                  className={`px-4 py-3 text-center text-sm font-semibold ${
+                                    improvement === null
+                                      ? "text-gray-400"
+                                      : improvement >= 0
+                                        ? "text-green-600"
+                                        : "text-orange-600"
+                                  }`}
+                                >
+                                  {improvement === null
+                                    ? "-"
+                                    : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setNotesModal({
+                                        tutor_name: selectedTutor.tutor_name,
+                                        subject: session.subject,
+                                        topic: session.topic,
+                                        notes: session.tutor_notes || "",
+                                      })
+                                    }
+                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                  >
+                                    View
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className="mt-5 flex justify-end">
@@ -478,6 +522,40 @@ const SessionAnalytics = () => {
               </div>
             </div>
           )}
+
+          {notesModal && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+              <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
+                  <button
+                    type="button"
+                    onClick={() => setNotesModal(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close notes"
+                  >
+                    x
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {notesModal.tutor_name} - {notesModal.subject} - {notesModal.topic}
+                </p>
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
+                  {notesModal.notes ? notesModal.notes : "No notes provided yet."}
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setNotesModal(null)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
     </div>
