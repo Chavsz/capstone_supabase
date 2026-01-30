@@ -79,6 +79,19 @@ const SessionAnalytics = () => {
         return acc;
       }, {});
 
+      let profileMap = {};
+      if (tutorIds.length) {
+        const { data: profiles, error: profileError } = await supabase
+          .from("profile")
+          .select("user_id, profile_image")
+          .in("user_id", tutorIds);
+        if (profileError && profileError.code !== "PGRST116") throw profileError;
+        profileMap = (profiles || []).reduce((acc, item) => {
+          acc[item.user_id] = item.profile_image || "";
+          return acc;
+        }, {});
+      }
+
       let appointmentMetaMap = {};
       if (appointmentIds.length) {
         const { data: appointments, error: appointmentError } = await supabase
@@ -100,6 +113,7 @@ const SessionAnalytics = () => {
         grouped.set(tutorId, {
           tutor_id: tutorId,
           tutor_name: tutorMap[tutorId] || "Unknown",
+          tutor_image: profileMap[tutorId] || "",
           sessions: [],
         });
       });
@@ -109,6 +123,7 @@ const SessionAnalytics = () => {
           grouped.set(tutorId, {
             tutor_id: tutorId,
             tutor_name: tutorMap[tutorId] || "Unknown",
+            tutor_image: profileMap[tutorId] || "",
             sessions: [],
           });
         }
@@ -282,38 +297,6 @@ const SessionAnalytics = () => {
               ))}
             </div>
 
-            <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <div className="text-xs font-semibold text-gray-600">
-                Top tutors by avg effectiveness
-              </div>
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                {filteredLeaderboard.slice(0, 3).map((row, index) => (
-                  <div
-                    key={`${row.tutor_id}-rank-${index}`}
-                    className="rounded-lg border border-gray-200 bg-white p-3"
-                  >
-                    <div className="text-xs font-semibold text-gray-500">
-                      #{index + 1}
-                    </div>
-                    <div className="mt-1 text-sm font-semibold text-gray-700">
-                      {row.tutor_name}
-                    </div>
-                    {activeSubject === "all" && row.effectiveLastSession?.subject && (
-                      <div className="mt-1 text-[10px] font-semibold text-blue-700">
-                        {row.effectiveLastSession.subject}
-                      </div>
-                    )}
-                    <div className="mt-2 text-xs text-gray-500">
-                      {formatPercent(row.effectiveAverageGain)} avg gain
-                    </div>
-                  </div>
-                ))}
-                {filteredLeaderboard.length === 0 && (
-                  <div className="text-xs text-gray-500">No tutors available.</div>
-                )}
-              </div>
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               {pagedLeaderboard.length === 0 ? (
                 <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
@@ -339,6 +322,17 @@ const SessionAnalytics = () => {
                           <span className="text-xs font-semibold text-gray-400">
                             #{pageStartIndex + index + 1}
                           </span>
+                          {row.tutor_image ? (
+                            <img
+                              src={row.tutor_image}
+                              alt={row.tutor_name}
+                              className="h-7 w-7 rounded-full object-cover border border-gray-200"
+                            />
+                          ) : (
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-500">
+                              {row.tutor_name?.charAt(0) || "T"}
+                            </div>
+                          )}
                           {row.tutor_name}
                           {activeSubject === "all" && lastSession?.subject && (
                             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
@@ -421,7 +415,7 @@ const SessionAnalytics = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-sm font-semibold text-gray-700">
-                      ADMIN: DETAILED IMPACT ANALYSIS
+                      Detailed Impact Analysis
                     </h2>
                     <p className="text-xs text-gray-500">
                       {selectedTutor.tutor_name}: Pre vs. Post Comparison
