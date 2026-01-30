@@ -46,7 +46,16 @@ const SessionAnalytics = () => {
   const [activeSubject, setActiveSubject] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 4;
-  const [subjectTabs, setSubjectTabs] = useState(["all"]);
+  const subjectTabs = [
+    "all",
+    "Programming",
+    "Chemistry",
+    "Physics",
+    "Calculus and Statistics",
+    "Psychology and Language",
+    "Engineering",
+    "Accountancy and Economics",
+  ];
 
   const loadData = async () => {
     setLoading(true);
@@ -83,11 +92,14 @@ const SessionAnalytics = () => {
       if (tutorIds.length) {
         const { data: profiles, error: profileError } = await supabase
           .from("profile")
-          .select("user_id, profile_image")
+          .select("user_id, profile_image, subject")
           .in("user_id", tutorIds);
         if (profileError && profileError.code !== "PGRST116") throw profileError;
         profileMap = (profiles || []).reduce((acc, item) => {
-          acc[item.user_id] = item.profile_image || "";
+          acc[item.user_id] = {
+            profile_image: item.profile_image || "",
+            subject: item.subject || "",
+          };
           return acc;
         }, {});
       }
@@ -113,7 +125,8 @@ const SessionAnalytics = () => {
         grouped.set(tutorId, {
           tutor_id: tutorId,
           tutor_name: tutorMap[tutorId] || "Unknown",
-          tutor_image: profileMap[tutorId] || "",
+          tutor_image: profileMap[tutorId]?.profile_image || "",
+          tutor_subject: profileMap[tutorId]?.subject || "",
           sessions: [],
         });
       });
@@ -123,7 +136,8 @@ const SessionAnalytics = () => {
           grouped.set(tutorId, {
             tutor_id: tutorId,
             tutor_name: tutorMap[tutorId] || "Unknown",
-            tutor_image: profileMap[tutorId] || "",
+            tutor_image: profileMap[tutorId]?.profile_image || "",
+            tutor_subject: profileMap[tutorId]?.subject || "",
             sessions: [],
           });
         }
@@ -178,25 +192,6 @@ const SessionAnalytics = () => {
   }, [tutorRows]);
 
   useEffect(() => {
-    const loadSubjects = async () => {
-      try {
-        const { data: appointments, error } = await supabase
-          .from("appointment")
-          .select("subject");
-        if (error && error.code !== "PGRST116") throw error;
-        const set = new Set(["all"]);
-        (appointments || []).forEach((item) => {
-          if (item.subject) set.add(item.subject);
-        });
-        setSubjectTabs(Array.from(set));
-      } catch (err) {
-        setSubjectTabs(["all"]);
-      }
-    };
-    loadSubjects();
-  }, []);
-
-  useEffect(() => {
     setCurrentPage(1);
   }, [activeSubject]);
 
@@ -205,7 +200,11 @@ const SessionAnalytics = () => {
   }, [selectedTutor, activeSubject]);
 
   const filteredLeaderboard = useMemo(() => {
-    const withStats = leaderboard.map((row) => {
+    const scopedRows =
+      activeSubject === "all"
+        ? leaderboard
+        : leaderboard.filter((row) => row.tutor_subject === activeSubject);
+    const withStats = scopedRows.map((row) => {
       const subjectSessions =
         activeSubject === "all"
           ? row.sessions
@@ -334,9 +333,9 @@ const SessionAnalytics = () => {
                             </div>
                           )}
                           {row.tutor_name}
-                          {activeSubject === "all" && lastSession?.subject && (
+                          {activeSubject === "all" && (row.tutor_subject || lastSession?.subject) && (
                             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                              {lastSession.subject}
+                              {row.tutor_subject || lastSession?.subject}
                             </span>
                           )}
                         </span>
