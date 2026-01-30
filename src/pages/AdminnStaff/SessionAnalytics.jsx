@@ -43,11 +43,11 @@ const SessionAnalytics = () => {
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [detailStartIndex, setDetailStartIndex] = useState(1);
-  const [activeSubject, setActiveSubject] = useState("all");
+  const [activeSubject, setActiveSubject] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 4;
   const subjectTabs = [
-    "all",
+    "All",
     "Programming",
     "Chemistry",
     "Physics",
@@ -201,12 +201,12 @@ const SessionAnalytics = () => {
 
   const filteredLeaderboard = useMemo(() => {
     const scopedRows =
-      activeSubject === "all"
+      activeSubject === "All"
         ? leaderboard
         : leaderboard.filter((row) => row.tutor_subject === activeSubject);
     const withStats = scopedRows.map((row) => {
       const subjectSessions =
-        activeSubject === "all"
+        activeSubject === "All"
           ? row.sessions
           : row.sessions.filter((session) => session.subject === activeSubject);
       const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
@@ -243,7 +243,7 @@ const SessionAnalytics = () => {
   const detailSessions = useMemo(() => {
     if (!selectedTutor) return [];
     const sessions =
-      activeSubject === "all"
+      activeSubject === "All"
         ? selectedTutor.sessions
         : selectedTutor.sessions.filter((session) => session.subject === activeSubject);
     return [...sessions].sort(compareSessionsByDate);
@@ -333,7 +333,7 @@ const SessionAnalytics = () => {
                             </div>
                           )}
                           {row.tutor_name}
-                          {activeSubject === "all" && (row.tutor_subject || lastSession?.subject) && (
+                          {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
                             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
                               {row.tutor_subject || lastSession?.subject}
                             </span>
@@ -413,9 +413,6 @@ const SessionAnalytics = () => {
               <div className="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">
-                      Detailed Impact Analysis
-                    </h2>
                     <p className="text-xs text-gray-500">
                       {selectedTutor.tutor_name}: Pre vs. Post Comparison
                     </p>
