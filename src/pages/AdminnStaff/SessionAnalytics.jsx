@@ -35,6 +35,8 @@ const SessionAnalytics = () => {
   const [notesModal, setNotesModal] = useState(null);
   const [activeSubject, setActiveSubject] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortKey, setSortKey] = useState("rank");
   const cardsPerPage = 4;
   const subjectTabs = [
     "All",
@@ -203,7 +205,7 @@ const SessionAnalytics = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeSubject]);
+  }, [activeSubject, searchQuery, sortKey]);
 
   const filteredLeaderboard = useMemo(() => {
     const scopedRows =
@@ -235,8 +237,33 @@ const SessionAnalytics = () => {
       };
     });
     const sorted = [...withStats].sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
-    return sorted;
-  }, [leaderboard, activeSubject]);
+    const normalized = searchQuery.trim().toLowerCase();
+    const searched = normalized
+      ? sorted.filter((row) => {
+          const sessionText = (activeSubject === "All"
+            ? row.sessions
+            : row.sessions.filter((session) => session.subject === activeSubject))
+            .map(
+              (session) =>
+                `${session.subject} ${session.topic || ""} ${session.tutor_notes || ""} ${
+                  session.student_name || ""
+                }`
+            )
+            .join(" ")
+            .toLowerCase();
+          const haystack = `${row.tutor_name} ${row.tutor_subject || ""} ${sessionText}`.toLowerCase();
+          return haystack.includes(normalized);
+        })
+      : sorted;
+    const sortedByKey = [...searched];
+    sortedByKey.sort((a, b) => {
+      if (sortKey === "tutor") return a.tutor_name.localeCompare(b.tutor_name);
+      if (sortKey === "sessions") return b.effectiveSessions - a.effectiveSessions;
+      if (sortKey === "avg") return b.effectiveAverageGain - a.effectiveAverageGain;
+      return b.effectiveAverageGain - a.effectiveAverageGain;
+    });
+    return sortedByKey;
+  }, [leaderboard, activeSubject, searchQuery, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeaderboard.length / cardsPerPage));
   const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
@@ -291,6 +318,29 @@ const SessionAnalytics = () => {
               ))}
             </div>
 
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tutor or tutee"
+                className="w-full sm:max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>Sort by</span>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value)}
+                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                >
+                  <option value="rank">Rank</option>
+                  <option value="tutor">Tutor</option>
+                  <option value="sessions">Sessions</option>
+                  <option value="avg">Avg Gain</option>
+                </select>
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               {pagedLeaderboard.length === 0 ? (
                 <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
@@ -306,60 +356,106 @@ const SessionAnalytics = () => {
                         ? "bg-yellow-400"
                         : "bg-red-400";
                   const lastSession = row.effectiveLastSession;
+                  const lastImprovement = lastSession
+                    ? computeImprovement(lastSession.pre_test_score, lastSession.post_test_score)
+                    : null;
                   return (
                     <div
                       key={row.tutor_id}
-                      className="rounded-xl border border-gray-100 bg-gray-50 p-4"
+                      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
-                      <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-gray-400">
-                            #{pageStartIndex + index + 1}
-                          </span>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                           {row.tutor_image ? (
                             <img
                               src={row.tutor_image}
                               alt={row.tutor_name}
-                              className="h-7 w-7 rounded-full object-cover border border-gray-200"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-500">
-                              {row.tutor_name?.charAt(0) || "T"}
-                            </div>
-                          )}
-                          {row.tutor_name}
-                          {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
-                            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                              {row.tutor_subject || lastSession?.subject}
+                            <span className="text-blue-700 font-bold">
+                              {(row.tutor_name || "T").charAt(0).toUpperCase()}
                             </span>
                           )}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {row.effectiveSessions} sessions
-                        </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            #{pageStartIndex + index + 1}
+                            {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                {row.tutor_subject || lastSession?.subject}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-800">
+                            {row.tutor_name}
+                          </h3>
+                        </div>
+                        <div className="text-xs text-gray-500 text-right">
+                          <span className="text-sm font-semibold text-gray-800">
+                            {row.effectiveSessions}
+                          </span>{" "}
+                          sessions
+                        </div>
                       </div>
-                      <div className="mt-3 h-2 rounded-full bg-gray-200">
-                        <div
-                          className={`h-2 rounded-full ${barColor}`}
-                          style={{ width: `${percentage}%` }}
-                        />
+
+                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{lastSession?.date || "-"}</span>
+                          <span>{formatPercent(row.effectiveAverageGain)} avg gain</span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {lastSession?.subject || "No session at the moment"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {lastSession?.topic || "-"}
+                            </p>
+                          </div>
+                          <div className="text-right text-xs">
+                            <p>Pre: {lastSession?.pre_test_score ?? "-"}</p>
+                            <p>Post: {lastSession?.post_test_score ?? "-"}</p>
+                            <p
+                              className={`font-semibold ${
+                                lastImprovement === null
+                                  ? "text-gray-400"
+                                  : lastImprovement >= 0
+                                    ? "text-green-600"
+                                    : "text-orange-600"
+                              }`}
+                            >
+                              {lastImprovement === null
+                                ? "-"
+                                : `${lastImprovement >= 0 ? "+" : "-"}${Math.abs(lastImprovement).toFixed(1)}%`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNotesModal({
+                                tutor_name: row.tutor_name,
+                                subject: lastSession?.subject || "-",
+                                topic: lastSession?.topic || "-",
+                                notes: lastSession?.tutor_notes || "",
+                              })
+                            }
+                            className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                          >
+                            View notes
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-2 text-xs text-gray-500">
-                        {formatPercent(row.effectiveAverageGain)} avg gain
-                      </div>
-                      <div className="mt-2 text-xs text-gray-500">
-                        Last session:{" "}
-                        {lastSession
-                          ? `${lastSession.subject} (Pre ${lastSession.pre_test_score ?? "-"} / Post ${lastSession.post_test_score ?? "-"})`
-                          : "No session at the moment"}
-                      </div>
+
                       <div className="mt-3 flex justify-end">
                         <button
                           type="button"
                           onClick={() => setSelectedTutor(row)}
                           className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                         >
-                          View sessions
+                          View all sessions
                         </button>
                       </div>
                     </div>
@@ -428,7 +524,9 @@ const SessionAnalytics = () => {
                       <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
                         <tr>
                           <th className="text-left px-4 py-3">Date</th>
+                          <th className="text-left px-4 py-3">Tutee</th>
                           <th className="text-left px-4 py-3">Subject</th>
+                          <th className="text-left px-4 py-3">Specialization</th>
                           <th className="text-left px-4 py-3">Topic</th>
                           <th className="text-center px-4 py-3">Pre</th>
                           <th className="text-center px-4 py-3">Post</th>
@@ -460,8 +558,14 @@ const SessionAnalytics = () => {
                                 <td className="px-4 py-3 text-left text-gray-600">
                                   {session.date || "-"}
                                 </td>
+                                <td className="px-4 py-3 text-left text-gray-600">
+                                  {session.student_name || "Unknown"}
+                                </td>
                                 <td className="px-4 py-3 text-left text-gray-700">
                                   {session.subject}
+                                </td>
+                                <td className="px-4 py-3 text-left text-gray-600">
+                                  {session.topic || "-"}
                                 </td>
                                 <td className="px-4 py-3 text-left text-gray-600">
                                   {session.topic || "-"}
