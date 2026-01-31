@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "../../supabase-client";
 import AssessmentModal from "../../components/AssessmentModal";
 import LoadingButton from "../../components/LoadingButton";
@@ -24,6 +25,9 @@ const formatScoreWithTotal = (score, total) => {
   if (total === null || total === undefined || total === "") return `${score}`;
   return `${score}/${total}`;
 };
+
+const formatPercent = (value) =>
+  Number.isFinite(value) ? `${value.toFixed(1)}%` : "0.0%";
 
 const MyTutees = () => {
   const { version } = useDataSync();
@@ -219,6 +223,35 @@ const MyTutees = () => {
     (currentPageSafe - 1) * cardsPerPage,
     currentPageSafe * cardsPerPage
   );
+  const allSessions = useMemo(() => {
+    const items = [];
+    tutees.forEach((tutee) => {
+      (tutee.sessions || []).forEach((session) => items.push(session));
+    });
+    return items.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+  }, [tutees]);
+  const masteryValues = allSessions
+    .map((session) =>
+      formatImprovement(
+        session.pre_test_score,
+        session.post_test_score,
+        session.pre_test_total
+      )
+    )
+    .filter((value) => value !== null);
+  const totalMastery =
+    masteryValues.length > 0
+      ? masteryValues.reduce((sum, value) => sum + value, 0) / masteryValues.length
+      : 0;
+  const masteryChartData = allSessions.slice(-10).map((session, index) => ({
+    name: `S${Math.max(allSessions.length - 9, 1) + index}`,
+    mastery:
+      formatImprovement(
+        session.pre_test_score,
+        session.post_test_score,
+        session.pre_test_total
+      ) || 0,
+  }));
   const rawSessions = useMemo(() => {
     const items = [];
     tutees.forEach((tutee) => {
@@ -377,11 +410,30 @@ const MyTutees = () => {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-[calc(100vh-260px)]">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">
-            MY TUTEES
-          </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-700">
+              MY TUTEES
+            </h2>
+            <p className="text-xs text-gray-500">
+              Total Sessions: {allSessions.length} | Total Mastery:{" "}
+              <span className="font-semibold text-green-600">
+                {formatPercent(totalMastery)}
+              </span>
+            </p>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="h-[64px] w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={masteryChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input

@@ -3,8 +3,9 @@ import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
 import {
   Bar,
-  BarChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
@@ -55,6 +56,7 @@ const SessionAnalytics = () => {
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [chartTutor, setChartTutor] = useState(null);
+  const [chartPage, setChartPage] = useState(1);
   const [notesModal, setNotesModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
@@ -377,6 +379,13 @@ const SessionAnalytics = () => {
     return [...sessions].sort(compareSessionsByDate);
   }, [selectedTutor, chartTutor, activeSubject]);
 
+  const chartTotalPages = Math.max(1, Math.ceil(selectedSessions.length / 10));
+  const chartPageSafe = Math.min(Math.max(chartPage, 1), chartTotalPages);
+  const chartSessions = selectedSessions.slice(
+    (chartPageSafe - 1) * 10,
+    chartPageSafe * 10
+  );
+
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="mb-6">
@@ -541,10 +550,13 @@ const SessionAnalytics = () => {
                             </ResponsiveContainer>
                           </div>
                           <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-                            <span>View Performance Chart</span>
+                            <span>View Chart</span>
                             <button
                               type="button"
-                              onClick={() => setChartTutor(row)}
+                              onClick={() => {
+                                setChartTutor(row);
+                                setChartPage(1);
+                              }}
                               className="font-semibold text-blue-600 hover:text-blue-800"
                             >
                               View chart
@@ -990,16 +1002,43 @@ const SessionAnalytics = () => {
                 </div>
 
                 <div className="mt-5">
-                  <div className="relative h-[260px] rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="absolute right-3 top-3 text-xs font-semibold text-gray-600">
-                      View Performance
+                  <div className="h-[160px] rounded-lg border border-gray-200 bg-white p-3">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={selectedSessions.map((session, idx) => ({
+                          name: `Session ${idx + 1}`,
+                          mastery: computeImprovement(
+                            session.pre_test_score,
+                            session.post_test_score,
+                            session.pre_test_total
+                          ) || 0,
+                        }))}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="absolute -top-6 right-0 text-xs font-semibold text-gray-600">
+                      View Chart
                     </div>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[...selectedSessions].map((session, idx) => ({
-                          name: `Session ${idx + 1}`,
+                      <ComposedChart
+                        data={chartSessions.map((session, idx) => ({
+                          name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
                           pre: Number(session.pre_test_score) || 0,
                           post: Number(session.post_test_score) || 0,
+                          mastery: computeImprovement(
+                            session.pre_test_score,
+                            session.post_test_score,
+                            session.pre_test_total
+                          ) || 0,
                         }))}
                         margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
                       >
@@ -1010,10 +1049,42 @@ const SessionAnalytics = () => {
                         <Legend />
                         <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                         <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                      </BarChart>
+                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
 
+                  {chartTotalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded border ${
+                          chartPageSafe === 1
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                        }`}
+                        disabled={chartPageSafe === 1}
+                        onClick={() => setChartPage((prev) => Math.max(prev - 1, 1))}
+                      >
+                        Previous
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Page {chartPageSafe} of {chartTotalPages}
+                      </span>
+                      <button
+                        type="button"
+                        className={`px-3 py-1 rounded border ${
+                          chartPageSafe === chartTotalPages
+                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                            : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                        }`}
+                        disabled={chartPageSafe === chartTotalPages}
+                        onClick={() => setChartPage((prev) => Math.min(prev + 1, chartTotalPages))}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
