@@ -33,6 +33,8 @@ const SessionAnalytics = () => {
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [notesModal, setNotesModal] = useState(null);
+  const [rawModalOpen, setRawModalOpen] = useState(false);
+  const [rawPage, setRawPage] = useState(1);
   const [activeSubject, setActiveSubject] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -273,6 +275,24 @@ const SessionAnalytics = () => {
     currentPageSafe * cardsPerPage
   );
 
+  const rawSessions = useMemo(() => {
+    const items = [];
+    tutorRows.forEach((tutor) => {
+      (tutor.sessions || []).forEach((session) => {
+        if (activeSubject !== "All" && session.subject !== activeSubject) return;
+        items.push({
+          ...session,
+          tutor_name: tutor.tutor_name,
+        });
+      });
+    });
+    return items.sort(compareSessionsByDate);
+  }, [tutorRows, activeSubject]);
+
+  const rawTotalPages = Math.max(1, Math.ceil(rawSessions.length / 6));
+  const rawPageSafe = Math.min(Math.max(rawPage, 1), rawTotalPages);
+  const rawPagedSessions = rawSessions.slice((rawPageSafe - 1) * 6, rawPageSafe * 6);
+
   const selectedSessions = useMemo(() => {
     if (!selectedTutor) return [];
     const sessions =
@@ -298,9 +318,21 @@ const SessionAnalytics = () => {
       ) : (
         <div className="space-y-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">
-              ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
-            </h2>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-700">
+                ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setRawPage(1);
+                  setRawModalOpen(true);
+                }}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+              >
+                Sessions Test Result (Raw)
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {subjectTabs.map((subject) => (
                 <button
@@ -380,7 +412,6 @@ const SessionAnalytics = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            #{pageStartIndex + index + 1}
                             {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
                               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
                                 {row.tutor_subject || lastSession?.subject}
@@ -519,7 +550,7 @@ const SessionAnalytics = () => {
                 </div>
 
                 <div className="mt-4">
-                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="rounded-lg border border-gray-200 overflow-x-auto">
                     <table className="w-full text-sm min-w-[640px] sm:min-w-0">
                       <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
                         <tr>
@@ -527,7 +558,6 @@ const SessionAnalytics = () => {
                           <th className="text-left px-4 py-3">Tutee</th>
                           <th className="text-left px-4 py-3">Subject</th>
                           <th className="text-left px-4 py-3">Specialization</th>
-                          <th className="text-left px-4 py-3">Topic</th>
                           <th className="text-center px-4 py-3">Pre</th>
                           <th className="text-center px-4 py-3">Post</th>
                           <th className="text-center px-4 py-3">Avg Gain</th>
@@ -563,9 +593,6 @@ const SessionAnalytics = () => {
                                 </td>
                                 <td className="px-4 py-3 text-left text-gray-700">
                                   {session.subject}
-                                </td>
-                                <td className="px-4 py-3 text-left text-gray-600">
-                                  {session.topic || "-"}
                                 </td>
                                 <td className="px-4 py-3 text-left text-gray-600">
                                   {session.topic || "-"}
@@ -656,6 +683,135 @@ const SessionAnalytics = () => {
                     Close
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {rawModalOpen && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+              <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Sessions Test Result (Raw)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setRawModalOpen(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close raw sessions"
+                  >
+                    x
+                  </button>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
+                  <table className="w-full text-sm min-w-[720px] sm:min-w-0">
+                    <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                      <tr>
+                        <th className="text-left px-4 py-3">Date</th>
+                        <th className="text-left px-4 py-3">Tutor</th>
+                        <th className="text-left px-4 py-3">Tutee</th>
+                        <th className="text-left px-4 py-3">Subject</th>
+                        <th className="text-left px-4 py-3">Specialization</th>
+                        <th className="text-center px-4 py-3">Pre</th>
+                        <th className="text-center px-4 py-3">Post</th>
+                        <th className="text-center px-4 py-3">Avg Gain</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rawPagedSessions.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="px-4 py-6 text-center text-sm text-gray-500"
+                          >
+                            No sessions available.
+                          </td>
+                        </tr>
+                      ) : (
+                        rawPagedSessions.map((session) => {
+                          const improvement = computeImprovement(
+                            session.pre_test_score,
+                            session.post_test_score
+                          );
+                          return (
+                            <tr
+                              key={session.evaluation_id || session.appointment_id}
+                              className="border-t border-gray-100"
+                            >
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.date || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-700">
+                                {session.tutor_name || "Unknown"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.student_name || "Unknown"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-700">
+                                {session.subject || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.topic || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center text-gray-600">
+                                {session.pre_test_score ?? "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center text-gray-600">
+                                {session.post_test_score ?? "-"}
+                              </td>
+                              <td
+                                className={`px-4 py-3 text-center text-sm font-semibold ${
+                                  improvement === null
+                                    ? "text-gray-400"
+                                    : improvement >= 0
+                                      ? "text-green-600"
+                                      : "text-orange-600"
+                                }`}
+                              >
+                                {improvement === null
+                                  ? "-"
+                                  : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {rawTotalPages > 1 && (
+                  <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+                    <button
+                      type="button"
+                      className={`px-3 py-1 rounded border ${
+                        rawPageSafe === 1
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                      }`}
+                      disabled={rawPageSafe === 1}
+                      onClick={() => setRawPage((prev) => Math.max(prev - 1, 1))}
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-gray-500">
+                      Page {rawPageSafe} of {rawTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className={`px-3 py-1 rounded border ${
+                        rawPageSafe === rawTotalPages
+                          ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                          : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                      }`}
+                      disabled={rawPageSafe === rawTotalPages}
+                      onClick={() => setRawPage((prev) => Math.min(prev + 1, rawTotalPages))}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

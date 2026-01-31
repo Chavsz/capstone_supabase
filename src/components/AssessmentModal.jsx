@@ -27,8 +27,7 @@ const AssessmentModal = ({
 }) => {
   const [preScore, setPreScore] = useState("");
   const [postScore, setPostScore] = useState("");
-  const [preTotal, setPreTotal] = useState(10);
-  const [postTotal, setPostTotal] = useState(10);
+  const [totalItems, setTotalItems] = useState(10);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
@@ -36,8 +35,7 @@ const AssessmentModal = ({
     if (!isOpen) return;
     setPreScore(toNumber(defaultValues.preScore));
     setPostScore(toNumber(defaultValues.postScore));
-    setPreTotal(defaultValues.preTotal || 10);
-    setPostTotal(defaultValues.postTotal || 10);
+    setTotalItems(defaultValues.preTotal || defaultValues.postTotal || 10);
     setNotes(defaultValues.notes || "");
     setError("");
   }, [defaultValues, isOpen]);
@@ -47,12 +45,12 @@ const AssessmentModal = ({
     [preScore, postScore]
   );
   const prePercent =
-    preScore !== "" && preTotal
-      ? Math.min((Number(preScore) / Number(preTotal)) * 100, 100)
+    preScore !== "" && totalItems
+      ? Math.min((Number(preScore) / Number(totalItems)) * 100, 100)
       : null;
   const postPercent =
-    postScore !== "" && postTotal
-      ? Math.min((Number(postScore) / Number(postTotal)) * 100, 100)
+    postScore !== "" && totalItems
+      ? Math.min((Number(postScore) / Number(totalItems)) * 100, 100)
       : null;
   const totalOptions = [5, 10, 15, 20, 25, 30];
 
@@ -97,8 +95,8 @@ const AssessmentModal = ({
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
               <span>/ Total Items</span>
               <select
-                value={preTotal}
-                onChange={(e) => setPreTotal(Number(e.target.value))}
+                value={totalItems}
+                onChange={(e) => setTotalItems(Number(e.target.value))}
                 className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
                 disabled={isBusy}
               >
@@ -131,8 +129,7 @@ const AssessmentModal = ({
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
               <span>/ Total Items</span>
               <select
-                value={postTotal}
-                onChange={(e) => setPostTotal(Number(e.target.value))}
+                value={totalItems}
                 className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
                 disabled={isBusy}
               >
@@ -205,8 +202,8 @@ const AssessmentModal = ({
               onSubmit?.({
                 preScore: pre,
                 postScore: post,
-                preTotal,
-                postTotal,
+                preTotal: totalItems,
+                postTotal: totalItems,
                 notes: notes.trim() || null,
               });
             }}
