@@ -381,16 +381,27 @@ const MyTutees = () => {
           <h2 className="text-sm font-semibold text-gray-700">
             MY TUTEES
           </h2>
-          <button
-            type="button"
-            onClick={() => {
-              setRawPage(1);
-              setRawModalOpen(true);
-            }}
-            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-          >
-            {rawSessions.length} Sessions Test Result (Raw)
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Month</span>
+              <input
+                type="month"
+                value={rawMonth}
+                onChange={(e) => setRawMonth(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRawPage(1);
+                setRawModalOpen(true);
+              }}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+            >
+              {rawSessions.length} Sessions Test Result (Raw)
+            </button>
+          </div>
         </div>
 
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -746,20 +757,9 @@ const MyTutees = () => {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <h3 className="text-lg font-bold text-gray-800">
-                  {rawSessions.length} Sessions Test Result (Raw)
-                </h3>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>Month</span>
-                  <input
-                    type="month"
-                    value={rawMonth}
-                    onChange={(e) => setRawMonth(e.target.value)}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                  />
-                </div>
-              </div>
+              <h3 className="text-lg font-bold text-gray-800">
+                {rawSessions.length} Sessions Test Result (Raw)
+              </h3>
               <button
                 type="button"
                 onClick={() => setRawModalOpen(false)}

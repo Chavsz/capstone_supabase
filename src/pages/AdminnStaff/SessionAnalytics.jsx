@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
+import LoadingButton from "../../components/LoadingButton";
 
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0%";
@@ -45,6 +46,14 @@ const SessionAnalytics = () => {
   const [notesModal, setNotesModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
+  const [editScoreSession, setEditScoreSession] = useState(null);
+  const [editScores, setEditScores] = useState({
+    preScore: "",
+    postScore: "",
+    preTotal: "",
+    postTotal: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -180,6 +189,7 @@ const SessionAnalytics = () => {
         grouped.get(tutorId).sessions.push({
           ...evaluation,
           appointment_id: appointment.appointment_id,
+          tutor_id: appointment.tutor_id,
           user_id: meta.user_id,
           subject: meta.subject || "Unknown",
           topic: meta.topic || "-",
@@ -352,6 +362,72 @@ const SessionAnalytics = () => {
   const rawPageSafe = Math.min(Math.max(rawPage, 1), rawTotalPages);
   const rawPagedSessions = rawSessions.slice((rawPageSafe - 1) * 6, rawPageSafe * 6);
 
+  const openEditScores = (session) => {
+    if (!session) return;
+    setEditScores({
+      preScore: session.pre_test_score ?? "",
+      postScore: session.post_test_score ?? "",
+      preTotal: session.pre_test_total ?? "",
+      postTotal: session.post_test_total ?? "",
+    });
+    setEditScoreSession(session);
+  };
+
+  const saveRawScores = async () => {
+    if (!editScoreSession) return;
+    setEditSaving(true);
+    try {
+      const preScore = Number(editScores.preScore);
+      const postScore = Number(editScores.postScore);
+      const preTotal = Number(editScores.preTotal);
+      const postTotal = Number(editScores.postTotal);
+      if (Number.isNaN(preScore) || Number.isNaN(postScore)) {
+        return;
+      }
+
+      const { data: existing, error: existingError } = await supabase
+        .from("evaluation")
+        .select("evaluation_id")
+        .eq("appointment_id", editScoreSession.appointment_id)
+        .maybeSingle();
+      if (existingError && existingError.code !== "PGRST116") throw existingError;
+
+      const payload = {
+        pre_test_score: preScore,
+        post_test_score: postScore,
+        pre_test_total: Number.isNaN(preTotal) ? null : preTotal,
+        post_test_total: Number.isNaN(postTotal) ? null : postTotal,
+      };
+
+      if (existing?.evaluation_id) {
+        const { error: updateError } = await supabase
+          .from("evaluation")
+          .update(payload)
+          .eq("evaluation_id", existing.evaluation_id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("evaluation")
+          .insert([
+            {
+              appointment_id: editScoreSession.appointment_id,
+              tutor_id: editScoreSession.tutor_id,
+              user_id: editScoreSession.user_id,
+              ...payload,
+            },
+          ]);
+        if (insertError) throw insertError;
+      }
+
+      await loadData();
+      setEditScoreSession(null);
+    } catch (err) {
+      console.error("Error saving scores:", err.message);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const selectedSessions = useMemo(() => {
     if (!selectedTutor) return [];
     const sessions =
@@ -381,16 +457,27 @@ const SessionAnalytics = () => {
               <h2 className="text-sm font-semibold text-gray-700">
                 ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
               </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setRawPage(1);
-                  setRawModalOpen(true);
-                }}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-              >
-                {rawSessions.length} Sessions Test Result (Raw)
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>Month</span>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRawPage(1);
+                    setRawModalOpen(true);
+                  }}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                >
+                  {rawSessions.length} Sessions Test Result (Raw)
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {subjectTabs.map((subject) => (
@@ -774,20 +861,9 @@ const SessionAnalytics = () => {
             <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
               <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {rawSessions.length} Sessions Test Result (Raw)
-                    </h3>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>Month</span>
-                      <input
-                        type="month"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                      />
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {rawSessions.length} Sessions Test Result (Raw)
+                  </h3>
                   <button
                     type="button"
                     onClick={() => setRawModalOpen(false)}
@@ -850,16 +926,28 @@ const SessionAnalytics = () => {
                                 {session.topic || "-"}
                               </td>
                               <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.pre_test_score,
-                                  session.pre_test_total
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => openEditScores(session)}
+                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                >
+                                  {formatScoreWithTotal(
+                                    session.pre_test_score,
+                                    session.pre_test_total
+                                  )}
+                                </button>
                               </td>
                               <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.post_test_score,
-                                  session.post_test_total
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => openEditScores(session)}
+                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                >
+                                  {formatScoreWithTotal(
+                                    session.post_test_score,
+                                    session.post_test_total
+                                  )}
+                                </button>
                               </td>
                               <td
                                 className={`px-4 py-3 text-center text-sm font-semibold ${
@@ -911,6 +999,104 @@ const SessionAnalytics = () => {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {editScoreSession && (
+            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-4">
+              <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-gray-800">Update Scores</h3>
+                  <button
+                    type="button"
+                    onClick={() => setEditScoreSession(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close edit scores"
+                  >
+                    x
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {editScoreSession.tutor_name || "Tutor"} - {editScoreSession.subject}
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Pre-Test</label>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={editScores.preScore}
+                        onChange={(e) =>
+                          setEditScores((prev) => ({ ...prev, preScore: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Score"
+                        disabled={editSaving}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={editScores.preTotal}
+                        onChange={(e) =>
+                          setEditScores((prev) => ({ ...prev, preTotal: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Total"
+                        disabled={editSaving}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600">Post-Test</label>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={editScores.postScore}
+                        onChange={(e) =>
+                          setEditScores((prev) => ({ ...prev, postScore: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Score"
+                        disabled={editSaving}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={editScores.postTotal}
+                        onChange={(e) =>
+                          setEditScores((prev) => ({ ...prev, postTotal: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Total"
+                        disabled={editSaving}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex justify-end gap-2">
+                  <LoadingButton
+                    type="button"
+                    onClick={() => setEditScoreSession(null)}
+                    disabled={editSaving}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </LoadingButton>
+                  <LoadingButton
+                    type="button"
+                    onClick={saveRawScores}
+                    isLoading={editSaving}
+                    loadingText="Saving..."
+                    className="rounded-lg bg-[#132c91] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f1f6b]"
+                  >
+                    Save
+                  </LoadingButton>
+                </div>
               </div>
             </div>
           )}
