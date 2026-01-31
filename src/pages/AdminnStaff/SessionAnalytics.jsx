@@ -54,15 +54,6 @@ const SessionAnalytics = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: evaluations, error } = await supabase
-        .from("evaluation")
-        .select(
-          "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, tutor_notes, created_at"
-        )
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-
       const { data: tutors, error: tutorError } = await supabase
         .from("users")
         .select("user_id, name")
@@ -72,9 +63,47 @@ const SessionAnalytics = () => {
       const tutorIds = Array.from(
         new Set((tutors || []).map((item) => item.user_id).filter(Boolean))
       );
+      let appointmentList = [];
+      if (tutorIds.length) {
+        const { data: appointments, error: appointmentError } = await supabase
+          .from("appointment")
+          .select(
+            `
+            appointment_id,
+            tutor_id,
+            user_id,
+            subject,
+            topic,
+            date,
+            status,
+            student:users!appointment_user_id_fkey(name)
+          `
+          )
+          .in("tutor_id", tutorIds);
+        if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
+        appointmentList = (appointments || []).filter((appointment) =>
+          ["completed", "awaiting_feedback"].includes(appointment.status)
+        );
+      }
+
       const appointmentIds = Array.from(
-        new Set((evaluations || []).map((item) => item.appointment_id).filter(Boolean))
+        new Set(appointmentList.map((item) => item.appointment_id).filter(Boolean))
       );
+
+      let evaluationMap = {};
+      if (appointmentIds.length) {
+        const { data: evaluations, error: evaluationError } = await supabase
+          .from("evaluation")
+          .select(
+            "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, tutor_notes, created_at"
+          )
+          .in("appointment_id", appointmentIds);
+        if (evaluationError && evaluationError.code !== "PGRST116") throw evaluationError;
+        evaluationMap = (evaluations || []).reduce((acc, item) => {
+          acc[item.appointment_id] = item;
+          return acc;
+        }, {});
+      }
 
       let tutorMap = {};
       tutorMap = (tutors || []).reduce((acc, item) => {
@@ -98,33 +127,16 @@ const SessionAnalytics = () => {
         }, {});
       }
 
-      let appointmentMetaMap = {};
-      if (appointmentIds.length) {
-        const { data: appointments, error: appointmentError } = await supabase
-          .from("appointment")
-          .select(
-            `
-            appointment_id,
-            user_id,
-            subject,
-            topic,
-            date,
-            student:users!appointment_user_id_fkey(name)
-          `
-          )
-          .in("appointment_id", appointmentIds);
-        if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
-        appointmentMetaMap = (appointments || []).reduce((acc, item) => {
-          acc[item.appointment_id] = {
-            user_id: item.user_id || "",
-            subject: item.subject || "Unknown",
-            topic: item.topic || "-",
-            date: item.date || null,
-            student_name: item.student?.name || "Unknown",
-          };
-          return acc;
-        }, {});
-      }
+      const appointmentMetaMap = appointmentList.reduce((acc, item) => {
+        acc[item.appointment_id] = {
+          user_id: item.user_id || "",
+          subject: item.subject || "Unknown",
+          topic: item.topic || "-",
+          date: item.date || null,
+          student_name: item.student?.name || "Unknown",
+        };
+        return acc;
+      }, {});
 
       const grouped = new Map();
       tutorIds.forEach((tutorId) => {
@@ -136,8 +148,8 @@ const SessionAnalytics = () => {
           sessions: [],
         });
       });
-      (evaluations || []).forEach((item) => {
-        const tutorId = item.tutor_id || "unknown";
+      appointmentList.forEach((appointment) => {
+        const tutorId = appointment.tutor_id || "unknown";
         if (!grouped.has(tutorId)) {
           grouped.set(tutorId, {
             tutor_id: tutorId,
@@ -147,10 +159,11 @@ const SessionAnalytics = () => {
             sessions: [],
           });
         }
-        const meta = appointmentMetaMap[item.appointment_id] || {};
+        const meta = appointmentMetaMap[appointment.appointment_id] || {};
+        const evaluation = evaluationMap[appointment.appointment_id] || {};
         grouped.get(tutorId).sessions.push({
-          ...item,
-          appointment_id: item.appointment_id,
+          ...evaluation,
+          appointment_id: appointment.appointment_id,
           user_id: meta.user_id,
           subject: meta.subject || "Unknown",
           topic: meta.topic || "-",
@@ -412,6 +425,9 @@ const SessionAnalytics = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                              #{pageStartIndex + index + 1}
+                            </span>
                             {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
                               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
                                 {row.tutor_subject || lastSession?.subject}
