@@ -54,6 +54,7 @@ const SessionAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
+  const [chartTutor, setChartTutor] = useState(null);
   const [notesModal, setNotesModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
@@ -367,13 +368,14 @@ const SessionAnalytics = () => {
 
 
   const selectedSessions = useMemo(() => {
-    if (!selectedTutor) return [];
+    const baseTutor = selectedTutor || chartTutor;
+    if (!baseTutor) return [];
     const sessions =
       activeSubject === "All"
-        ? selectedTutor.sessions
-        : selectedTutor.sessions.filter((session) => session.subject === activeSubject);
+        ? baseTutor.sessions
+        : baseTutor.sessions.filter((session) => session.subject === activeSubject);
     return [...sessions].sort(compareSessionsByDate);
-  }, [selectedTutor, activeSubject]);
+  }, [selectedTutor, chartTutor, activeSubject]);
 
   return (
     <div className="min-h-screen p-4 md:p-6">
@@ -542,7 +544,7 @@ const SessionAnalytics = () => {
                             <span>View Performance Chart</span>
                             <button
                               type="button"
-                              onClick={() => setSelectedTutor(row)}
+                              onClick={() => setChartTutor(row)}
                               className="font-semibold text-blue-600 hover:text-blue-800"
                             >
                               View chart
@@ -590,12 +592,6 @@ const SessionAnalytics = () => {
                         <div className="mt-2 flex justify-end gap-2">
                           <button
                             type="button"
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                          >
-                            Add scores
-                          </button>
-                          <button
-                            type="button"
                             onClick={() =>
                               setNotesModal({
                                 tutor_name: row.tutor_name,
@@ -607,6 +603,13 @@ const SessionAnalytics = () => {
                             className="text-xs font-semibold text-gray-500 hover:text-gray-700"
                           >
                             View notes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTutor(row)}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                          >
+                            View all sessions
                           </button>
                         </div>
                       </div>
@@ -650,69 +653,134 @@ const SessionAnalytics = () => {
 
           {selectedTutor && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+              <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-gray-800">
-                      {selectedTutor.tutor_name}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {activeSubject === "All" ? "All subjects" : activeSubject} comparison
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                      {selectedTutor.tutor_image ? (
+                        <img
+                          src={selectedTutor.tutor_image}
+                          alt={selectedTutor.tutor_name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-blue-700 font-bold">
+                          {(selectedTutor.tutor_name || "T").charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-800">
+                        {selectedTutor.tutor_name}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {activeSubject === "All" ? "All subjects" : activeSubject} sessions
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedTutor(null)}
                     className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close graph"
+                    aria-label="Close sessions"
                   >
                     x
                   </button>
                 </div>
 
-                <div className="mt-4 h-[280px]">
-                  <div className="mb-1 text-xs font-semibold text-gray-600">
-                    View Performance
-                  </div>
-                  <div className="mb-3 h-[120px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={selectedSessions.map((session, idx) => ({
-                          name: `Session ${idx + 1}`,
-                          mastery: computeImprovement(
+                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
+                  <table className="w-full text-sm min-w-[720px] sm:min-w-0">
+                    <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                      <tr>
+                        <th className="text-left px-4 py-3">Date</th>
+                        <th className="text-left px-4 py-3">Tutee</th>
+                        <th className="text-left px-4 py-3">Subject</th>
+                        <th className="text-left px-4 py-3">Specialization</th>
+                        <th className="text-center px-4 py-3">Pre</th>
+                        <th className="text-center px-4 py-3">Post</th>
+                        <th className="text-center px-4 py-3">Avg Gain</th>
+                        <th className="text-center px-4 py-3">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedSessions.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="px-4 py-6 text-center text-sm text-gray-500"
+                          >
+                            No sessions available for this tutor.
+                          </td>
+                        </tr>
+                      ) : (
+                        selectedSessions.map((session) => {
+                          const improvement = computeImprovement(
                             session.pre_test_score,
                             session.post_test_score,
                             session.pre_test_total
-                          ) || 0,
-                        }))}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={[...selectedSessions].reverse().map((session, idx) => ({
-                        name: `Session ${idx + 1}`,
-                        pre: Number(session.pre_test_score) || 0,
-                        post: Number(session.post_test_score) || 0,
-                      }))}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
-                      <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                          );
+                          return (
+                            <tr
+                              key={session.appointment_id || session.evaluation_id}
+                              className="border-t border-gray-100"
+                            >
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.date || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.student_name || "Unknown"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-700">
+                                {session.subject || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-left text-gray-600">
+                                {session.topic || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center text-gray-600">
+                                {formatScoreWithTotal(
+                                  session.pre_test_score,
+                                  session.pre_test_total
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center text-gray-600">
+                                {formatScoreWithTotal(
+                                  session.post_test_score,
+                                  session.post_test_total
+                                )}
+                              </td>
+                              <td
+                                className={`px-4 py-3 text-center text-sm font-semibold ${
+                                  improvement === null || improvement >= 0
+                                    ? "text-green-600"
+                                    : "text-orange-600"
+                                }`}
+                              >
+                                {improvement === null
+                                  ? "+0.0%"
+                                  : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setNotesModal({
+                                      tutor_name: selectedTutor.tutor_name,
+                                      subject: session.subject,
+                                      topic: session.topic,
+                                      notes: session.tutor_notes || "",
+                                    })
+                                  }
+                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                >
+                                  View
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -895,6 +963,58 @@ const SessionAnalytics = () => {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {chartTutor && (
+            <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/30 px-4">
+              <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-gray-800">
+                      {chartTutor.tutor_name}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {activeSubject === "All" ? "All subjects" : activeSubject} comparison
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setChartTutor(null)}
+                    className="text-gray-500 hover:text-gray-700"
+                    aria-label="Close chart"
+                  >
+                    x
+                  </button>
+                </div>
+
+                <div className="mt-5">
+                  <div className="relative h-[260px] rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="absolute right-3 top-3 text-xs font-semibold text-gray-600">
+                      View Performance
+                    </div>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[...selectedSessions].map((session, idx) => ({
+                          name: `Session ${idx + 1}`,
+                          pre: Number(session.pre_test_score) || 0,
+                          post: Number(session.post_test_score) || 0,
+                        }))}
+                        margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
+                        <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                </div>
               </div>
             </div>
           )}
