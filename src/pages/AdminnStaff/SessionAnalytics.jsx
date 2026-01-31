@@ -517,8 +517,8 @@ const SessionAnalytics = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="w-32 rounded-lg border border-gray-200 bg-gray-50 p-2">
-                          <div className="h-[56px]">
+                        <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                          <div className="h-[72px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
                                 <Line
@@ -538,13 +538,14 @@ const SessionAnalytics = () => {
                               </LineChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="mt-2 text-right">
+                          <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                            <span>View Performance Chart</span>
                             <button
                               type="button"
                               onClick={() => setSelectedTutor(row)}
-                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                              className="font-semibold text-blue-600 hover:text-blue-800"
                             >
-                              View more
+                              View chart
                             </button>
                           </div>
                         </div>
@@ -670,6 +671,30 @@ const SessionAnalytics = () => {
                 </div>
 
                 <div className="mt-4 h-[280px]">
+                  <div className="mb-1 text-xs font-semibold text-gray-600">
+                    View Performance
+                  </div>
+                  <div className="mb-3 h-[120px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={selectedSessions.map((session, idx) => ({
+                          name: `Session ${idx + 1}`,
+                          mastery: computeImprovement(
+                            session.pre_test_score,
+                            session.post_test_score,
+                            session.pre_test_total
+                          ) || 0,
+                        }))}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={[...selectedSessions].reverse().map((session, idx) => ({
