@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0%";
@@ -504,6 +504,12 @@ const SessionAnalytics = () => {
                                 {formatPercent(row.effectiveAverageGain)}
                               </span>
                             </p>
+                            <p className="text-xs text-gray-500">
+                              Last session:{" "}
+                              {row.effectiveLastSession
+                                ? `${row.effectiveLastSession.subject} (${row.effectiveLastSession.date || "-"})`
+                                : "No session at the moment"}
+                            </p>
                           </div>
                         </div>
                         <div className="w-32 rounded-lg border border-gray-200 bg-gray-50 p-2">
@@ -598,21 +604,24 @@ const SessionAnalytics = () => {
                   </button>
                 </div>
 
-                <div className="mt-4 h-[180px]">
+                <div className="mt-4 h-[280px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={selectedSessions.map((session, idx) => ({
-                        name: idx + 1,
+                    <BarChart
+                      data={[...selectedSessions].reverse().map((session, idx) => ({
+                        name: `Session ${idx + 1}`,
                         pre: Number(session.pre_test_score) || 0,
                         post: Number(session.post_test_score) || 0,
                       }))}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                      <Line type="monotone" dataKey="pre" stroke="#94a3b8" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="post" stroke="#0ea5e9" strokeWidth={2} dot={false} />
-                    </LineChart>
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
+                      <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
