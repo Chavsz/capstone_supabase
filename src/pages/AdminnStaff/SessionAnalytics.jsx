@@ -507,19 +507,13 @@ const SessionAnalytics = () => {
                               )}
                             </div>
                             <h3 className="text-base font-semibold text-gray-800">
-                              Tutor: {row.tutor_name}
+                              {row.tutor_name}
                             </h3>
                             <p className="text-xs text-gray-500">
-                              Sessions: {row.effectiveSessions} | Total Mastery:{" "}
+                              {row.effectiveSessions} sessions | Total Mastery:{" "}
                               <span className="font-semibold text-green-600">
                                 {formatPercent(row.effectiveAverageGain)}
                               </span>
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Last session:{" "}
-                              {row.effectiveLastSession
-                                ? `${row.effectiveLastSession.subject} (${row.effectiveLastSession.date || "-"})`
-                                : "No session at the moment"}
                             </p>
                           </div>
                         </div>
@@ -553,6 +547,66 @@ const SessionAnalytics = () => {
                               View more
                             </button>
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{row.effectiveLastSession?.date || "-"}</span>
+                          <span>
+                            {row.effectiveLastSession?.start_time
+                              ? row.effectiveLastSession.start_time.slice(0, 5)
+                              : ""}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {row.effectiveLastSession?.subject || "No session at the moment"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {row.effectiveLastSession?.topic || "-"}
+                            </p>
+                          </div>
+                          <div className="text-right text-xs">
+                            <p>
+                              Pre:{" "}
+                              {formatScoreWithTotal(
+                                row.effectiveLastSession?.pre_test_score,
+                                row.effectiveLastSession?.pre_test_total
+                              )}
+                            </p>
+                            <p>
+                              Post:{" "}
+                              {formatScoreWithTotal(
+                                row.effectiveLastSession?.post_test_score,
+                                row.effectiveLastSession?.post_test_total
+                              )}
+                            </p>
+                            <p className="text-green-600 font-semibold">+0.0%</p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                          >
+                            Add scores
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNotesModal({
+                                tutor_name: row.tutor_name,
+                                subject: row.effectiveLastSession?.subject || "-",
+                                topic: row.effectiveLastSession?.topic || "-",
+                                notes: row.effectiveLastSession?.tutor_notes || "",
+                              })
+                            }
+                            className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                          >
+                            View notes
+                          </button>
                         </div>
                       </div>
                     </div>
