@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import AssessmentModal from "../../components/AssessmentModal";
+import LoadingButton from "../../components/LoadingButton";
 import { useDataSync } from "../../contexts/DataSyncContext";
 
 const formatImprovement = (preScore, postScore, preTotal) => {
@@ -40,6 +41,14 @@ const MyTutees = () => {
     const month = String(now.getMonth() + 1).padStart(2, "0");
     return `${year}-${month}`;
   });
+  const [editScoreSession, setEditScoreSession] = useState(null);
+  const [editScores, setEditScores] = useState({
+    preScore: "",
+    postScore: "",
+    preTotal: "",
+    postTotal: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutee");
   const [currentPage, setCurrentPage] = useState(1);
@@ -286,6 +295,75 @@ const MyTutees = () => {
       console.error("Error saving scores:", err.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const openEditScores = (session) => {
+    if (!session) return;
+    setEditScores({
+      preScore: session.pre_test_score ?? "",
+      postScore: session.post_test_score ?? "",
+      preTotal: session.pre_test_total ?? "",
+      postTotal: session.post_test_total ?? "",
+    });
+    setEditScoreSession(session);
+  };
+
+  const saveRawScores = async () => {
+    if (!editScoreSession) return;
+    setEditSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const preScore = Number(editScores.preScore);
+      const postScore = Number(editScores.postScore);
+      const preTotal = Number(editScores.preTotal);
+      const postTotal = Number(editScores.postTotal);
+      if (Number.isNaN(preScore) || Number.isNaN(postScore)) {
+        return;
+      }
+
+      const { data: existing, error: existingError } = await supabase
+        .from("evaluation")
+        .select("evaluation_id")
+        .eq("appointment_id", editScoreSession.appointment_id)
+        .maybeSingle();
+      if (existingError && existingError.code !== "PGRST116") throw existingError;
+
+      const payload = {
+        pre_test_score: preScore,
+        post_test_score: postScore,
+        pre_test_total: Number.isNaN(preTotal) ? null : preTotal,
+        post_test_total: Number.isNaN(postTotal) ? null : postTotal,
+      };
+
+      if (existing?.evaluation_id) {
+        const { error: updateError } = await supabase
+          .from("evaluation")
+          .update(payload)
+          .eq("evaluation_id", existing.evaluation_id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("evaluation")
+          .insert([
+            {
+              appointment_id: editScoreSession.appointment_id,
+              tutor_id: editScoreSession.tutor_id,
+              user_id: editScoreSession.user_id,
+              ...payload,
+            },
+          ]);
+        if (insertError) throw insertError;
+      }
+
+      await loadRows();
+      setEditScoreSession(null);
+    } catch (err) {
+      console.error("Error saving scores:", err.message);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -740,16 +818,28 @@ const MyTutees = () => {
                             {session.topic || "-"}
                           </td>
                           <td className="px-4 py-3 text-center text-gray-600">
-                            {formatScoreWithTotal(
-                              session.pre_test_score,
-                              session.pre_test_total
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => openEditScores(session)}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                            >
+                              {formatScoreWithTotal(
+                                session.pre_test_score,
+                                session.pre_test_total
+                              )}
+                            </button>
                           </td>
                           <td className="px-4 py-3 text-center text-gray-600">
-                            {formatScoreWithTotal(
-                              session.post_test_score,
-                              session.post_test_total
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => openEditScores(session)}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                            >
+                              {formatScoreWithTotal(
+                                session.post_test_score,
+                                session.post_test_total
+                              )}
+                            </button>
                           </td>
                           <td
                             className={`px-4 py-3 text-center text-sm font-semibold ${
@@ -801,6 +891,104 @@ const MyTutees = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {editScoreSession && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-800">Update Scores</h3>
+              <button
+                type="button"
+                onClick={() => setEditScoreSession(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close edit scores"
+              >
+                x
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              {editScoreSession.tutee_name || "Tutee"} - {editScoreSession.subject}
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600">Pre-Test</label>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={editScores.preScore}
+                    onChange={(e) =>
+                      setEditScores((prev) => ({ ...prev, preScore: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Score"
+                    disabled={editSaving}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    value={editScores.preTotal}
+                    onChange={(e) =>
+                      setEditScores((prev) => ({ ...prev, preTotal: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Total"
+                    disabled={editSaving}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600">Post-Test</label>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={editScores.postScore}
+                    onChange={(e) =>
+                      setEditScores((prev) => ({ ...prev, postScore: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Score"
+                    disabled={editSaving}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    value={editScores.postTotal}
+                    onChange={(e) =>
+                      setEditScores((prev) => ({ ...prev, postTotal: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Total"
+                    disabled={editSaving}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <LoadingButton
+                type="button"
+                onClick={() => setEditScoreSession(null)}
+                disabled={editSaving}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </LoadingButton>
+              <LoadingButton
+                type="button"
+                onClick={saveRawScores}
+                isLoading={editSaving}
+                loadingText="Saving..."
+                className="rounded-lg bg-[#132c91] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0f1f6b]"
+              >
+                Save
+              </LoadingButton>
+            </div>
           </div>
         </div>
       )}
