@@ -46,6 +46,8 @@ const MyLearningJourney = () => {
   const [sessionsModal, setSessionsModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
+  const [chartTutor, setChartTutor] = useState(null);
+  const [chartPage, setChartPage] = useState(1);
   const [rawMonth, setRawMonth] = useState(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -216,6 +218,18 @@ const MyLearningJourney = () => {
   const pagedTutors = sortedTutors.slice(
     (currentPageSafe - 1) * cardsPerPage,
     currentPageSafe * cardsPerPage
+  );
+  const chartSessions = useMemo(() => {
+    if (!chartTutor) return [];
+    return [...(chartTutor.sessions || [])].sort((a, b) =>
+      String(a.date || "").localeCompare(String(b.date || ""))
+    );
+  }, [chartTutor]);
+  const chartTotalPages = Math.max(1, Math.ceil(chartSessions.length / 10));
+  const chartPageSafe = Math.min(Math.max(chartPage, 1), chartTotalPages);
+  const chartPagedSessions = chartSessions.slice(
+    (chartPageSafe - 1) * 10,
+    chartPageSafe * 10
   );
   const allSessions = useMemo(() => {
     const items = [];
@@ -471,11 +485,21 @@ const MyLearningJourney = () => {
                     >
                       View all sessions
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChartTutor(tutor);
+                        setChartPage(1);
+                      }}
+                      className="ml-3 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      View chart
+                    </button>
                   </div>
-                  </div>
-                );
-              })
-            )}
+                </div>
+              );
+            })
+          )}
           </div>
         )}
 
@@ -766,6 +790,81 @@ const MyLearningJourney = () => {
                   }`}
                   disabled={rawPageSafe === rawTotalPages}
                   onClick={() => setRawPage((prev) => Math.min(prev + 1, rawTotalPages))}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {chartTutor && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-800">
+                  {chartTutor.tutor_name}
+                </h3>
+                <p className="text-xs text-gray-500">Mastery trend</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setChartTutor(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close chart"
+              >
+                x
+              </button>
+            </div>
+            <div className="mt-4 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartPagedSessions.map((session, idx) => ({
+                    name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
+                    mastery:
+                      formatImprovement(
+                        session.pre_test_score,
+                        session.post_test_score,
+                        session.pre_test_total
+                      ) || 0,
+                  }))}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            {chartTotalPages > 1 && (
+              <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+                <button
+                  type="button"
+                  className={`px-3 py-1 rounded border ${
+                    chartPageSafe === 1
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                  }`}
+                  disabled={chartPageSafe === 1}
+                  onClick={() => setChartPage((prev) => Math.max(prev - 1, 1))}
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-gray-500">
+                  Page {chartPageSafe} of {chartTotalPages}
+                </span>
+                <button
+                  type="button"
+                  className={`px-3 py-1 rounded border ${
+                    chartPageSafe === chartTotalPages
+                      ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                      : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                  }`}
+                  disabled={chartPageSafe === chartTotalPages}
+                  onClick={() => setChartPage((prev) => Math.min(prev + 1, chartTotalPages))}
                 >
                   Next
                 </button>
