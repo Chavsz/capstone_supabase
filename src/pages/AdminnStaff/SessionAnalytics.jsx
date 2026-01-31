@@ -97,15 +97,9 @@ const SessionAnalytics = () => {
           )
           .in("tutor_id", tutorIds);
         if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
-        appointmentList = (appointments || []).filter((appointment) => {
-          if (!["completed", "awaiting_feedback"].includes(appointment.status)) return false;
-          if (!selectedMonth) return true;
-          if (!appointment.date) return false;
-          const dateValue = new Date(appointment.date);
-          if (Number.isNaN(dateValue.getTime())) return false;
-          const monthValue = `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}`;
-          return monthValue === selectedMonth;
-        });
+        appointmentList = (appointments || []).filter((appointment) =>
+          ["completed", "awaiting_feedback"].includes(appointment.status)
+        );
       }
 
       const appointmentIds = Array.from(
@@ -228,7 +222,7 @@ const SessionAnalytics = () => {
 
   useEffect(() => {
     loadData();
-  }, [version, selectedMonth]);
+  }, [version]);
 
   const leaderboard = useMemo(() => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
@@ -336,6 +330,15 @@ const SessionAnalytics = () => {
     tutorRows.forEach((tutor) => {
       (tutor.sessions || []).forEach((session) => {
         if (activeSubject !== "All" && session.subject !== activeSubject) return;
+        if (selectedMonth) {
+          if (!session.date) return;
+          const dateValue = new Date(session.date);
+          if (Number.isNaN(dateValue.getTime())) return;
+          const monthValue = `${dateValue.getFullYear()}-${String(
+            dateValue.getMonth() + 1
+          ).padStart(2, "0")}`;
+          if (monthValue !== selectedMonth) return;
+        }
         items.push({
           ...session,
           tutor_name: tutor.tutor_name,
@@ -343,7 +346,7 @@ const SessionAnalytics = () => {
       });
     });
     return items.sort(compareSessionsByDate);
-  }, [tutorRows, activeSubject]);
+  }, [tutorRows, activeSubject, selectedMonth]);
 
   const rawTotalPages = Math.max(1, Math.ceil(rawSessions.length / 6));
   const rawPageSafe = Math.min(Math.max(rawPage, 1), rawTotalPages);
