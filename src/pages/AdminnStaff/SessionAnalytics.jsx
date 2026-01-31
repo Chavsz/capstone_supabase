@@ -35,6 +35,12 @@ const SessionAnalytics = () => {
   const [notesModal, setNotesModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  });
   const [activeSubject, setActiveSubject] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,9 +87,15 @@ const SessionAnalytics = () => {
           )
           .in("tutor_id", tutorIds);
         if (appointmentError && appointmentError.code !== "PGRST116") throw appointmentError;
-        appointmentList = (appointments || []).filter((appointment) =>
-          ["completed", "awaiting_feedback"].includes(appointment.status)
-        );
+        appointmentList = (appointments || []).filter((appointment) => {
+          if (!["completed", "awaiting_feedback"].includes(appointment.status)) return false;
+          if (!selectedMonth) return true;
+          if (!appointment.date) return false;
+          const dateValue = new Date(appointment.date);
+          if (Number.isNaN(dateValue.getTime())) return false;
+          const monthValue = `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, "0")}`;
+          return monthValue === selectedMonth;
+        });
       }
 
       const appointmentIds = Array.from(
@@ -202,17 +214,7 @@ const SessionAnalytics = () => {
 
   useEffect(() => {
     loadData();
-  }, [version]);
-
-  useEffect(() => {
-    if (!selectedTutor) return;
-    const updated = tutorRows.find((row) => row.tutor_id === selectedTutor.tutor_id);
-    if (updated) {
-      setSelectedTutor(updated);
-    } else {
-      setSelectedTutor(null);
-    }
-  }, [tutorRows, selectedTutor]);
+  }, [version, selectedMonth]);
 
   const leaderboard = useMemo(() => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
@@ -335,16 +337,27 @@ const SessionAnalytics = () => {
               <h2 className="text-sm font-semibold text-gray-700">
                 ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
               </h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setRawPage(1);
-                  setRawModalOpen(true);
-                }}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-              >
-                Sessions Test Result (Raw)
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>Month</span>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRawPage(1);
+                    setRawModalOpen(true);
+                  }}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                >
+                  {rawSessions.length} Sessions Test Result (Raw)
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {subjectTabs.map((subject) => (
@@ -465,15 +478,13 @@ const SessionAnalytics = () => {
                             <p>Post: {lastSession?.post_test_score ?? "-"}</p>
                             <p
                               className={`font-semibold ${
-                                lastImprovement === null
-                                  ? "text-gray-400"
-                                  : lastImprovement >= 0
-                                    ? "text-green-600"
-                                    : "text-orange-600"
+                                lastImprovement === null || lastImprovement >= 0
+                                  ? "text-green-600"
+                                  : "text-orange-600"
                               }`}
                             >
                               {lastImprovement === null
-                                ? "-"
+                                ? "+0.0%"
                                 : `${lastImprovement >= 0 ? "+" : "-"}${Math.abs(lastImprovement).toFixed(1)}%`}
                             </p>
                           </div>
@@ -621,15 +632,13 @@ const SessionAnalytics = () => {
                                 </td>
                                 <td
                                   className={`px-4 py-3 text-center text-sm font-semibold ${
-                                    improvement === null
-                                      ? "text-gray-400"
-                                      : improvement >= 0
-                                        ? "text-green-600"
-                                        : "text-orange-600"
+                                    improvement === null || improvement >= 0
+                                      ? "text-green-600"
+                                      : "text-orange-600"
                                   }`}
                                 >
                                   {improvement === null
-                                    ? "-"
+                                    ? "+0.0%"
                                     : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
                                 </td>
                                 <td className="px-4 py-3 text-center">
@@ -778,15 +787,13 @@ const SessionAnalytics = () => {
                               </td>
                               <td
                                 className={`px-4 py-3 text-center text-sm font-semibold ${
-                                  improvement === null
-                                    ? "text-gray-400"
-                                    : improvement >= 0
-                                      ? "text-green-600"
-                                      : "text-orange-600"
+                                  improvement === null || improvement >= 0
+                                    ? "text-green-600"
+                                    : "text-orange-600"
                                 }`}
                               >
                                 {improvement === null
-                                  ? "-"
+                                  ? "+0.0%"
                                   : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
                               </td>
                             </tr>
