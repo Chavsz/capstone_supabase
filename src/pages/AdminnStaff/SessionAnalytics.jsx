@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0%";
@@ -452,133 +453,90 @@ const SessionAnalytics = () => {
                 </div>
               ) : (
                 pagedLeaderboard.map((row, index) => {
-                  const percentage = Math.min(Math.max(row.effectiveAverageGain, 0), 100);
-                  const barColor =
-                    percentage >= 70
-                      ? "bg-green-500"
-                      : percentage >= 40
-                        ? "bg-yellow-400"
-                        : "bg-red-400";
-                  const lastSession = row.effectiveLastSession;
-                  const lastImprovement = lastSession
-                    ? computeImprovement(
-                        lastSession.pre_test_score,
-                        lastSession.post_test_score,
-                        lastSession.pre_test_total
-                      )
-                    : null;
+                  const subjectSessions =
+                    activeSubject === "All"
+                      ? row.sessions
+                      : row.sessions.filter((session) => session.subject === activeSubject);
+                  const chartData = subjectSessions.slice(-6).map((session, idx) => ({
+                    name: idx + 1,
+                    pre: Number(session.pre_test_score) || 0,
+                    post: Number(session.post_test_score) || 0,
+                  }));
                   return (
                     <div
                       key={row.tutor_id}
                       className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          {row.tutor_image ? (
-                            <img
-                              src={row.tutor_image}
-                              alt={row.tutor_name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-blue-700 font-bold">
-                              {(row.tutor_name || "T").charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 text-xs text-gray-400">
-                            {row.effectiveHasScores && (
-                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                                #{rankMap[row.tutor_id]}
-                              </span>
-                            )}
-                            {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
-                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                {row.tutor_subject || lastSession?.subject}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                            {row.tutor_image ? (
+                              <img
+                                src={row.tutor_image}
+                                alt={row.tutor_name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-blue-700 font-bold">
+                                {(row.tutor_name || "T").charAt(0).toUpperCase()}
                               </span>
                             )}
                           </div>
-                          <h3 className="text-base font-semibold text-gray-800">
-                            {row.tutor_name}
-                          </h3>
-                        </div>
-                        <div className="text-xs text-gray-500 text-right">
-                          <span className="text-sm font-semibold text-gray-800">
-                            {row.effectiveSessions}
-                          </span>{" "}
-                          sessions
-                        </div>
-                      </div>
-
-                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{lastSession?.date || "-"}</span>
-                          <span>{formatPercent(row.effectiveAverageGain)} avg gain</span>
-                        </div>
-                        <div className="mt-1 flex items-center justify-between">
                           <div>
-                            <p className="font-semibold text-gray-800">
-                              {lastSession?.subject || "No session at the moment"}
-                            </p>
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              {row.effectiveHasScores && (
+                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                                  #{rankMap[row.tutor_id]}
+                                </span>
+                              )}
+                              {activeSubject === "All" && row.tutor_subject && (
+                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                  {row.tutor_subject}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-base font-semibold text-gray-800">
+                              Tutor: {row.tutor_name}
+                            </h3>
                             <p className="text-xs text-gray-500">
-                              {lastSession?.topic || "-"}
+                              Sessions: {row.effectiveSessions} | Total Mastery:{" "}
+                              <span className="font-semibold text-green-600">
+                                {formatPercent(row.effectiveAverageGain)}
+                              </span>
                             </p>
                           </div>
-                          <div className="text-right text-xs">
-                            <p>
-                              Pre:{" "}
-                              {formatScoreWithTotal(
-                                lastSession?.pre_test_score,
-                                lastSession?.pre_test_total
-                              )}
-                            </p>
-                            <p>
-                              Post:{" "}
-                              {formatScoreWithTotal(
-                                lastSession?.post_test_score,
-                                lastSession?.post_test_total
-                              )}
-                            </p>
-                            <p
-                              className={`font-semibold ${
-                                lastImprovement === null || lastImprovement >= 0
-                                  ? "text-green-600"
-                                  : "text-orange-600"
-                              }`}
+                        </div>
+                        <div className="w-32 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                          <div className="h-[56px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={chartData}>
+                                <Line
+                                  type="monotone"
+                                  dataKey="pre"
+                                  stroke="#94a3b8"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="post"
+                                  stroke="#0ea5e9"
+                                  strokeWidth={2}
+                                  dot={false}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="mt-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTutor(row)}
+                              className="text-[11px] font-semibold text-blue-600 hover:text-blue-800"
                             >
-                              {lastImprovement === null
-                                ? "+0.0%"
-                                : `${lastImprovement >= 0 ? "+" : "-"}${Math.abs(lastImprovement).toFixed(1)}%`}
-                            </p>
+                              View more
+                            </button>
                           </div>
                         </div>
-                        <div className="mt-2 flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNotesModal({
-                                tutor_name: row.tutor_name,
-                                subject: lastSession?.subject || "-",
-                                topic: lastSession?.topic || "-",
-                                notes: lastSession?.tutor_notes || "",
-                              })
-                            }
-                            className="text-xs font-semibold text-gray-500 hover:text-gray-700"
-                          >
-                            View notes
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedTutor(row)}
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                        >
-                          View all sessions
-                        </button>
                       </div>
                     </div>
                   );
@@ -620,131 +578,42 @@ const SessionAnalytics = () => {
 
           {selectedTutor && (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
+              <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {selectedTutor.tutor_name} Sessions
+                    <h3 className="text-base font-bold text-gray-800">
+                      {selectedTutor.tutor_name}
                     </h3>
                     <p className="text-xs text-gray-500">
-                      {activeSubject === "All" ? "All subjects" : activeSubject}
+                      {activeSubject === "All" ? "All subjects" : activeSubject} comparison
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedTutor(null)}
                     className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close sessions"
+                    aria-label="Close graph"
                   >
                     x
                   </button>
                 </div>
 
-                <div className="mt-4">
-                  <div className="rounded-lg border border-gray-200 overflow-x-auto">
-                    <table className="w-full text-sm min-w-[640px] sm:min-w-0">
-                      <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                        <tr>
-                          <th className="text-left px-4 py-3">Date</th>
-                          <th className="text-left px-4 py-3">Tutee</th>
-                          <th className="text-left px-4 py-3">Subject</th>
-                          <th className="text-left px-4 py-3">Specialization</th>
-                          <th className="text-center px-4 py-3">Pre</th>
-                          <th className="text-center px-4 py-3">Post</th>
-                          <th className="text-center px-4 py-3">Avg Gain</th>
-                          <th className="text-center px-4 py-3">Notes</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedSessions.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={7}
-                              className="px-4 py-6 text-center text-sm text-gray-500"
-                            >
-                              No sessions available for this tutor.
-                            </td>
-                          </tr>
-                        ) : (
-                          selectedSessions.map((session) => {
-                            const improvement = computeImprovement(
-                              session.pre_test_score,
-                              session.post_test_score,
-                              session.pre_test_total
-                            );
-                            return (
-                              <tr
-                                key={session.appointment_id || session.evaluation_id}
-                                className="border-t border-gray-100"
-                              >
-                                <td className="px-4 py-3 text-left text-gray-600">
-                                  {session.date || "-"}
-                                </td>
-                                <td className="px-4 py-3 text-left text-gray-600">
-                                  {session.student_name || "Unknown"}
-                                </td>
-                                <td className="px-4 py-3 text-left text-gray-700">
-                                  {session.subject}
-                                </td>
-                                <td className="px-4 py-3 text-left text-gray-600">
-                                  {session.topic || "-"}
-                                </td>
-                                <td className="px-4 py-3 text-center text-gray-600">
-                                  {formatScoreWithTotal(
-                                    session.pre_test_score,
-                                    session.pre_test_total
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-center text-gray-600">
-                                  {formatScoreWithTotal(
-                                    session.post_test_score,
-                                    session.post_test_total
-                                  )}
-                                </td>
-                                <td
-                                  className={`px-4 py-3 text-center text-sm font-semibold ${
-                                    improvement === null || improvement >= 0
-                                      ? "text-green-600"
-                                      : "text-orange-600"
-                                  }`}
-                                >
-                                  {improvement === null
-                                    ? "+0.0%"
-                                    : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setNotesModal({
-                                        tutor_name: selectedTutor.tutor_name,
-                                        subject: session.subject,
-                                        topic: session.topic,
-                                        notes: session.tutor_notes || "",
-                                      })
-                                    }
-                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                                  >
-                                    View
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTutor(null)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Close
-                  </button>
+                <div className="mt-4 h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={selectedSessions.map((session, idx) => ({
+                        name: idx + 1,
+                        pre: Number(session.pre_test_score) || 0,
+                        post: Number(session.post_test_score) || 0,
+                      }))}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                      <Line type="monotone" dataKey="pre" stroke="#94a3b8" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="post" stroke="#0ea5e9" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
