@@ -2,14 +2,25 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
 
-const formatImprovement = (preScore, postScore) => {
+const formatImprovement = (preScore, postScore, preTotal) => {
   const pre = Number(preScore);
   const post = Number(postScore);
-  if (Number.isNaN(pre) || Number.isNaN(post) || pre === 0) {
-    if (post > 0 && pre === 0) return 100;
+  const total = Number(preTotal);
+  if (Number.isNaN(pre) || Number.isNaN(post)) return null;
+  if (Number.isFinite(total) && total > 0) {
+    return ((post - pre) / total) * 100;
+  }
+  if (pre === 0) {
+    if (post > 0) return 100;
     return null;
   }
   return ((post - pre) / pre) * 100;
+};
+
+const formatScoreWithTotal = (score, total) => {
+  if (score === null || score === undefined || score === "") return "-";
+  if (total === null || total === undefined || total === "") return `${score}`;
+  return `${score}/${total}`;
 };
 
 const formatDate = (dateValue) => {
@@ -71,7 +82,9 @@ const MyLearningJourney = () => {
       if (appointmentIds.length) {
         const { data: evaluations, error: evalError } = await supabase
           .from("evaluation")
-          .select("appointment_id, pre_test_score, post_test_score, tutor_notes")
+          .select(
+            "appointment_id, pre_test_score, post_test_score, pre_test_total, post_test_total, tutor_notes"
+          )
           .in("appointment_id", appointmentIds);
         if (evalError) throw evalError;
         evaluationMap = (evaluations || []).reduce((acc, item) => {
@@ -117,6 +130,8 @@ const MyLearningJourney = () => {
           start_time: appointment.start_time || "",
           pre_test_score: evaluation.pre_test_score ?? null,
           post_test_score: evaluation.post_test_score ?? null,
+          pre_test_total: evaluation.pre_test_total ?? null,
+          post_test_total: evaluation.post_test_total ?? null,
           tutor_notes: evaluation.tutor_notes ?? "",
         });
       });
@@ -165,7 +180,9 @@ const MyLearningJourney = () => {
       if (sortKey === "improvement") {
         const avg = (sessions) => {
           const values = sessions
-            .map((s) => formatImprovement(s.pre_test_score, s.post_test_score))
+            .map((s) =>
+              formatImprovement(s.pre_test_score, s.post_test_score, s.pre_test_total)
+            )
             .filter((value) => value !== null);
           if (!values.length) return null;
           return values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -274,7 +291,8 @@ const MyLearningJourney = () => {
                     {(() => {
                       const improvement = formatImprovement(
                         session.pre_test_score,
-                        session.post_test_score
+                        session.post_test_score,
+                        session.pre_test_total
                       );
                       return (
                         <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
@@ -290,8 +308,20 @@ const MyLearningJourney = () => {
                               <p className="text-xs text-gray-500">{session.topic}</p>
                             </div>
                             <div className="text-right text-xs">
-                              <p>Pre: {session.pre_test_score ?? "-"}</p>
-                              <p>Post: {session.post_test_score ?? "-"}</p>
+                              <p>
+                                Pre:{" "}
+                                {formatScoreWithTotal(
+                                  session.pre_test_score,
+                                  session.pre_test_total
+                                )}
+                              </p>
+                              <p>
+                                Post:{" "}
+                                {formatScoreWithTotal(
+                                  session.post_test_score,
+                                  session.post_test_total
+                                )}
+                              </p>
                               <p
                                 className={`font-semibold ${
                                   improvement === null
@@ -427,7 +457,8 @@ const MyLearningJourney = () => {
               {sessionsModal.sessions.map((session) => {
                 const improvement = formatImprovement(
                   session.pre_test_score,
-                  session.post_test_score
+                  session.post_test_score,
+                  session.pre_test_total
                 );
                 return (
                   <div
@@ -446,8 +477,20 @@ const MyLearningJourney = () => {
                         <p className="text-xs text-gray-500">{session.topic}</p>
                       </div>
                       <div className="text-right text-xs">
-                        <p>Pre: {session.pre_test_score ?? "-"}</p>
-                        <p>Post: {session.post_test_score ?? "-"}</p>
+                        <p>
+                          Pre:{" "}
+                          {formatScoreWithTotal(
+                            session.pre_test_score,
+                            session.pre_test_total
+                          )}
+                        </p>
+                        <p>
+                          Post:{" "}
+                          {formatScoreWithTotal(
+                            session.post_test_score,
+                            session.post_test_total
+                          )}
+                        </p>
                         <p
                           className={`font-semibold ${
                             improvement === null

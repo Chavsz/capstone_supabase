@@ -7,10 +7,14 @@ const toNumber = (value) => {
   return Number.isNaN(parsed) ? "" : parsed;
 };
 
-const computeImprovement = (preScore, postScore) => {
+const computeImprovement = (preScore, postScore, preTotal) => {
   const pre = Number(preScore);
   const post = Number(postScore);
+  const total = Number(preTotal);
   if (Number.isNaN(pre) || Number.isNaN(post)) return null;
+  if (Number.isFinite(total) && total > 0) {
+    return ((post - pre) / total) * 100;
+  }
   if (pre <= 0) return post > 0 ? 100 : 0;
   return ((post - pre) / pre) * 100;
 };
@@ -41,8 +45,8 @@ const AssessmentModal = ({
   }, [defaultValues, isOpen]);
 
   const improvement = useMemo(
-    () => computeImprovement(preScore, postScore),
-    [preScore, postScore]
+    () => computeImprovement(preScore, postScore, totalItems),
+    [preScore, postScore, totalItems]
   );
   const prePercent =
     preScore !== "" && totalItems

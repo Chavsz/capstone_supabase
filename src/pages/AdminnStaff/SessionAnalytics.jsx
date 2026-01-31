@@ -5,12 +5,22 @@ import { useDataSync } from "../../contexts/DataSyncContext";
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0%";
 
-const computeImprovement = (pre, post) => {
+const computeImprovement = (pre, post, preTotal) => {
   const preNum = Number(pre);
   const postNum = Number(post);
+  const totalNum = Number(preTotal);
   if (Number.isNaN(preNum) || Number.isNaN(postNum)) return null;
+  if (Number.isFinite(totalNum) && totalNum > 0) {
+    return ((postNum - preNum) / totalNum) * 100;
+  }
   if (preNum === 0) return postNum > 0 ? 100 : 0;
   return ((postNum - preNum) / preNum) * 100;
+};
+
+const formatScoreWithTotal = (score, total) => {
+  if (score === null || score === undefined || score === "") return "-";
+  if (total === null || total === undefined || total === "") return `${score}`;
+  return `${score}/${total}`;
 };
 
 const compareSessionsByDate = (a, b) => {
@@ -107,7 +117,7 @@ const SessionAnalytics = () => {
         const { data: evaluations, error: evaluationError } = await supabase
           .from("evaluation")
           .select(
-            "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, tutor_notes, created_at"
+            "evaluation_id, appointment_id, tutor_id, pre_test_score, post_test_score, pre_test_total, post_test_total, tutor_notes, created_at"
           )
           .in("appointment_id", appointmentIds);
         if (evaluationError && evaluationError.code !== "PGRST116") throw evaluationError;
@@ -188,7 +198,11 @@ const SessionAnalytics = () => {
         const sortedSessions = [...tutor.sessions].sort(compareSessionsByDate);
         const improvements = tutor.sessions
           .map((session) =>
-            computeImprovement(session.pre_test_score, session.post_test_score)
+            computeImprovement(
+              session.pre_test_score,
+              session.post_test_score,
+              session.pre_test_total
+            )
           )
           .filter((value) => value !== null);
         const averageGain =
@@ -237,9 +251,18 @@ const SessionAnalytics = () => {
       const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
       const improvements = subjectSessions
         .map((session) =>
-          computeImprovement(session.pre_test_score, session.post_test_score)
+          computeImprovement(
+            session.pre_test_score,
+            session.post_test_score,
+            session.pre_test_total
+          )
         )
         .filter((value) => value !== null);
+      const hasScores = subjectSessions.some((session) => {
+        const pre = Number(session.pre_test_score);
+        const post = Number(session.post_test_score);
+        return Number.isFinite(pre) && Number.isFinite(post);
+      });
       const averageGain =
         improvements.length > 0
           ? improvements.reduce((sum, value) => sum + value, 0) /
@@ -249,6 +272,7 @@ const SessionAnalytics = () => {
         ...row,
         effectiveSessions: subjectSessions.length,
         effectiveAverageGain: averageGain,
+        effectiveHasScores: hasScores,
         effectiveLastSession:
           sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
       };
@@ -281,6 +305,23 @@ const SessionAnalytics = () => {
     });
     return sortedByKey;
   }, [leaderboard, activeSubject, searchQuery, sortKey]);
+
+  const rankMap = useMemo(() => {
+    const ranked = [...filteredLeaderboard]
+      .filter((row) => row.effectiveHasScores)
+      .sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
+    const map = {};
+    let currentRank = 0;
+    let lastGain = null;
+    ranked.forEach((row, index) => {
+      if (lastGain === null || row.effectiveAverageGain !== lastGain) {
+        currentRank = index + 1;
+        lastGain = row.effectiveAverageGain;
+      }
+      map[row.tutor_id] = currentRank;
+    });
+    return map;
+  }, [filteredLeaderboard]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeaderboard.length / cardsPerPage));
   const currentPageSafe = Math.min(Math.max(currentPage, 1), totalPages);
@@ -404,7 +445,11 @@ const SessionAnalytics = () => {
                         : "bg-red-400";
                   const lastSession = row.effectiveLastSession;
                   const lastImprovement = lastSession
-                    ? computeImprovement(lastSession.pre_test_score, lastSession.post_test_score)
+                    ? computeImprovement(
+                        lastSession.pre_test_score,
+                        lastSession.post_test_score,
+                        lastSession.pre_test_total
+                      )
                     : null;
                   return (
                     <div
@@ -427,9 +472,9 @@ const SessionAnalytics = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            {row.effectiveAverageGain > 0 && (
+                            {row.effectiveHasScores && (
                               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                                #{pageStartIndex + index + 1}
+                                #{rankMap[row.tutor_id]}
                               </span>
                             )}
                             {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
@@ -465,8 +510,20 @@ const SessionAnalytics = () => {
                             </p>
                           </div>
                           <div className="text-right text-xs">
-                            <p>Pre: {lastSession?.pre_test_score ?? "-"}</p>
-                            <p>Post: {lastSession?.post_test_score ?? "-"}</p>
+                            <p>
+                              Pre:{" "}
+                              {formatScoreWithTotal(
+                                lastSession?.pre_test_score,
+                                lastSession?.pre_test_total
+                              )}
+                            </p>
+                            <p>
+                              Post:{" "}
+                              {formatScoreWithTotal(
+                                lastSession?.post_test_score,
+                                lastSession?.post_test_total
+                              )}
+                            </p>
                             <p
                               className={`font-semibold ${
                                 lastImprovement === null || lastImprovement >= 0
@@ -596,7 +653,8 @@ const SessionAnalytics = () => {
                           selectedSessions.map((session) => {
                             const improvement = computeImprovement(
                               session.pre_test_score,
-                              session.post_test_score
+                              session.post_test_score,
+                              session.pre_test_total
                             );
                             return (
                               <tr
@@ -616,10 +674,16 @@ const SessionAnalytics = () => {
                                   {session.topic || "-"}
                                 </td>
                                 <td className="px-4 py-3 text-center text-gray-600">
-                                  {session.pre_test_score ?? "-"}
+                                  {formatScoreWithTotal(
+                                    session.pre_test_score,
+                                    session.pre_test_total
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-center text-gray-600">
-                                  {session.post_test_score ?? "-"}
+                                  {formatScoreWithTotal(
+                                    session.post_test_score,
+                                    session.post_test_total
+                                  )}
                                 </td>
                                 <td
                                   className={`px-4 py-3 text-center text-sm font-semibold ${
@@ -708,7 +772,7 @@ const SessionAnalytics = () => {
               <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="text-lg font-bold text-gray-800">
-                    Sessions Test Result (Raw)
+                    {rawSessions.length} Sessions Test Result (Raw)
                   </h3>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -759,7 +823,8 @@ const SessionAnalytics = () => {
                         rawPagedSessions.map((session) => {
                           const improvement = computeImprovement(
                             session.pre_test_score,
-                            session.post_test_score
+                            session.post_test_score,
+                            session.pre_test_total
                           );
                           return (
                             <tr
@@ -782,10 +847,16 @@ const SessionAnalytics = () => {
                                 {session.topic || "-"}
                               </td>
                               <td className="px-4 py-3 text-center text-gray-600">
-                                {session.pre_test_score ?? "-"}
+                                {formatScoreWithTotal(
+                                  session.pre_test_score,
+                                  session.pre_test_total
+                                )}
                               </td>
                               <td className="px-4 py-3 text-center text-gray-600">
-                                {session.post_test_score ?? "-"}
+                                {formatScoreWithTotal(
+                                  session.post_test_score,
+                                  session.post_test_total
+                                )}
                               </td>
                               <td
                                 className={`px-4 py-3 text-center text-sm font-semibold ${

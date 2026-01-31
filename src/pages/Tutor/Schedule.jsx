@@ -820,6 +820,8 @@ const Schedule = () => {
       const payload = {
         pre_test_score: values.preScore,
         post_test_score: values.postScore,
+        pre_test_total: values.preTotal,
+        post_test_total: values.postTotal,
         tutor_notes: values.notes,
       };
 
