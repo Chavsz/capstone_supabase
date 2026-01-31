@@ -826,6 +826,13 @@ const MyTutees = () => {
                               {formatScoreWithTotal(
                                 session.pre_test_score,
                                 session.pre_test_total
+                              ) === "-" ? (
+                                <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
+                              ) : (
+                                formatScoreWithTotal(
+                                  session.pre_test_score,
+                                  session.pre_test_total
+                                )
                               )}
                             </button>
                           </td>
@@ -838,6 +845,13 @@ const MyTutees = () => {
                               {formatScoreWithTotal(
                                 session.post_test_score,
                                 session.post_test_total
+                              ) === "-" ? (
+                                <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
+                              ) : (
+                                formatScoreWithTotal(
+                                  session.post_test_score,
+                                  session.post_test_total
+                                )
                               )}
                             </button>
                           </td>
