@@ -337,27 +337,16 @@ const SessionAnalytics = () => {
               <h2 className="text-sm font-semibold text-gray-700">
                 ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
               </h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>Month</span>
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRawPage(1);
-                    setRawModalOpen(true);
-                  }}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                >
-                  {rawSessions.length} Sessions Test Result (Raw)
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRawPage(1);
+                  setRawModalOpen(true);
+                }}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+              >
+                {rawSessions.length} Sessions Test Result (Raw)
+              </button>
             </div>
             <div className="flex flex-wrap gap-2 mb-4">
               {subjectTabs.map((subject) => (
@@ -438,9 +427,11 @@ const SessionAnalytics = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                              #{pageStartIndex + index + 1}
-                            </span>
+                            {row.effectiveAverageGain > 0 && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                                #{pageStartIndex + index + 1}
+                              </span>
+                            )}
                             {activeSubject === "All" && (row.tutor_subject || lastSession?.subject) && (
                               <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
                                 {row.tutor_subject || lastSession?.subject}
@@ -715,18 +706,29 @@ const SessionAnalytics = () => {
           {rawModalOpen && (
             <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
               <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="text-lg font-bold text-gray-800">
                     Sessions Test Result (Raw)
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setRawModalOpen(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close raw sessions"
-                  >
-                    x
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>Month</span>
+                      <input
+                        type="month"
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setRawModalOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                      aria-label="Close raw sessions"
+                    >
+                      x
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
