@@ -34,6 +34,12 @@ const MyTutees = () => {
   const [sessionsModal, setSessionsModal] = useState(null);
   const [rawModalOpen, setRawModalOpen] = useState(false);
   const [rawPage, setRawPage] = useState(1);
+  const [rawMonth, setRawMonth] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutee");
   const [currentPage, setCurrentPage] = useState(1);
@@ -208,6 +214,15 @@ const MyTutees = () => {
     const items = [];
     tutees.forEach((tutee) => {
       (tutee.sessions || []).forEach((session) => {
+        if (rawMonth) {
+          if (!session.date) return;
+          const dateValue = new Date(session.date);
+          if (Number.isNaN(dateValue.getTime())) return;
+          const monthValue = `${dateValue.getFullYear()}-${String(
+            dateValue.getMonth() + 1
+          ).padStart(2, "0")}`;
+          if (monthValue !== rawMonth) return;
+        }
         items.push({
           ...session,
           tutee_name: tutee.tutee_name,
@@ -215,7 +230,7 @@ const MyTutees = () => {
       });
     });
     return items.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-  }, [tutees]);
+  }, [tutees, rawMonth]);
   const rawTotalPages = Math.max(1, Math.ceil(rawSessions.length / 6));
   const rawPageSafe = Math.min(Math.max(rawPage, 1), rawTotalPages);
   const rawPagedSessions = rawSessions.slice((rawPageSafe - 1) * 6, rawPageSafe * 6);
@@ -283,7 +298,7 @@ const MyTutees = () => {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-[calc(100vh-260px)]">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">
             MY TUTEES
@@ -652,10 +667,21 @@ const MyTutees = () => {
       {rawModalOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-800">
-                {rawSessions.length} Sessions Test Result (Raw)
-              </h3>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-lg font-bold text-gray-800">
+                  {rawSessions.length} Sessions Test Result (Raw)
+                </h3>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>Month</span>
+                  <input
+                    type="month"
+                    value={rawMonth}
+                    onChange={(e) => setRawMonth(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                  />
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setRawModalOpen(false)}
