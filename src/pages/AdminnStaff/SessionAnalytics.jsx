@@ -3,7 +3,6 @@ import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
 import {
   Bar,
-  Bar,
   CartesianGrid,
   ComposedChart,
   Legend,
