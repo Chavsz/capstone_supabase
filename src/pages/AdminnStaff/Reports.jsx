@@ -65,7 +65,8 @@ const Reports = () => {
 
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointment")
-        .select(`
+        .select(
+          `
           appointment_id,
           tutor_id,
           user_id,
@@ -78,7 +79,8 @@ const Reports = () => {
           status,
           tutor:users!appointment_tutor_id_fkey(name),
           student:users!appointment_user_id_fkey(name)
-        `)
+        `
+        )
         .order("date", { ascending: false });
       if (appointmentError) throw appointmentError;
 
@@ -104,7 +106,11 @@ const Reports = () => {
       if (evaluationError) throw evaluationError;
 
       const tutorIds = Array.from(
-        new Set((appointmentData || []).map((appointment) => appointment.tutor_id).filter(Boolean))
+        new Set(
+          (appointmentData || [])
+            .map((appointment) => appointment.tutor_id)
+            .filter(Boolean)
+        )
       );
       if (tutorIds.length > 0) {
         const { data: profileData, error: profileError } = await supabase
@@ -127,10 +133,13 @@ const Reports = () => {
 
       const { data: scheduleData, error: scheduleError } = await supabase
         .from("schedule")
-        .select("schedule_id, day, start_time, end_time, profile:profile_id(user_id, user:users(name))")
+        .select(
+          "schedule_id, day, start_time, end_time, profile:profile_id(user_id, user:users(name))"
+        )
         .order("day", { ascending: true })
         .order("start_time", { ascending: true });
-      if (scheduleError && scheduleError.code !== "PGRST116") throw scheduleError;
+      if (scheduleError && scheduleError.code !== "PGRST116")
+        throw scheduleError;
 
       const scheduleEntries =
         scheduleData?.map((slot) => ({
@@ -337,7 +346,9 @@ const Reports = () => {
 
   const rangeKey = useMemo(() => {
     if (!periodRange) return "custom-range";
-    const startKey = toDateInputValue(periodRange.startRaw || periodRange.start);
+    const startKey = toDateInputValue(
+      periodRange.startRaw || periodRange.start
+    );
     const endKey = toDateInputValue(periodRange.endRaw || periodRange.end);
     return `${startKey}_to_${endKey}`;
   }, [periodRange]);
@@ -386,7 +397,9 @@ const Reports = () => {
   };
 
   const weekInfo = (date) => {
-    const newDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const newDate = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
     const dayNum = newDate.getUTCDay() || 7;
     newDate.setUTCDate(newDate.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(newDate.getUTCFullYear(), 0, 1));
@@ -424,16 +437,16 @@ const Reports = () => {
         const entry = stats[tutorId];
         entry.total += 1;
         const tuteesCount =
-          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+          appointment.number_of_tutees &&
+          !Number.isNaN(Number(appointment.number_of_tutees))
             ? Number(appointment.number_of_tutees)
             : 1;
         entry.totalTutees = (entry.totalTutees || 0) + tuteesCount;
 
         const sessionDate = new Date(appointment.date);
-        const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(
-          2,
-          "0"
-        )}`;
+        const monthKey = `${sessionDate.getFullYear()}-${String(
+          sessionDate.getMonth() + 1
+        ).padStart(2, "0")}`;
         entry.monthly[monthKey] = (entry.monthly[monthKey] || 0) + 1;
         const durationMinutes =
           (new Date(`2000-01-01T${appointment.end_time}`) -
@@ -449,19 +462,27 @@ const Reports = () => {
           student: appointment.student?.name || "Unknown",
           subject: appointment.subject || "Untitled Session",
           date: appointment.date,
-          time: `${formatTime(appointment.start_time)} - ${formatTime(appointment.end_time)}`,
+          time: `${formatTime(appointment.start_time)} - ${formatTime(
+            appointment.end_time
+          )}`,
         });
 
         if (appointment.date === todayKey) {
           entry.today += 1;
         }
 
-        if (sessionDate.getFullYear() === thisYear && sessionDate.getMonth() === thisMonth) {
+        if (
+          sessionDate.getFullYear() === thisYear &&
+          sessionDate.getMonth() === thisMonth
+        ) {
           entry.thisMonth += 1;
         }
 
         const sessionWeek = weekInfo(sessionDate);
-        if (sessionWeek === thisWeek && sessionDate.getFullYear() === thisYear) {
+        if (
+          sessionWeek === thisWeek &&
+          sessionDate.getFullYear() === thisYear
+        ) {
           entry.thisWeek += 1;
         }
       });
@@ -483,8 +504,8 @@ const Reports = () => {
           map[tutorId] = {
             tutorId,
             name:
-              appointments.find((apt) => apt.tutor_id === tutorId)?.tutor?.name ||
-              "Unknown Tutor",
+              appointments.find((apt) => apt.tutor_id === tutorId)?.tutor
+                ?.name || "Unknown Tutor",
             overallSum: 0,
             overallCount: 0,
             fields: tutorRatingFields.reduce(
@@ -538,7 +559,10 @@ const Reports = () => {
     () => computeLavStats(evaluationsInPeriod),
     [evaluationsInPeriod]
   );
-  const lavStatsYear = useMemo(() => computeLavStats(evaluationsInYear), [evaluationsInYear]);
+  const lavStatsYear = useMemo(
+    () => computeLavStats(evaluationsInYear),
+    [evaluationsInYear]
+  );
 
   const appointmentsInPeriod = useMemo(() => {
     if (!periodRange) return [];
@@ -602,13 +626,17 @@ const Reports = () => {
 
   const totalSessionsBooked = appointmentsBookedInPeriod.length;
   const totalSessionsCompleted = completedAppointmentsInPeriod.length;
-  const totalTuteesServed = completedAppointmentsInPeriod.reduce((sum, appointment) => {
-    const count =
-      appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
-        ? Number(appointment.number_of_tutees)
-        : 1;
-    return sum + count;
-  }, 0);
+  const totalTuteesServed = completedAppointmentsInPeriod.reduce(
+    (sum, appointment) => {
+      const count =
+        appointment.number_of_tutees &&
+        !Number.isNaN(Number(appointment.number_of_tutees))
+          ? Number(appointment.number_of_tutees)
+          : 1;
+      return sum + count;
+    },
+    0
+  );
 
   const appointmentsBookedInPdfRange = useMemo(() => {
     return appointmentsInPdfRange.filter((appointment) => {
@@ -619,13 +647,17 @@ const Reports = () => {
 
   const pdfTotalSessionsBooked = appointmentsBookedInPdfRange.length;
   const pdfTotalSessionsCompleted = completedAppointmentsInPdfRange.length;
-  const pdfTotalTuteesServed = completedAppointmentsInPdfRange.reduce((sum, appointment) => {
-    const count =
-      appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
-        ? Number(appointment.number_of_tutees)
-        : 1;
-    return sum + count;
-  }, 0);
+  const pdfTotalTuteesServed = completedAppointmentsInPdfRange.reduce(
+    (sum, appointment) => {
+      const count =
+        appointment.number_of_tutees &&
+        !Number.isNaN(Number(appointment.number_of_tutees))
+          ? Number(appointment.number_of_tutees)
+          : 1;
+      return sum + count;
+    },
+    0
+  );
   const pdfTotalHoursTeach = useMemo(() => {
     return completedAppointmentsInPdfRange.reduce((sum, appointment) => {
       const minutes =
@@ -646,7 +678,8 @@ const Reports = () => {
   const comparisonCompletedCount = useMemo(() => {
     if (!comparisonRange) return null;
     return appointments.filter((appointment) => {
-      if (!isFinishedStatus(appointment.status) || !appointment.date) return false;
+      if (!isFinishedStatus(appointment.status) || !appointment.date)
+        return false;
       const date = normalizeDate(appointment.date);
       return date >= comparisonRange.start && date < comparisonRange.end;
     }).length;
@@ -659,7 +692,9 @@ const Reports = () => {
       ? totalSessionsCompleted > 0
         ? 100
         : 0
-      : ((totalSessionsCompleted - comparisonCompletedCount) / comparisonCompletedCount) * 100;
+      : ((totalSessionsCompleted - comparisonCompletedCount) /
+          comparisonCompletedCount) *
+        100;
 
   const tutorEntries = Object.values(tutorStats);
   const tutorSummaryEntries = Object.values(tutorEvaluationStats);
@@ -718,7 +753,9 @@ const Reports = () => {
       value: averageSatisfactionDisplay,
       detail: "Tutor evaluations",
       icon: "AR",
-      progress: overallTutorSatisfaction ? (overallTutorSatisfaction / 5) * 100 : 0,
+      progress: overallTutorSatisfaction
+        ? (overallTutorSatisfaction / 5) * 100
+        : 0,
       color: "bg-pink-100 text-pink-700",
       accent: "#ec4899",
     },
@@ -748,7 +785,8 @@ const Reports = () => {
             new Date(`2000-01-01T${appointment.start_time}`)) /
           60000;
         const appointmentTutees =
-          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+          appointment.number_of_tutees &&
+          !Number.isNaN(Number(appointment.number_of_tutees))
             ? Number(appointment.number_of_tutees)
             : 1;
         aggregate[tutorId].sessions += 1;
@@ -785,7 +823,8 @@ const Reports = () => {
             new Date(`2000-01-01T${appointment.start_time}`)) /
           60000;
         const appointmentTutees =
-          appointment.number_of_tutees && !Number.isNaN(Number(appointment.number_of_tutees))
+          appointment.number_of_tutees &&
+          !Number.isNaN(Number(appointment.number_of_tutees))
             ? Number(appointment.number_of_tutees)
             : 1;
         aggregate[tutorId].sessions += 1;
@@ -817,7 +856,9 @@ const Reports = () => {
         return;
       }
 
-      const rows = [["Tutor", "Sessions", "Tutees Served", "Hours", "Avg Rating"]];
+      const rows = [
+        ["Tutor", "Sessions", "Tutees Served", "Hours", "Avg Rating"],
+      ];
       tutorMonthlyPerformance.forEach((entry) => {
         rows.push([
           entry.name,
@@ -868,7 +909,9 @@ const Reports = () => {
             </svg>
           </div>
           <p class="summary-label">Total Hours Taught</p>
-          <p class="summary-value">${escapeHtml(`${pdfTotalHoursTeach.toFixed(1)} hrs`)}</p>
+          <p class="summary-value">${escapeHtml(
+            `${pdfTotalHoursTeach.toFixed(1)} hrs`
+          )}</p>
         </div>
         <div class="summary-card">
           <div class="summary-icon">
@@ -878,7 +921,9 @@ const Reports = () => {
             </svg>
           </div>
           <p class="summary-label">Sessions Completed</p>
-          <p class="summary-value">${escapeHtml(`${pdfTotalSessionsCompleted}`)}</p>
+          <p class="summary-value">${escapeHtml(
+            `${pdfTotalSessionsCompleted}`
+          )}</p>
         </div>
         <div class="summary-card">
           <div class="summary-icon">
@@ -888,7 +933,9 @@ const Reports = () => {
             </svg>
           </div>
           <p class="summary-label">Sessions Booked</p>
-          <p class="summary-value">${escapeHtml(`${pdfTotalSessionsBooked}`)}</p>
+          <p class="summary-value">${escapeHtml(
+            `${pdfTotalSessionsBooked}`
+          )}</p>
         </div>
         <div class="summary-card">
           <div class="summary-icon">
@@ -915,13 +962,15 @@ const Reports = () => {
     const performanceRowsHtml =
       pdfTutorMonthlyPerformance
         .map(
-        (entry) => `
+          (entry) => `
           <tr>
             <td>${escapeHtml(entry.name)}</td>
             <td>${entry.sessions}</td>
             <td>${entry.totalTutees}</td>
             <td>${entry.hours.toFixed(1)} hrs</td>
-            <td>${entry.averageRating ? entry.averageRating.toFixed(2) : "-"}</td>
+            <td>${
+              entry.averageRating ? entry.averageRating.toFixed(2) : "-"
+            }</td>
           </tr>
         `
         )
@@ -1075,10 +1124,14 @@ const Reports = () => {
               <div>
                 <div class="badge">Learning Assistance Volunteer</div>
                 <h1 class="title">Monthly Performance Report</h1>
-                <p class="subtitle">Reporting period: ${escapeHtml(pdfRange?.label || displayPeriodLabel)}</p>
+                <p class="subtitle">Reporting period: ${escapeHtml(
+                  pdfRange?.label || displayPeriodLabel
+                )}</p>
               </div>
             </div>
-            <div class="subtitle">Generated on ${escapeHtml(preparedDateLabel)}</div>
+            <div class="subtitle">Generated on ${escapeHtml(
+              preparedDateLabel
+            )}</div>
           </div>
 
             <h2 class="section-title" style="margin-bottom:8px;">Summary (${escapeHtml(
@@ -1141,7 +1194,9 @@ const Reports = () => {
 
   const topTutorsByHours = useMemo(() => {
     if (tutorMonthlyPerformance.length === 0) return [];
-    const maxHours = Math.max(...tutorMonthlyPerformance.map((entry) => entry.hours));
+    const maxHours = Math.max(
+      ...tutorMonthlyPerformance.map((entry) => entry.hours)
+    );
     return tutorMonthlyPerformance.filter((entry) => entry.hours === maxHours);
   }, [tutorMonthlyPerformance]);
 
@@ -1155,17 +1210,18 @@ const Reports = () => {
   }
 
   return (
-      <div className="min-h-screen p-4 md:p-8 bg-[#eef2f7]">
-        <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-200 px-3 py-5 md:px-5 md:py-7 space-y-6">
+    <div className="min-h-screen p-4 md:p-6 bg-[#eef2f7]">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Performance Reports
+        </h1>
+        <p className="text-sm text-gray-500">
+          Overview of completed sessions and feedback.
+        </p>
+      </div>
+      <div className="bg-white rounded-md shadow-xl border border-gray-200 px-3 py-5 md:px-5 md:py-7 space-y-6 mt-4">
         <header className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-[#2b8a6f] font-semibold">
-                LAV
-              </p>
-              <h1 className="text-3xl font-bold text-gray-800">Performance Reports</h1>
-              <p className="text-sm text-gray-500">Overview of completed sessions and feedback.</p>
-            </div>
             <div className="flex flex-wrap gap-2">
               <div className="relative">
                 <button
@@ -1295,7 +1351,7 @@ const Reports = () => {
           {summaryMetrics.map((metric) => (
             <div
               key={metric.label}
-              className="relative rounded-2xl border border-gray-200 border-t-4 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+              className="relative rounded-md border border-gray-200 border-t-4 p-5 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
               style={{ borderTopColor: metric.accent }}
             >
               <div
@@ -1311,7 +1367,10 @@ const Reports = () => {
               <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className="h-full transition-all duration-500"
-                  style={{ width: `${metric.progress ?? 0}%`, backgroundColor: metric.accent }}
+                  style={{
+                    width: `${metric.progress ?? 0}%`,
+                    backgroundColor: metric.accent,
+                  }}
                 />
               </div>
             </div>
@@ -1319,9 +1378,11 @@ const Reports = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+          <section className="bg-white rounded-md border border-gray-200 shadow-md overflow-hidden">
             <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">Tutor Performance</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Tutor Performance
+              </h2>
               <p className="text-sm text-gray-500">
                 Sessions, tutees, total hours, and average rating per tutor.
               </p>
@@ -1343,36 +1404,49 @@ const Reports = () => {
                 <tbody>
                   {tutorMonthlyPerformance.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center text-gray-500 py-5">
-                        No completed sessions were logged for {displayPeriodLabel}.
+                      <td
+                        colSpan={5}
+                        className="text-center text-gray-500 py-5"
+                      >
+                        No completed sessions were logged for{" "}
+                        {displayPeriodLabel}.
                       </td>
                     </tr>
                   ) : (
                     tutorMonthlyPerformance.map((entry) => (
-                        <tr key={entry.tutorId} className="border-t border-gray-100">
-                          <td className="px-4 py-3 font-medium text-gray-800">
-                            <div className="flex items-center gap-3">
-                              {tutorProfiles[entry.tutorId] ? (
-                                <img
-                                  src={tutorProfiles[entry.tutorId]}
-                                  alt={entry.name}
-                                  className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                                />
-                              ) : (
-                                <div className="w-9 h-9 rounded-full bg-[#dfecff] text-[#132c91] flex items-center justify-center font-semibold">
-                                  {(entry.name || "?").charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span>{entry.name}</span>
-                            </div>
-                          </td>
-                        <td className="px-4 py-3 text-center">{entry.sessions}</td>
-                        <td className="px-4 py-3 text-center">{entry.totalTutees}</td>
+                      <tr
+                        key={entry.tutorId}
+                        className="border-t border-gray-100"
+                      >
+                        <td className="px-4 py-3 font-medium text-gray-800">
+                          <div className="flex items-center gap-3">
+                            {tutorProfiles[entry.tutorId] ? (
+                              <img
+                                src={tutorProfiles[entry.tutorId]}
+                                alt={entry.name}
+                                className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-[#dfecff] text-[#132c91] flex items-center justify-center font-semibold">
+                                {(entry.name || "?").charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span>{entry.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {entry.sessions}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {entry.totalTutees}
+                        </td>
                         <td className="px-4 py-3 text-center font-semibold text-blue-600">
                           {entry.hours.toFixed(1)} hrs
                         </td>
                         <td className="px-4 py-3 text-center font-semibold text-gray-700">
-                          {entry.averageRating ? entry.averageRating.toFixed(2) : "-"}
+                          {entry.averageRating
+                            ? entry.averageRating.toFixed(2)
+                            : "-"}
                         </td>
                       </tr>
                     ))
@@ -1382,10 +1456,14 @@ const Reports = () => {
             </div>
           </section>
 
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+          <section className="bg-white rounded-md border border-gray-200 shadow-md overflow-hidden">
             <div className="p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">LAV Environment Satisfaction</h2>
-              <p className="text-sm text-gray-500">Average ratings for {displayPeriodLabel}.</p>
+              <h2 className="text-lg font-semibold text-gray-800">
+                LAV Environment Satisfaction
+              </h2>
+              <p className="text-sm text-gray-500">
+                Average ratings for {displayPeriodLabel}.
+              </p>
             </div>
             <div className="p-4">
               {evaluations.length === 0 ? (
@@ -1407,14 +1485,20 @@ const Reports = () => {
                       ];
                       const barColor = barColors[index % barColors.length];
                       return (
-                        <div key={field.key} className="flex flex-col items-center gap-2 flex-1">
+                        <div
+                          key={field.key}
+                          className="flex flex-col items-center gap-2 flex-1"
+                        >
                           <span className="text-xs font-semibold text-gray-600">
                             {avg !== null ? avg.toFixed(1) : "-"}
                           </span>
                           <div className="w-8 h-32 rounded-full bg-white border border-gray-200 flex items-end overflow-hidden">
                             <div
                               className="w-full transition-all"
-                              style={{ height: `${height}px`, backgroundColor: barColor }}
+                              style={{
+                                height: `${height}px`,
+                                backgroundColor: barColor,
+                              }}
                             />
                           </div>
                           <span className="text-[11px] text-gray-500 text-center leading-tight">

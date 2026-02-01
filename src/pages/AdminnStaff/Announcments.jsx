@@ -122,7 +122,7 @@ const Announcments = () => {
                 <button
                   onClick={() => setIsEditingAnnouncement(true)}
                   disabled={actionBusy}
-                  className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
@@ -131,7 +131,7 @@ const Announcments = () => {
                   disabled={actionBusy}
                   isLoading={actionBusy}
                   loadingText="Deleting..."
-                  className="px-5 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-1.5 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
                 </LoadingButton>
@@ -166,7 +166,7 @@ const Announcments = () => {
                 disabled={actionBusy}
                 isLoading={actionBusy}
                 loadingText={isEditingAnnouncement ? "Updating..." : "Publishing..."}
-                className="px-5 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-300 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isEditingAnnouncement
                   ? "Update Announcement"

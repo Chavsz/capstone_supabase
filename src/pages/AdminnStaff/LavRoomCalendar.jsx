@@ -434,7 +434,7 @@ const LavRoomCalendar = () => {
         </div>
       </div>
 
-      <div className="bg-[#ffffff] rounded-3xl border border-[#EBEDEF] p-3 shadow-sm">
+      <div className="bg-[#ffffff] rounded-md border border-[#EBEDEF] p-3 shadow-sm">
         <div className="flex flex-col gap-3 mb-3">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:overflow-x-auto lg:whitespace-nowrap lg:pb-1 pb-2">

@@ -470,13 +470,13 @@ const Event = () => {
                     </p>
                   )}
               </div>
-              <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:gap-0 mt-4">
+              <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 sm:gap-2 mt-2 justify-end">
                 <LoadingButton
                   type="submit"
                   disabled={actionBusy}
                   isLoading={actionBusy}
                   loadingText={editingEvent ? "Updating..." : "Adding..."}
-                  className="flex-1 py-2 md:py-3 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="py-2 px-4 bg-blue-600 font-semibold text-white rounded-md hover:bg-blue-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingEvent ? "Update Event" : "Add Event"}
                 </LoadingButton>
@@ -498,7 +498,7 @@ const Event = () => {
                       document.getElementById("eventImageInput").value = "";
                     }}
                     disabled={actionBusy}
-                    className="flex-1 py-2 md:py-3 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="py-1.5 px-3 bg-gray-400 text-white font-semibold rounded-md hover:bg-gray-500 transition duration-300 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel Edit
                   </button>
@@ -586,7 +586,7 @@ const Event = () => {
                       <button
                         onClick={() => handleEventEdit(event)}
                         disabled={actionBusy}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-500 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Edit
                       </button>
@@ -595,7 +595,7 @@ const Event = () => {
                         disabled={actionBusy}
                         isLoading={actionBusy}
                         loadingText="Deleting..."
-                        className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 py-2 bg-red-600 text-white rounded-md font-semibold hover:bg-red-700 transition duration-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Delete
                       </LoadingButton>

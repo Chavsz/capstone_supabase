@@ -386,13 +386,13 @@ const TutorDashboard = () => {
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+        <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
           <div className="flex items-center justify-between">
             <p className="text-[#1f3b94] font-semibold">Sessions</p>
             <button
               type="button"
               onClick={() => openTutorClassesFocus("finished")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
               aria-label="View completed sessions"
             >
               <FaClipboardList />
@@ -414,13 +414,13 @@ const TutorDashboard = () => {
           </button>
         </div>
 
-        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+        <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
           <div className="flex items-center justify-between">
             <p className="text-[#1f3b94] font-semibold">Tutee Request</p>
             <button
               type="button"
               onClick={() => openTutorClassesFocus("pending")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
               aria-label="View pending requests"
             >
               <FaUserPlus />
@@ -442,13 +442,13 @@ const TutorDashboard = () => {
           </button>
         </div>
 
-        <div className="rounded-3xl bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
+        <div className="rounded-md bg-[#ffffff] p-4 shadow-sm border border-[#EBEDEF]">
           <div className="flex items-center justify-between">
             <p className="text-[#1f3b94] font-semibold">Cancellations</p>
             <button
               type="button"
               onClick={() => openTutorClassesFocus("cancelled")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#b9bdd8] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white border border-[#1f3b94] text-[#1f3b94] hover:bg-[#9fa6d1] cursor-pointer"
               aria-label="View cancelled sessions"
             >
               <FaTimesCircle />
