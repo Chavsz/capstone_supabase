@@ -24,6 +24,23 @@ const formatScoreWithTotal = (score, total) => {
   return `${score}/${total}`;
 };
 
+const renderScoreTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const sample = payload[0]?.payload || {};
+  const byKey = (key) => payload.find((item) => item.dataKey === key);
+  const pre = byKey("pre")?.value ?? sample.pre;
+  const post = byKey("post")?.value ?? sample.post;
+  const preTotal = sample.preTotal;
+  const postTotal = sample.postTotal;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm">
+      <p className="font-semibold text-gray-600">{label}</p>
+      <p>Pre: {formatScoreWithTotal(pre, preTotal)}</p>
+      <p>Post: {formatScoreWithTotal(post, postTotal)}</p>
+    </div>
+  );
+};
+
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0.0%";
 
@@ -447,11 +464,13 @@ const MyLearningJourney = () => {
                               name: idx + 1,
                               pre: Number(item.pre_test_score) || 0,
                               post: Number(item.post_test_score) || 0,
+                              preTotal: item.pre_test_total ?? "-",
+                              postTotal: item.post_test_total ?? "-",
                             }))}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Tooltip />
+                            <Tooltip content={renderScoreTooltip} />
                             <Line
                               type="monotone"
                               dataKey="post"
@@ -899,7 +918,7 @@ const MyLearningJourney = () => {
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <Legend />
-                  <Tooltip />
+                  <Tooltip content={renderScoreTooltip} />
                   <Line
                     type="monotone"
                     dataKey="post"

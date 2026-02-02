@@ -37,6 +37,23 @@ const formatScoreWithTotal = (score, total) => {
   return `${score}/${total}`;
 };
 
+const renderScoreTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const sample = payload[0]?.payload || {};
+  const byKey = (key) => payload.find((item) => item.dataKey === key);
+  const pre = byKey("pre")?.value ?? sample.pre;
+  const post = byKey("post")?.value ?? sample.post;
+  const preTotal = sample.preTotal;
+  const postTotal = sample.postTotal;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm">
+      <p className="font-semibold text-gray-600">{label}</p>
+      <p>Pre: {formatScoreWithTotal(pre, preTotal)}</p>
+      <p>Post: {formatScoreWithTotal(post, postTotal)}</p>
+    </div>
+  );
+};
+
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0.0%";
 
@@ -429,10 +446,7 @@ const MyTutees = () => {
               MY TUTEES
             </h2>
             <p className="text-xs text-gray-500">
-              Total Sessions: {allSessions.length} | Total Mastery:{" "}
-              <span className="font-semibold text-green-600">
-                {formatPercent(totalMastery)}
-              </span>
+              Total Sessions: {allSessions.length}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 sm:hidden">
@@ -576,11 +590,13 @@ const MyTutees = () => {
                               name: idx + 1,
                               pre: Number(item.pre_test_score) || 0,
                               post: Number(item.post_test_score) || 0,
+                              preTotal: item.pre_test_total ?? "-",
+                              postTotal: item.post_test_total ?? "-",
                             }))}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Tooltip />
+                            <Tooltip content={renderScoreTooltip} />
                             <Line
                               type="monotone"
                               dataKey="post"
@@ -817,7 +833,7 @@ const MyTutees = () => {
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Legend />
-                    <Tooltip />
+                    <Tooltip content={renderScoreTooltip} />
                     <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
                     <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
                   </ComposedChart>

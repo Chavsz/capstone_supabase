@@ -81,6 +81,23 @@ const formatScoreWithTotal = (score, total) => {
   return `${score}/${total}`;
 };
 
+const renderScoreTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const byKey = (key) => payload.find((item) => item.dataKey === key);
+  const sample = payload[0]?.payload || {};
+  const pre = byKey("pre")?.value ?? sample.pre;
+  const post = byKey("post")?.value ?? sample.post;
+  const preTotal = sample.preTotal;
+  const postTotal = sample.postTotal;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm">
+      <p className="font-semibold text-gray-600">{label}</p>
+      <p>Pre: {formatScoreWithTotal(pre, preTotal)}</p>
+      <p>Post: {formatScoreWithTotal(post, postTotal)}</p>
+    </div>
+  );
+};
+
 const compareSessionsByDate = (a, b) => {
   const dateA = a?.date ? new Date(a.date) : null;
   const dateB = b?.date ? new Date(b.date) : null;
@@ -624,7 +641,7 @@ const SessionAnalytics = () => {
                               <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <Legend wrapperStyle={{ fontSize: 9 }} />
-                                <Tooltip />
+                                <Tooltip content={renderScoreTooltip} />
                                 <Line
                                   type="monotone"
                                   dataKey="pre"
@@ -1120,7 +1137,7 @@ const SessionAnalytics = () => {
                           <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                           <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                           <Legend />
-                          <Tooltip />
+                          <Tooltip content={renderScoreTooltip} />
                           <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                           <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
                           <Line
