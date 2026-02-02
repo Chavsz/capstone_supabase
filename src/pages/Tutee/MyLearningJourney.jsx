@@ -62,9 +62,10 @@ const MyLearningJourney = () => {
     return `${year}-${month}`;
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
   const [sortKey, setSortKey] = useState("tutor");
   const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 4;
+  const cardsPerPage = isMobile ? 2 : 4;
 
   const loadRows = async (showSpinner = false) => {
     if (showSpinner) setLoading(true);
@@ -177,6 +178,15 @@ const MyLearningJourney = () => {
   useEffect(() => {
     loadRows(!hasLoaded);
   }, [version]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 639px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
 
   const filteredTutors = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -418,7 +428,7 @@ const MyLearningJourney = () => {
                       </p>
                     </div>
                     <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
-                      <div className="h-[64px]">
+                      <div className="h-[120px] sm:h-[64px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart
                             data={tutor.sessions.slice(-10).map((item, idx) => ({
@@ -477,7 +487,7 @@ const MyLearningJourney = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-3 sm:mt-4">
                     {(() => {
                       const improvement = formatImprovement(
                         session.pre_test_score,
@@ -867,8 +877,8 @@ const MyLearningJourney = () => {
       )}
 
       {chartTutor && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+        <div className="fixed inset-0 z-[80] flex items-start sm:items-center justify-center bg-black/30 px-4 py-6">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-gray-800">

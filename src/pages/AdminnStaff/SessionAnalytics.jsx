@@ -69,7 +69,8 @@ const SessionAnalytics = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("rank");
-  const cardsPerPage = 4;
+  const [isMobile, setIsMobile] = useState(false);
+  const cardsPerPage = isMobile ? 2 : 4;
   const subjectTabs = [
     "All",
     "Programming",
@@ -240,6 +241,15 @@ const SessionAnalytics = () => {
     loadData(!hasLoaded);
   }, [version]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 639px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
+
   const leaderboard = useMemo(() => {
     return [...tutorRows].sort((a, b) => b.averageGain - a.averageGain);
   }, [tutorRows]);
@@ -401,6 +411,21 @@ const SessionAnalytics = () => {
         <div className="text-center text-gray-500">Loading analytics...</div>
       ) : (
         <div className="space-y-6">
+          <div className="flex items-center justify-end sm:hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setRawPage(1);
+                setRawModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+            >
+              <span className="text-green-600 font-bold">
+                {rawSessions.length}
+              </span>
+              View Sessions Test Result (Raw)
+            </button>
+          </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-700">
@@ -422,7 +447,7 @@ const SessionAnalytics = () => {
                     setRawPage(1);
                     setRawModalOpen(true);
                   }}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                  className="hidden sm:inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
                 >
                   <span className="text-green-600 font-bold">
                     {rawSessions.length}
@@ -534,7 +559,7 @@ const SessionAnalytics = () => {
                           </div>
                         </div>
                         <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
-                          <div className="h-[72px]">
+                          <div className="h-[120px] sm:h-[72px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
@@ -991,8 +1016,8 @@ const SessionAnalytics = () => {
           )}
 
           {chartTutor && (
-            <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+            <div className="fixed inset-0 z-[75] flex items-start sm:items-center justify-center bg-black/30 px-4 py-6">
+              <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-gray-800">
