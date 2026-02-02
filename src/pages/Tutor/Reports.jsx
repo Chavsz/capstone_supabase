@@ -68,6 +68,7 @@ const normalizeDate = (value) => {
 
 const Reports = () => {
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [evaluations, setEvaluations] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [userId, setUserId] = useState(null);
@@ -126,7 +127,7 @@ const Reports = () => {
 
   const fetchReportsData = useCallback(async (shouldUpdate) => {
     try {
-      if (shouldUpdate()) setLoading(true);
+      if (shouldUpdate() && !hasLoaded) setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) {
         if (shouldUpdate()) {
@@ -196,9 +197,12 @@ const Reports = () => {
         );
       }
     } finally {
-      if (shouldUpdate()) setLoading(false);
+      if (shouldUpdate()) {
+        setLoading(false);
+        if (!hasLoaded) setHasLoaded(true);
+      }
     }
-  }, [clearError, reportError]);
+  }, [clearError, reportError, hasLoaded]);
 
   useEffect(() => {
     let active = true;
@@ -424,7 +428,7 @@ const Reports = () => {
             </p>
           </div>
           <div className="p-4">
-            {loading ? (
+            {loading && !hasLoaded ? (
               <p className="text-sm text-gray-500 text-center py-6">Loading feedback...</p>
             ) : evaluationsInPeriod.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-6">

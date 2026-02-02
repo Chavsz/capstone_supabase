@@ -21,6 +21,7 @@ const STATUS_FILTERS = ["all", ...Object.keys(STATUS_META)];
 const Lavroom = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { run: runAction, busy: actionBusy } = useActionGuard();
@@ -28,6 +29,7 @@ const Lavroom = () => {
 
   const getAppointments = async () => {
     try {
+      if (!hasLoaded) setLoading(true);
       const { data, error } = await supabase
         .from("appointment")
         .select(`
@@ -52,6 +54,7 @@ const Lavroom = () => {
       toast.error("Error loading appointments");
     } finally {
       setLoading(false);
+      if (!hasLoaded) setHasLoaded(true);
     }
   };
 
@@ -123,7 +126,7 @@ const Lavroom = () => {
     return matchesStatus && matchesSearch;
   });
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className="min-h-screen p-6">
         <h1 className="text-xl font-bold text-gray-700">Lavroom</h1>

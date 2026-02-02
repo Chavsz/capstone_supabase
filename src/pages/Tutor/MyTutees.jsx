@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "../../supabase-client";
 import AssessmentModal from "../../components/AssessmentModal";
 import LoadingButton from "../../components/LoadingButton";
@@ -22,7 +21,7 @@ const formatImprovement = (preScore, postScore, preTotal) => {
 
 const formatScoreWithTotal = (score, total) => {
   if (score === null || score === undefined || score === "") return "-";
-  if (total === null || total === undefined || total === "") return `${score}`;
+  if (total === null || total === undefined || total === "") return `${score}/-`;
   return `${score}/${total}`;
 };
 
@@ -32,6 +31,7 @@ const formatPercent = (value) =>
 const MyTutees = () => {
   const { version } = useDataSync();
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [tutees, setTutees] = useState([]);
   const [selected, setSelected] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,8 +58,8 @@ const MyTutees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 4;
 
-  const loadRows = async () => {
-    setLoading(true);
+  const loadRows = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -159,15 +159,16 @@ const MyTutees = () => {
       });
 
       setTutees(result);
+      if (!hasLoaded) setHasLoaded(true);
     } catch (err) {
       console.error("Error loading tutees:", err.message);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadRows();
+    loadRows(!hasLoaded);
   }, [version]);
 
   const filteredRows = useMemo(() => {
@@ -243,15 +244,6 @@ const MyTutees = () => {
     masteryValues.length > 0
       ? masteryValues.reduce((sum, value) => sum + value, 0) / masteryValues.length
       : 0;
-  const masteryChartData = allSessions.slice(-10).map((session, index) => ({
-    name: `S${Math.max(allSessions.length - 9, 1) + index}`,
-    mastery:
-      formatImprovement(
-        session.pre_test_score,
-        session.post_test_score,
-        session.pre_test_total
-      ) || 0,
-  }));
   const rawSessions = useMemo(() => {
     const items = [];
     tutees.forEach((tutee) => {
@@ -356,6 +348,9 @@ const MyTutees = () => {
       if (Number.isNaN(preScore) || Number.isNaN(postScore)) {
         return;
       }
+      if (Number.isNaN(preTotal) || Number.isNaN(postTotal)) {
+        return;
+      }
 
       const { data: existing, error: existingError } = await supabase
         .from("evaluation")
@@ -423,17 +418,6 @@ const MyTutees = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="h-[64px] w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={masteryChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input

@@ -16,6 +16,7 @@ const MAX_COMMENT_LENGTH = 150;
 
 const Comments = () => {
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [comments, setComments] = useState([]);
   const { reportError, clearError } = useDataSync();
 
@@ -24,7 +25,7 @@ const Comments = () => {
 
     const fetchComments = async () => {
       try {
-        setLoading(true);
+        if (!hasLoaded) setLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user?.id) {
           if (active) setComments([]);
@@ -67,7 +68,10 @@ const Comments = () => {
           );
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          if (!hasLoaded) setHasLoaded(true);
+        }
       }
     };
 
@@ -105,7 +109,7 @@ const Comments = () => {
           </div>
         </header>
 
-        {loading ? (
+        {loading && !hasLoaded ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-500">
             Loading comments...
           </div>

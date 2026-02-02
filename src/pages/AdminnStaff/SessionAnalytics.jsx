@@ -31,7 +31,7 @@ const computeImprovement = (pre, post, preTotal) => {
 
 const formatScoreWithTotal = (score, total) => {
   if (score === null || score === undefined || score === "") return "-";
-  if (total === null || total === undefined || total === "") return `${score}`;
+  if (total === null || total === undefined || total === "") return `${score}/-`;
   return `${score}/${total}`;
 };
 
@@ -52,6 +52,7 @@ const compareSessionsByDate = (a, b) => {
 const SessionAnalytics = () => {
   const { version } = useDataSync();
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [tutorRows, setTutorRows] = useState([]);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [chartTutor, setChartTutor] = useState(null);
@@ -81,8 +82,8 @@ const SessionAnalytics = () => {
     "Accountancy and Economics",
   ];
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const { data: tutors, error: tutorError } = await supabase
         .from("users")
@@ -228,15 +229,16 @@ const SessionAnalytics = () => {
       });
 
       setTutorRows(rows);
+      if (!hasLoaded) setHasLoaded(true);
     } catch (err) {
       console.error("Error loading session analytics:", err.message);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(!hasLoaded);
   }, [version]);
 
   const leaderboard = useMemo(() => {
@@ -423,7 +425,10 @@ const SessionAnalytics = () => {
                   }}
                   className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                 >
-                  {rawSessions.length} Sessions Test Result (Raw)
+                  <span className="text-green-600 font-bold">
+                    {rawSessions.length}
+                  </span>{" "}
+                  Sessions Test Result (Raw)
                 </button>
               </div>
             </div>
@@ -548,8 +553,7 @@ const SessionAnalytics = () => {
                               </LineChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-                            <span>View Chart</span>
+                          <div className="mt-2 flex items-center justify-end text-[11px] text-gray-500">
                             <button
                               type="button"
                               onClick={() => {
@@ -835,7 +839,10 @@ const SessionAnalytics = () => {
               <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="text-lg font-bold text-gray-800">
-                    {rawSessions.length} Sessions Test Result (Raw)
+                    <span className="text-green-600 font-semibold">
+                      {rawSessions.length}
+                    </span>{" "}
+                    Sessions Test Result (Raw)
                   </h3>
                   <button
                     type="button"
@@ -1001,32 +1008,7 @@ const SessionAnalytics = () => {
                 </div>
 
                 <div className="mt-5">
-                  <div className="h-[160px] rounded-lg border border-gray-200 bg-white p-3">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={selectedSessions.map((session, idx) => ({
-                          name: `Session ${idx + 1}`,
-                          mastery: computeImprovement(
-                            session.pre_test_score,
-                            session.post_test_score,
-                            session.pre_test_total
-                          ) || 0,
-                        }))}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="absolute -top-6 right-0 text-xs font-semibold text-gray-600">
-                      View Chart
-                    </div>
+                    <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={chartSessions.map((session, idx) => ({
@@ -1048,7 +1030,6 @@ const SessionAnalytics = () => {
                         <Legend />
                         <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                         <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                        <Line type="monotone" dataKey="mastery" stroke="#22c55e" strokeWidth={2} dot={false} />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>

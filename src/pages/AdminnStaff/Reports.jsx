@@ -39,6 +39,7 @@ const Reports = () => {
   const [schedules, setSchedules] = useState([]);
   const [tutorProfiles, setTutorProfiles] = useState({});
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [monthlyExporting, setMonthlyExporting] = useState(false);
   const [landingImage, setLandingImage] = useState("");
   const [showRangePicker, setShowRangePicker] = useState(false);
@@ -61,7 +62,7 @@ const Reports = () => {
 
   const fetchData = async (shouldUpdate) => {
     try {
-      if (shouldUpdate()) setLoading(true);
+      if (shouldUpdate() && !hasLoaded) setLoading(true);
 
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointment")
@@ -177,7 +178,10 @@ const Reports = () => {
         );
       }
     } finally {
-      if (shouldUpdate()) setLoading(false);
+      if (shouldUpdate()) {
+        setLoading(false);
+        if (!hasLoaded) setHasLoaded(true);
+      }
     }
   };
 
@@ -1200,7 +1204,7 @@ const Reports = () => {
     return tutorMonthlyPerformance.filter((entry) => entry.hours === maxHours);
   }, [tutorMonthlyPerformance]);
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className="min-h-screen p-6">
         <h1 className="text-2xl font-bold text-gray-700">Reports</h1>
