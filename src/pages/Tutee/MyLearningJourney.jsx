@@ -1,14 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip } from "recharts";
 
 const formatImprovement = (preScore, postScore, preTotal) => {
   const pre = Number(preScore);
@@ -446,61 +439,14 @@ const MyLearningJourney = () => {
                         {tutor.sessions.length} sessions
                       </p>
                     </div>
-                    <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
-                      <div className="h-[120px] sm:h-[64px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={tutor.sessions.slice(-10).map((item, idx) => ({
-                              name: idx + 1,
-                              pre: Number(item.pre_test_score) || 0,
-                              post: Number(item.post_test_score) || 0,
-                              preTotal: item.pre_test_total ?? "-",
-                              postTotal: item.post_test_total ?? "-",
-                              mastery:
-                                formatImprovement(
-                                  item.pre_test_score,
-                                  item.post_test_score,
-                                  item.pre_test_total
-                                ) || 0,
-                            }))}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Tooltip />
-                            <Line
-                              type="monotone"
-                              dataKey="mastery"
-                              name="Mastery"
-                              stroke="#22c55e"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="post"
-                              name="Post-Test"
-                              stroke="#0ea5e9"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="pre"
-                              name="Pre-Test"
-                              stroke="#94a3b8"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
+                    <div className="flex w-full sm:w-auto justify-end">
                       <button
                         type="button"
                         onClick={() => {
                           setChartTutor(tutor);
                           setChartPage(1);
                         }}
-                        className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                       >
                         View chart
                       </button>

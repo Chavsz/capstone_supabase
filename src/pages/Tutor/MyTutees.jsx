@@ -567,46 +567,11 @@ const MyTutees = () => {
                         {tutee.sessions.length} sessions
                       </p>
                     </div>
-                    <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
-                      <div className="h-[120px] sm:h-[64px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart
-                            data={tutee.sessions.slice(-10).map((item, idx) => ({
-                              name: idx + 1,
-                              pre: Number(item.pre_test_score) || 0,
-                              post: Number(item.post_test_score) || 0,
-                              preTotal: item.pre_test_total ?? "-",
-                              postTotal: item.post_test_total ?? "-",
-                              mastery:
-                                formatImprovement(
-                                  item.pre_test_score,
-                                  item.post_test_score,
-                                  item.pre_test_total
-                                ) || 0,
-                            }))}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={false} axisLine={false} hide />
-                            <YAxis tick={false} axisLine={false} hide />
-                            <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Tooltip />
-                            <Line
-                              type="monotone"
-                              dataKey="mastery"
-                              name="Mastery"
-                              stroke="#22c55e"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                            <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
-                            <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
-                          </ComposedChart>
-                        </ResponsiveContainer>
-                      </div>
+                    <div className="flex w-full sm:w-auto justify-end">
                       <button
                         type="button"
                         onClick={() => setChartTutee(tutee)}
-                        className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                       >
                         View chart
                       </button>
