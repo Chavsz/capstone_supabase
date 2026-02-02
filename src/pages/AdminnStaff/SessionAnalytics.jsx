@@ -49,6 +49,27 @@ const compareSessionsByDate = (a, b) => {
   return String(a?.date || "").localeCompare(String(b?.date || ""));
 };
 
+const formatChartTooltip = (value, name, props) => {
+  const numeric = Number(value);
+  const payload = props?.payload || {};
+  if (name === "mastery") {
+    if (Number.isNaN(numeric)) return ["-", "Mastery"];
+    const sign = numeric >= 0 ? "+" : "-";
+    return [`${sign}${Math.abs(numeric).toFixed(1)}%`, "Mastery"];
+  }
+  if (name === "pre") {
+    if (Number.isNaN(numeric)) return ["-", "Pre"];
+    const total = payload.preTotal ?? "-";
+    return [`${numeric}/${total}`, "Pre"];
+  }
+  if (name === "post") {
+    if (Number.isNaN(numeric)) return ["-", "Post"];
+    const total = payload.postTotal ?? "-";
+    return [`${numeric}/${total}`, "Post"];
+  }
+  return [value, name];
+};
+
 const SessionAnalytics = () => {
   const { version } = useDataSync();
   const [loading, setLoading] = useState(true);
@@ -487,6 +508,8 @@ const SessionAnalytics = () => {
                     name: idx + 1,
                     pre: Number(session.pre_test_score) || 0,
                     post: Number(session.post_test_score) || 0,
+                    preTotal: session.pre_test_total ?? "-",
+                    postTotal: session.post_test_total ?? "-",
                   }));
                   return (
                     <div
@@ -536,9 +559,13 @@ const SessionAnalytics = () => {
                           <div className="h-[72px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <Tooltip formatter={formatChartTooltip} />
+                                <Legend wrapperStyle={{ fontSize: 9 }} />
                                 <Line
                                   type="monotone"
                                   dataKey="pre"
+                                  name="Pre"
                                   stroke="#94a3b8"
                                   strokeWidth={2}
                                   dot={false}
@@ -546,6 +573,7 @@ const SessionAnalytics = () => {
                                 <Line
                                   type="monotone"
                                   dataKey="post"
+                                  name="Post"
                                   stroke="#0ea5e9"
                                   strokeWidth={2}
                                   dot={false}
@@ -1015,6 +1043,8 @@ const SessionAnalytics = () => {
                           name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
                           pre: Number(session.pre_test_score) || 0,
                           post: Number(session.post_test_score) || 0,
+                          preTotal: session.pre_test_total ?? "-",
+                          postTotal: session.post_test_total ?? "-",
                           mastery: computeImprovement(
                             session.pre_test_score,
                             session.post_test_score,
@@ -1026,7 +1056,7 @@ const SessionAnalytics = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip />
+                        <Tooltip formatter={formatChartTooltip} />
                         <Legend />
                         <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                         <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
