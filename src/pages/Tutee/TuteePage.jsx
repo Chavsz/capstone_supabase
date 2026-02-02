@@ -4,7 +4,7 @@ import { Outlet, useLocation } from "react-router-dom";
 // components
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { DataSyncErrorBanner, useDataSync } from "../../contexts/DataSyncContext";
+import { DataSyncErrorBanner } from "../../contexts/DataSyncContext";
 
 // Tutee Pages
 import * as fiIcons from "react-icons/fi";
@@ -13,8 +13,6 @@ function TuteePage({ setAuth }) {
   const location = useLocation();
   const isProfilePage = location.pathname.includes("/profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { version } = useDataSync();
-
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
@@ -53,9 +51,7 @@ function TuteePage({ setAuth }) {
           {!isProfilePage && <Header />}
           <DataSyncErrorBanner />
           <div className="flex-1">
-            <div key={`${location.pathname}-${version}`}>
-              <Outlet />
-            </div>
+            <Outlet />
           </div>
         </div>
       </div>

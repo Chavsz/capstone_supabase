@@ -24,6 +24,9 @@ const Header = () => {
   const dropdownRef = useRef(null);
   const isProcessingAutoDecline = useRef(false);
   const { run: runAction, busy: actionBusy } = useActionGuard();
+  const [confirmedPopupKey, setConfirmedPopupKey] = useState(
+    "lav.confirmedPopups.anon"
+  );
   const [profile, setProfile] = useState({
     program: "",
     college: "",
@@ -280,11 +283,11 @@ const Header = () => {
   const formatNotificationContent = (content = "") =>
     content.replace(/\s*\[appointment_id:[^\]]+\]/i, "").trim();
 
-  const getConfirmedPopupKey = () => "lav.confirmedPopups";
+  const getConfirmedPopupKey = () => confirmedPopupKey;
 
   const readConfirmedPopupIds = () => {
     try {
-      const raw = localStorage.getItem(getConfirmedPopupKey());
+      const raw = sessionStorage.getItem(getConfirmedPopupKey());
       const parsed = raw ? JSON.parse(raw) : [];
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch (err) {
@@ -297,7 +300,7 @@ const Header = () => {
     try {
       const ids = readConfirmedPopupIds();
       ids.add(id);
-      localStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
+      sessionStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
     } catch (err) {
       // Ignore storage errors.
     }
@@ -493,6 +496,44 @@ const Header = () => {
     return () => {
       clearInterval(upcomingIntervalId);
       clearInterval(autoDeclineIntervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const updateKey = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      if (!session) {
+        setConfirmedPopupKey("lav.confirmedPopups.anon");
+        return;
+      }
+      const loginMarker = session.user?.last_sign_in_at || "unknown";
+      setConfirmedPopupKey(
+        `lav.confirmedPopups.${session.user.id}.${loginMarker}`
+      );
+    };
+
+    updateKey();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!session) {
+          setConfirmedPopupKey("lav.confirmedPopups.anon");
+          setConfirmedPopup(null);
+          return;
+        }
+        const loginMarker = session.user?.last_sign_in_at || "unknown";
+        setConfirmedPopupKey(
+          `lav.confirmedPopups.${session.user.id}.${loginMarker}`
+        );
+        setConfirmedPopup(null);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
     };
   }, []);
 

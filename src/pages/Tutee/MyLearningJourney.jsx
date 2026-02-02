@@ -341,7 +341,7 @@ const MyLearningJourney = () => {
               View Sessions Test Result (Raw)
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="hidden sm:flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input
@@ -357,7 +357,7 @@ const MyLearningJourney = () => {
                 setRawPage(1);
                 setRawModalOpen(true);
               }}
-              className="hidden sm:inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
             >
               <span className="text-green-600 font-bold">
                 {rawSessions.length}
@@ -584,16 +584,6 @@ const MyLearningJourney = () => {
                       className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                     >
                       View all sessions
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChartTutor(tutor);
-                        setChartPage(1);
-                      }}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                      View chart
                     </button>
                   </div>
                 </div>

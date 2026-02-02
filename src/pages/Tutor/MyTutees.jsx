@@ -458,7 +458,7 @@ const MyTutees = () => {
               View Sessions Test Result (Raw)
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="hidden sm:flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input

@@ -6,7 +6,7 @@ import Sidebar from "./Sidebar";
 
 // Tutor Pages
 import Header from "./Header";
-import { DataSyncErrorBanner, useDataSync } from "../../contexts/DataSyncContext";
+import { DataSyncErrorBanner } from "../../contexts/DataSyncContext";
 
 import * as fiIcons from "react-icons/fi";
 
@@ -14,8 +14,6 @@ function TutorPage({ setAuth }) {
   const location = useLocation();
   const isProfilePage = location.pathname.includes("/profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { version } = useDataSync();
-
   return (
     <div className="bg-[#f8f9f0] min-h-screen">
       {/* Mobile Menu Button */}
@@ -50,9 +48,7 @@ function TutorPage({ setAuth }) {
           {!isProfilePage && <Header />}
           <DataSyncErrorBanner />
           <div className="flex-1">
-            <div key={`${location.pathname}-${version}`}>
-              <Outlet />
-            </div>
+            <Outlet />
           </div>
         </div>
       </div>
