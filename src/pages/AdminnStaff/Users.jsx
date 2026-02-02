@@ -506,7 +506,7 @@ const Users = () => {
           <div className="flex-1">
             <div className="bg-white rounded-lg border border-gray-300 p-4 md:p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-2 w-full max-w-[260px]">
+                <div className="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-2 w-full max-w-[300px]">
                   <FiSearch className="text-blue-600" />
                   <input
                     type="text"
@@ -543,7 +543,7 @@ const Users = () => {
                   return (
                     <div
                       key={user.user_id}
-                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-4 border-b border-blue-200 last:border-b-0"
+                      className="grid grid-cols-[32px_64px_1fr_32px] items-center gap-4 py-4 border-b border-gray-300 last:border-b-0"
                     >
                       <input
                         type="checkbox"
@@ -738,10 +738,10 @@ const Users = () => {
                   <img
                     src={selectedUser.profile.profile_image}
                     alt={selectedUser.name}
-                    className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full border border-blue-200 flex items-center justify-center text-blue-700 font-semibold">
+                  <div className="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-blue-700 font-semibold">
                     {(selectedUser.name || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
