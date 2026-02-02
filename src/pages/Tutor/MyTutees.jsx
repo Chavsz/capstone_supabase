@@ -557,8 +557,6 @@ const MyTutees = () => {
                             <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                             <YAxis allowDecimals={false} tick={{ fontSize: 9 }} />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Bar dataKey="pre" name="Pre" fill="#94a3b8" />
-                            <Bar dataKey="post" name="Post" fill="#0ea5e9" />
                             <Line
                               type="monotone"
                               dataKey="mastery"
@@ -567,6 +565,8 @@ const MyTutees = () => {
                               strokeWidth={2}
                               dot={false}
                             />
+                            <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
+                            <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
                           </ComposedChart>
                         </ResponsiveContainer>
                       </div>
@@ -787,8 +787,6 @@ const MyTutees = () => {
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Legend />
-                    <Bar dataKey="pre" name="Pre" fill="#94a3b8" />
-                    <Bar dataKey="post" name="Post" fill="#0ea5e9" />
                     <Line
                       type="monotone"
                       dataKey="mastery"
@@ -797,6 +795,8 @@ const MyTutees = () => {
                       strokeWidth={2}
                       dot={false}
                     />
+                    <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
+                    <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
