@@ -574,6 +574,7 @@ const SessionAnalytics = () => {
                               <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <Legend wrapperStyle={{ fontSize: 9 }} />
+                                <Tooltip />
                                 <Line
                                   type="monotone"
                                   dataKey="pre"

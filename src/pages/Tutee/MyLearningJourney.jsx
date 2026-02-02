@@ -311,10 +311,7 @@ const MyLearningJourney = () => {
               MY LEARNING JOURNEY
             </h2>
             <p className="text-xs text-gray-500">
-              Total Sessions: {allSessions.length} | Total Mastery:{" "}
-              <span className="font-semibold text-green-600">
-                {formatPercent(totalMastery)}
-              </span>
+              Total Sessions: {allSessions.length}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 sm:hidden">
