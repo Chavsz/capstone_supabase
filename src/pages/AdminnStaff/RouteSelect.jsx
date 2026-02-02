@@ -5,7 +5,7 @@ import * as mdIcons from "react-icons/md";
 import * as fiIcons from "react-icons/fi";
 import * as faIcons from "react-icons/fa";
 
-const RouteSelect = ({ onClose, canSwitchAdmin }) => {
+const RouteSelect = ({ onClose, canSwitchAdmin, isSuperadmin }) => {
   return (
     <div className="space-y-1">
       <p className="text-[13px] font-extralight text-[#696969]">MENU</p>
@@ -23,12 +23,14 @@ const RouteSelect = ({ onClose, canSwitchAdmin }) => {
         title="LAV Room"
         onClose={onClose}
       />
-      <Route
-        to="/dashboard/session-analytics"
-        Icon={mdIcons.MdQueryStats}
-        title="Session Analytics"
-        onClose={onClose}
-      />
+      {isSuperadmin && (
+        <Route
+          to="/dashboard/session-analytics"
+          Icon={mdIcons.MdQueryStats}
+          title="Session Analytics"
+          onClose={onClose}
+        />
+      )}
       <Route
         to="/dashboard/reports"
         Icon={fiIcons.FiBarChart2}

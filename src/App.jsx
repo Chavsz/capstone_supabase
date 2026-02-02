@@ -74,9 +74,19 @@ function RoleBasedLayout({ setAuth, currentRole, loading }) {
   }
 }
 
-function RoleRoute({ allowedRoles, currentRole, loading, element }) {
+function RoleRoute({
+  allowedRoles,
+  currentRole,
+  loading,
+  element,
+  requireSuperadmin = false,
+  isSuperadmin = false,
+}) {
   if (loading) return null;
   if (!allowedRoles.includes(currentRole)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (requireSuperadmin && !isSuperadmin) {
     return <Navigate to="/dashboard" replace />;
   }
   return element;
@@ -104,6 +114,8 @@ function RoleProfile({ currentRole, loading }) {
 }
 
 function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
+  const { userDetails } = useUserDetails();
+  const isSuperadmin = Boolean(userDetails?.is_superadmin);
   const loadingScreen = (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-blue-600">Loading...</div>
@@ -322,6 +334,8 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               allowedRoles={["admin"]}
               currentRole={currentRole}
               loading={loading}
+              requireSuperadmin
+              isSuperadmin={isSuperadmin}
               element={<AdminSessionAnalytics />}
             />
           }

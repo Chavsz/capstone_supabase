@@ -11,6 +11,7 @@ const Sidebar = ({ setAuth, onClose }) => {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState(null);
   const [canSwitchAdmin, setCanSwitchAdmin] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [roleOverridePrev, setRoleOverridePrev] = useState(null);
   const [roleOverride, setRoleOverride] = useState(null);
   const { run: runAction, busy: actionBusy } = useActionGuard();
@@ -54,7 +55,9 @@ const Sidebar = ({ setAuth, onClose }) => {
       if (error && error.code !== "PGRST116") {
         throw error;
       }
-      setCanSwitchAdmin(Boolean(data?.is_admin && !data?.is_superadmin));
+      const superAdmin = Boolean(data?.is_superadmin);
+      setIsSuperadmin(superAdmin);
+      setCanSwitchAdmin(Boolean(data?.is_admin && !superAdmin));
     } catch (err) {
       console.error("Error checking admin permissions:", err.message);
       setCanSwitchAdmin(false);
@@ -233,7 +236,11 @@ const Sidebar = ({ setAuth, onClose }) => {
 
       {/* Menu Items - Scrollable */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <RouteSelect onClose={onClose} canSwitchAdmin={canSwitchAdmin} />
+        <RouteSelect
+          onClose={onClose}
+          canSwitchAdmin={canSwitchAdmin}
+          isSuperadmin={isSuperadmin}
+        />
       </div>
 
       {/* Logout Button - Always Visible at Bottom */}
