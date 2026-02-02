@@ -779,6 +779,9 @@ const Profile = () => {
       const trimmedCollege = (form.college || "").trim();
       const trimmedYear = (form.year_level || "").trim();
       const trimmedSpecialization = (form.specialization || "").trim();
+      const trimmedNickname = (form.nickname || "").trim();
+      const trimmedFileLink = (form.file_link || "").trim();
+      const trimmedProfileImage = (form.profile_image || "").trim();
 
       if (!trimmedName) {
         setSaveError("Please enter your name before saving.");
@@ -790,6 +793,18 @@ const Profile = () => {
       }
       if (!subjectValue || !trimmedSpecialization) {
         setSaveError("Please fill in subject and specialization before saving.");
+        return;
+      }
+      if (!trimmedNickname) {
+        setSaveError("Please fill in your nickname before saving.");
+        return;
+      }
+      if (!trimmedProfileImage) {
+        setSaveError("Please add a profile image before saving.");
+        return;
+      }
+      if (!trimmedFileLink) {
+        setSaveError("Please add your file link before saving.");
         return;
       }
 

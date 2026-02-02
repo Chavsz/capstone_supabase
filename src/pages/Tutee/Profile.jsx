@@ -100,12 +100,17 @@ const Profile = () => {
       const trimmedProgram = (form.program || "").trim();
       const trimmedCollege = (form.college || "").trim();
       const trimmedYear = (form.year_level || "").trim();
+      const trimmedProfileImage = (form.profile_image || "").trim();
       if (!trimmedName) {
         setSaveError("Please enter your name before saving.");
         return;
       }
       if (!trimmedProgram || !trimmedCollege || !trimmedYear) {
         setSaveError("Please fill in program, college, and year level before saving.");
+        return;
+      }
+      if (!trimmedProfileImage) {
+        setSaveError("Please add a profile image before saving.");
         return;
       }
 

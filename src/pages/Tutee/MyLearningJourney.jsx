@@ -253,22 +253,6 @@ const MyLearningJourney = () => {
     masteryValues.length > 0
       ? masteryValues.reduce((sum, value) => sum + value, 0) / masteryValues.length
       : 0;
-  const headerChartData = useMemo(() => {
-    const recent = [...allSessions]
-      .slice(-10)
-      .map((session, idx) => ({
-        name: idx + 1,
-        pre: Number(session.pre_test_score) || 0,
-        post: Number(session.post_test_score) || 0,
-        mastery:
-          formatImprovement(
-            session.pre_test_score,
-            session.post_test_score,
-            session.pre_test_total
-          ) || 0,
-      }));
-    return recent;
-  }, [allSessions]);
   const rawSessions = useMemo(() => {
     const items = [];
     tutors.forEach((tutor) => {
@@ -317,36 +301,6 @@ const MyLearningJourney = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-44 rounded-lg border border-gray-200 bg-gray-50 p-2">
-              <div className="h-[72px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={headerChartData}>
-                    <Line
-                      type="monotone"
-                      dataKey="pre"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="post"
-                      stroke="#0ea5e9"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="mastery"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-2 text-[11px] text-gray-500">Recent sessions</div>
-            </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input
@@ -364,7 +318,10 @@ const MyLearningJourney = () => {
               }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-800"
             >
-              {rawSessions.length} Sessions Test Result (Raw)
+              <span className="text-green-600 font-bold">
+                {rawSessions.length}
+              </span>{" "}
+              Sessions Test Result (Raw)
             </button>
           </div>
         </div>
@@ -432,6 +389,48 @@ const MyLearningJourney = () => {
                           ? ` - ${tutor.tutor_specialization}`
                           : ""}
                       </p>
+                    </div>
+                    <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                      <div className="h-[64px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={tutor.sessions.slice(-10).map((item, idx) => ({
+                              name: idx + 1,
+                              pre: Number(item.pre_test_score) || 0,
+                              post: Number(item.post_test_score) || 0,
+                              mastery:
+                                formatImprovement(
+                                  item.pre_test_score,
+                                  item.post_test_score,
+                                  item.pre_test_total
+                                ) || 0,
+                            }))}
+                          >
+                            <Line
+                              type="monotone"
+                              dataKey="pre"
+                              stroke="#94a3b8"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="post"
+                              stroke="#0ea5e9"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="mastery"
+                              stroke="#22c55e"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-1 text-[11px] text-gray-500">Last 10 sessions</div>
                     </div>
                     <div className="text-xs text-gray-500 text-right">
                       <span className="text-sm font-semibold text-gray-800">
@@ -701,9 +700,12 @@ const MyLearningJourney = () => {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-lg font-bold text-gray-800">
-                {rawSessions.length} Sessions Test Result (Raw)
-              </h3>
+                <h3 className="text-lg font-bold text-gray-800">
+                  <span className="text-green-600 font-semibold">
+                    {rawSessions.length}
+                  </span>{" "}
+                  Sessions Test Result (Raw)
+                </h3>
               <button
                 type="button"
                 onClick={() => setRawModalOpen(false)}
