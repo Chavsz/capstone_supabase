@@ -29,6 +29,52 @@ const computeImprovement = (pre, post, preTotal) => {
   return ((postNum - preNum) / preNum) * 100;
 };
 
+const computeScaledDelta = (pre, post, preTotal, postTotal) => {
+  const preNum = Number(pre);
+  const postNum = Number(post);
+  const preTotalNum = Number(preTotal);
+  const postTotalNum = Number(postTotal);
+  if (!Number.isFinite(preNum) || !Number.isFinite(postNum)) return null;
+  if (Number.isFinite(preTotalNum) && Number.isFinite(postTotalNum) && postTotalNum > 0) {
+    const scaledPost = postNum * (preTotalNum / postTotalNum);
+    return {
+      preScaled: preNum,
+      postScaled: scaledPost,
+      base: preTotalNum,
+    };
+  }
+  if (Number.isFinite(preTotalNum) && preTotalNum > 0) {
+    return {
+      preScaled: preNum,
+      postScaled: postNum,
+      base: preTotalNum,
+    };
+  }
+  return {
+    preScaled: preNum,
+    postScaled: postNum,
+    base: preNum,
+  };
+};
+
+const computeTotalMastery = (sessions) => {
+  let totalImprovement = 0;
+  let totalBase = 0;
+  sessions.forEach((session) => {
+    const scaled = computeScaledDelta(
+      session.pre_test_score,
+      session.post_test_score,
+      session.pre_test_total,
+      session.post_test_total
+    );
+    if (!scaled) return;
+    totalImprovement += scaled.postScaled - scaled.preScaled;
+    totalBase += scaled.base;
+  });
+  if (!Number.isFinite(totalBase) || totalBase <= 0) return 0;
+  return (totalImprovement / totalBase) * 100;
+};
+
 const formatScoreWithTotal = (score, total) => {
   if (score === null || score === undefined || score === "") return "-";
   if (total === null || total === undefined || total === "") return `${score}/-`;
@@ -221,11 +267,13 @@ const SessionAnalytics = () => {
             ? improvements.reduce((sum, value) => sum + value, 0) /
               improvements.length
             : 0;
+        const totalMastery = computeTotalMastery(tutor.sessions);
         return {
           ...tutor,
           sessions: sortedSessions,
           totalSessions: tutor.sessions.length,
           averageGain,
+          totalMastery,
         };
       });
 
@@ -264,12 +312,12 @@ const SessionAnalytics = () => {
       activeSubject === "All"
         ? leaderboard
         : leaderboard.filter((row) => row.tutor_subject === activeSubject);
-    const withStats = scopedRows.map((row) => {
-      const subjectSessions =
-        activeSubject === "All"
-          ? row.sessions
-          : row.sessions.filter((session) => session.subject === activeSubject);
-      const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
+      const withStats = scopedRows.map((row) => {
+        const subjectSessions =
+          activeSubject === "All"
+            ? row.sessions
+            : row.sessions.filter((session) => session.subject === activeSubject);
+        const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
       const improvements = subjectSessions
         .map((session) =>
           computeImprovement(
@@ -284,20 +332,22 @@ const SessionAnalytics = () => {
         const post = Number(session.post_test_score);
         return Number.isFinite(pre) && Number.isFinite(post);
       });
-      const averageGain =
-        improvements.length > 0
-          ? improvements.reduce((sum, value) => sum + value, 0) /
-            improvements.length
-          : 0;
-      return {
-        ...row,
-        effectiveSessions: subjectSessions.length,
-        effectiveAverageGain: averageGain,
-        effectiveHasScores: hasScores,
-        effectiveLastSession:
-          sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
-      };
-    });
+        const averageGain =
+          improvements.length > 0
+            ? improvements.reduce((sum, value) => sum + value, 0) /
+              improvements.length
+            : 0;
+        const totalMastery = computeTotalMastery(subjectSessions);
+        return {
+          ...row,
+          effectiveSessions: subjectSessions.length,
+          effectiveAverageGain: averageGain,
+          effectiveTotalMastery: totalMastery,
+          effectiveHasScores: hasScores,
+          effectiveLastSession:
+            sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
+        };
+      });
     const sorted = [...withStats].sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
     const normalized = searchQuery.trim().toLowerCase();
     const searched = normalized
@@ -561,7 +611,10 @@ const SessionAnalytics = () => {
                               {row.tutor_name}
                             </h3>
                             <p className="text-xs text-gray-500">
-                              {row.effectiveSessions} sessions
+                              {row.effectiveSessions} sessions | Total Mastery:{" "}
+                              <span className="font-semibold text-green-600">
+                                {formatPercent(row.effectiveTotalMastery)}
+                              </span>
                             </p>
                           </div>
                         </div>

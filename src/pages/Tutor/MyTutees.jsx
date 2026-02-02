@@ -821,14 +821,6 @@ const MyTutees = () => {
                     <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Legend />
                     <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="mastery"
-                      name="Mastery"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      dot={false}
-                    />
                     <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
                     <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
                   </ComposedChart>

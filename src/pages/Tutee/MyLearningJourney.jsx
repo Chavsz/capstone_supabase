@@ -925,14 +925,6 @@ const MyLearningJourney = () => {
                   <Tooltip />
                   <Line
                     type="monotone"
-                    dataKey="mastery"
-                    name="Mastery"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
                     dataKey="post"
                     name="Post-Test"
                     stroke="#0ea5e9"
