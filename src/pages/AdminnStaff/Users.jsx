@@ -504,10 +504,10 @@ const Users = () => {
 
           <div className="w-1/2 flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <div className="bg-white rounded-[28px] border border-[#8a5a2b] p-4 md:p-6">
+            <div className="bg-white rounded-lg border border-gray-300 p-4 md:p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2 border border-[#4766fe] rounded-full px-3 py-2 w-full max-w-[260px]">
-                  <FiSearch className="text-[#4766fe]" />
+                <div className="flex items-center gap-2 border border-gray-300 rounded-full px-3 py-2 w-full max-w-[260px]">
+                  <FiSearch className="text-blue-600" />
                   <input
                     type="text"
                     placeholder="Search name, year, program..."
