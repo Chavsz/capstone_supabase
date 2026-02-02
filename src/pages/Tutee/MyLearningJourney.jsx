@@ -443,10 +443,7 @@ const MyLearningJourney = () => {
                         )}
                       </div>
                       <p className="text-xs text-gray-500">
-                        {tutor.sessions.length} sessions | Total Mastery:{" "}
-                        <span className="font-semibold text-green-600">
-                          {formatPercent(tutorMastery)}
-                        </span>
+                        {tutor.sessions.length} sessions
                       </p>
                     </div>
                     <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">

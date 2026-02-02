@@ -287,7 +287,7 @@ const Header = () => {
 
   const readConfirmedPopupIds = () => {
     try {
-      const raw = sessionStorage.getItem(getConfirmedPopupKey());
+      const raw = localStorage.getItem(getConfirmedPopupKey());
       const parsed = raw ? JSON.parse(raw) : [];
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch (err) {
@@ -300,7 +300,7 @@ const Header = () => {
     try {
       const ids = readConfirmedPopupIds();
       ids.add(id);
-      sessionStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
+      localStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
     } catch (err) {
       // Ignore storage errors.
     }

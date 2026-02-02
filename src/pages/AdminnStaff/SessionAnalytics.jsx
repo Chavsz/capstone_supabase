@@ -561,10 +561,7 @@ const SessionAnalytics = () => {
                               {row.tutor_name}
                             </h3>
                             <p className="text-xs text-gray-500">
-                              {row.effectiveSessions} sessions | Total Mastery:{" "}
-                              <span className="font-semibold text-green-600">
-                                {formatPercent(row.effectiveAverageGain)}
-                              </span>
+                              {row.effectiveSessions} sessions
                             </p>
                           </div>
                         </div>
