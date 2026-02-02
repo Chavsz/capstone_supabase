@@ -5,6 +5,7 @@ import {
   ComposedChart,
   Legend,
   Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -567,11 +568,42 @@ const MyTutees = () => {
                         {tutee.sessions.length} sessions
                       </p>
                     </div>
-                    <div className="flex w-full sm:w-auto justify-end">
+                    <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
+                      <div className="h-[72px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={tutee.sessions.slice(-10).map((item, idx) => ({
+                              name: idx + 1,
+                              pre: Number(item.pre_test_score) || 0,
+                              post: Number(item.post_test_score) || 0,
+                            }))}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <Legend wrapperStyle={{ fontSize: 9 }} />
+                            <Tooltip />
+                            <Line
+                              type="monotone"
+                              dataKey="post"
+                              name="Post-Test"
+                              stroke="#0ea5e9"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="pre"
+                              name="Pre-Test"
+                              stroke="#94a3b8"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setChartTutee(tutee)}
-                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                        className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
                       >
                         View chart
                       </button>
