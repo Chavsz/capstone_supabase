@@ -9,6 +9,7 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -411,7 +412,16 @@ const SessionAnalytics = () => {
         <div className="text-center text-gray-500">Loading analytics...</div>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center justify-end sm:hidden">
+          <div className="flex flex-col items-end gap-2 sm:hidden">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Month</span>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+              />
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -877,10 +887,10 @@ const SessionAnalytics = () => {
                   <button
                     type="button"
                     onClick={() => setRawModalOpen(false)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-700"
                     aria-label="Close raw sessions"
                   >
-                    x
+                    Close
                   </button>
                 </div>
 
@@ -1040,8 +1050,8 @@ const SessionAnalytics = () => {
                 <div className="mt-5">
                     <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={chartSessions.map((session, idx) => ({
+                        <ComposedChart
+                          data={chartSessions.map((session, idx) => ({
                           name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
                           pre: Number(session.pre_test_score) || 0,
                           post: Number(session.post_test_score) || 0,
@@ -1054,14 +1064,15 @@ const SessionAnalytics = () => {
                           ) || 0,
                         }))}
                         margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Legend />
-                        <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
-                        <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                        <Line
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                          <Legend />
+                          <Tooltip />
+                          <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
+                          <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                          <Line
                           type="monotone"
                           dataKey="mastery"
                           stroke="#22c55e"

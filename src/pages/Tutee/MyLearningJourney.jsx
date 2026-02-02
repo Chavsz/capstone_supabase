@@ -7,6 +7,7 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 
 const formatImprovement = (preScore, postScore, preTotal) => {
@@ -316,6 +317,30 @@ const MyLearningJourney = () => {
               </span>
             </p>
           </div>
+          <div className="flex flex-col items-end gap-2 sm:hidden">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Month</span>
+              <input
+                type="month"
+                value={rawMonth}
+                onChange={(e) => setRawMonth(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRawPage(1);
+                setRawModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+            >
+              <span className="text-green-600 font-bold">
+                {rawSessions.length}
+              </span>
+              View Sessions Test Result (Raw)
+            </button>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
@@ -332,7 +357,7 @@ const MyLearningJourney = () => {
                 setRawPage(1);
                 setRawModalOpen(true);
               }}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
             >
               <span className="text-green-600 font-bold">
                 {rawSessions.length}
@@ -447,6 +472,7 @@ const MyLearningJourney = () => {
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
+                            <Tooltip />
                             <Line
                               type="monotone"
                               dataKey="mastery"
@@ -756,10 +782,10 @@ const MyLearningJourney = () => {
               <button
                 type="button"
                 onClick={() => setRawModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700"
                 aria-label="Close raw sessions"
               >
-                x
+                Close
               </button>
             </div>
 
@@ -912,6 +938,7 @@ const MyLearningJourney = () => {
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <Legend />
+                  <Tooltip />
                   <Line
                     type="monotone"
                     dataKey="mastery"
