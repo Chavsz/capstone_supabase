@@ -285,7 +285,7 @@ const MyLearningJourney = () => {
   const rawPagedSessions = rawSessions.slice((rawPageSafe - 1) * 6, rawPageSafe * 6);
 
   return (
-    <div className="min-h-screen px-6 py-4">
+    <div className="min-h-screen px-4 sm:px-6 py-4">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-[#181718]">My Learning Journey</h1>
         <p className="text-sm text-gray-500">
@@ -293,7 +293,7 @@ const MyLearningJourney = () => {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-[calc(100vh-260px)]">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
           <div>
             <h2 className="text-sm font-semibold text-gray-700">
@@ -385,7 +385,7 @@ const MyLearningJourney = () => {
                     key={tutor.tutor_id}
                     className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                   >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                       {tutor.tutor_image ? (
                         <img
@@ -417,7 +417,7 @@ const MyLearningJourney = () => {
                         </span>
                       </p>
                     </div>
-                    <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                    <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
                       <div className="h-[64px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart
@@ -541,7 +541,7 @@ const MyLearningJourney = () => {
                     })()}
                   </div>
 
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-3 flex flex-wrap justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setSessionsModal(tutor)}
@@ -555,7 +555,7 @@ const MyLearningJourney = () => {
                         setChartTutor(tutor);
                         setChartPage(1);
                       }}
-                      className="ml-3 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800"
                     >
                       View chart
                     </button>

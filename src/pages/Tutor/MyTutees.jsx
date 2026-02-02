@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { supabase } from "../../supabase-client";
 import AssessmentModal from "../../components/AssessmentModal";
@@ -399,7 +402,7 @@ const MyTutees = () => {
   };
 
   return (
-    <div className="min-h-screen px-6 py-4">
+    <div className="min-h-screen px-4 sm:px-6 py-4">
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-[#181718]">My Tutees</h1>
         <p className="text-sm text-gray-500">
@@ -407,7 +410,7 @@ const MyTutees = () => {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-[calc(100vh-260px)]">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
           <div>
             <h2 className="text-sm font-semibold text-gray-700">
@@ -504,7 +507,7 @@ const MyTutees = () => {
                     key={tutee.tutee_id}
                     className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                   >
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                       {tutee.tutee_profile_image ? (
                         <img
@@ -532,10 +535,10 @@ const MyTutees = () => {
                         </span>
                       </p>
                     </div>
-                    <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                    <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
                       <div className="h-[64px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
+                          <ComposedChart
                             data={tutee.sessions.slice(-10).map((item, idx) => ({
                               name: idx + 1,
                               pre: Number(item.pre_test_score) || 0,
@@ -551,6 +554,8 @@ const MyTutees = () => {
                             }))}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" tick={false} axisLine={false} hide />
+                            <YAxis tick={false} axisLine={false} hide />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
                             <Line
                               type="monotone"
@@ -560,23 +565,9 @@ const MyTutees = () => {
                               strokeWidth={2}
                               dot={false}
                             />
-                            <Line
-                              type="monotone"
-                              dataKey="post"
-                              name="Post-Test"
-                              stroke="#0ea5e9"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="pre"
-                              name="Pre-Test"
-                              stroke="#94a3b8"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                          </LineChart>
+                            <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
+                            <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
+                          </ComposedChart>
                         </ResponsiveContainer>
                       </div>
                       <button
@@ -777,7 +768,7 @@ const MyTutees = () => {
             <div className="mt-5">
               <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <ComposedChart
                     data={chartTutee.sessions.slice(-10).map((item, idx) => ({
                       name: idx + 1,
                       pre: Number(item.pre_test_score) || 0,
@@ -793,6 +784,8 @@ const MyTutees = () => {
                     }))}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Legend />
                     <Line
                       type="monotone"
@@ -802,23 +795,9 @@ const MyTutees = () => {
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Line
-                      type="monotone"
-                      dataKey="post"
-                      name="Post-Test"
-                      stroke="#0ea5e9"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="pre"
-                      name="Pre-Test"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
+                    <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
+                    <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>

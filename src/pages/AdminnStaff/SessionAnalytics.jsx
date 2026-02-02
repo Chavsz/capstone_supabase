@@ -401,7 +401,7 @@ const SessionAnalytics = () => {
         <div className="text-center text-gray-500">Loading analytics...</div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-[calc(100vh-260px)]">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-700">
                 ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
@@ -494,8 +494,8 @@ const SessionAnalytics = () => {
                       key={row.tutor_id}
                       className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-center gap-3">
                           <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                             {row.tutor_image ? (
                               <img
@@ -533,7 +533,7 @@ const SessionAnalytics = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                        <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
                           <div className="h-[72px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
