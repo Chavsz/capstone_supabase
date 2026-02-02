@@ -53,6 +53,7 @@ const MyTutees = () => {
     postTotal: "",
   });
   const [editSaving, setEditSaving] = useState(false);
+  const [chartTutee, setChartTutee] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState("tutee");
   const [currentPage, setCurrentPage] = useState(1);
@@ -478,6 +479,20 @@ const MyTutees = () => {
                   session.post_test_score,
                   session.pre_test_total
                 );
+                const tuteeMasteryValues = tutee.sessions
+                  .map((item) =>
+                    formatImprovement(
+                      item.pre_test_score,
+                      item.post_test_score,
+                      item.pre_test_total
+                    )
+                  )
+                  .filter((value) => value !== null);
+                const tuteeMastery =
+                  tuteeMasteryValues.length > 0
+                    ? tuteeMasteryValues.reduce((sum, value) => sum + value, 0) /
+                      tuteeMasteryValues.length
+                    : 0;
                 return (
                   <div
                     key={tutee.tutee_id}
@@ -501,7 +516,15 @@ const MyTutees = () => {
                       <h2 className="text-base font-semibold text-gray-800">
                         {tutee.tutee_name}
                       </h2>
-                      <p className="text-xs text-gray-500">{tutee.tutee_program}</p>
+                      <p className="text-xs text-gray-500">
+                        {tutee.tutee_program}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {tutee.sessions.length} sessions | Total Mastery:{" "}
+                        <span className="font-semibold text-green-600">
+                          {formatPercent(tuteeMastery)}
+                        </span>
+                      </p>
                     </div>
                     <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
                       <div className="h-[64px]">
@@ -543,13 +566,13 @@ const MyTutees = () => {
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="mt-1 text-[11px] text-gray-500">Last 10 sessions</div>
-                    </div>
-                    <div className="text-xs text-gray-500 text-right">
-                      <span className="text-sm font-semibold text-gray-800">
-                        {tutee.sessions.length}
-                      </span>{" "}
-                      sessions
+                      <button
+                        type="button"
+                        onClick={() => setChartTutee(tutee)}
+                        className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        View chart
+                      </button>
                     </div>
                   </div>
 
@@ -713,6 +736,71 @@ const MyTutees = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {chartTutee && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/30 px-4">
+          <div className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-800">
+                  {chartTutee.tutee_name}
+                </h3>
+                <p className="text-xs text-gray-500">Last 10 sessions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setChartTutee(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close chart"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartTutee.sessions.slice(-10).map((item, idx) => ({
+                      name: idx + 1,
+                      pre: Number(item.pre_test_score) || 0,
+                      post: Number(item.post_test_score) || 0,
+                      mastery:
+                        formatImprovement(
+                          item.pre_test_score,
+                          item.post_test_score,
+                          item.pre_test_total
+                        ) || 0,
+                    }))}
+                  >
+                    <Line
+                      type="monotone"
+                      dataKey="pre"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="post"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="mastery"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>

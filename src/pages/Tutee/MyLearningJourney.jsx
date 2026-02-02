@@ -360,6 +360,20 @@ const MyLearningJourney = () => {
               pagedTutors.map((tutor) => {
                 const session = tutor.lastSession;
                 if (!session) return null;
+                const tutorMasteryValues = tutor.sessions
+                  .map((item) =>
+                    formatImprovement(
+                      item.pre_test_score,
+                      item.post_test_score,
+                      item.pre_test_total
+                    )
+                  )
+                  .filter((value) => value !== null);
+                const tutorMastery =
+                  tutorMasteryValues.length > 0
+                    ? tutorMasteryValues.reduce((sum, value) => sum + value, 0) /
+                      tutorMasteryValues.length
+                    : 0;
                 return (
                   <div
                     key={tutor.tutor_id}
@@ -380,14 +394,21 @@ const MyLearningJourney = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-base font-semibold text-gray-800">
-                        {tutor.tutor_name}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-semibold text-gray-800">
+                          {tutor.tutor_name}
+                        </h2>
+                        {tutor.tutor_subject && (
+                          <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                            {tutor.tutor_subject}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500">
-                        {tutor.tutor_subject}
-                        {tutor.tutor_specialization
-                          ? ` - ${tutor.tutor_specialization}`
-                          : ""}
+                        {tutor.sessions.length} sessions | Total Mastery:{" "}
+                        <span className="font-semibold text-green-600">
+                          {formatPercent(tutorMastery)}
+                        </span>
                       </p>
                     </div>
                     <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
@@ -430,13 +451,16 @@ const MyLearningJourney = () => {
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="mt-1 text-[11px] text-gray-500">Last 10 sessions</div>
-                    </div>
-                    <div className="text-xs text-gray-500 text-right">
-                      <span className="text-sm font-semibold text-gray-800">
-                        {tutor.sessions.length}
-                      </span>{" "}
-                      sessions
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChartTutor(tutor);
+                          setChartPage(1);
+                        }}
+                        className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        View chart
+                      </button>
                     </div>
                   </div>
 
