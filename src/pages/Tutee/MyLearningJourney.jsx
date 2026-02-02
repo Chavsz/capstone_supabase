@@ -752,13 +752,13 @@ const MyLearningJourney = () => {
       {rawModalOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-lg font-bold text-gray-800">
-                  <span className="text-green-600 font-semibold">
-                    {rawSessions.length}
-                  </span>{" "}
-                  Sessions Test Result (Raw)
-                </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-lg font-bold text-gray-800">
+                <span className="text-green-600 font-semibold">
+                  {rawSessions.length}
+                </span>{" "}
+                Sessions Test Result (Raw)
+              </h3>
               <button
                 type="button"
                 onClick={() => setRawModalOpen(false)}
