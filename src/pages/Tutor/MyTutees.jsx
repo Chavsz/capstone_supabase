@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Bar,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -37,27 +37,6 @@ const formatScoreWithTotal = (score, total) => {
 
 const formatPercent = (value) =>
   Number.isFinite(value) ? `${value.toFixed(1)}%` : "0.0%";
-
-const formatChartTooltip = (value, name, props) => {
-  const numeric = Number(value);
-  const payload = props?.payload || {};
-  if (name === "mastery") {
-    if (Number.isNaN(numeric)) return ["-", "Mastery"];
-    const sign = numeric >= 0 ? "+" : "-";
-    return [`${sign}${Math.abs(numeric).toFixed(1)}%`, "Mastery"];
-  }
-  if (name === "pre") {
-    if (Number.isNaN(numeric)) return ["-", "Pre"];
-    const total = payload.preTotal ?? "-";
-    return [`${numeric}/${total}`, "Pre"];
-  }
-  if (name === "post") {
-    if (Number.isNaN(numeric)) return ["-", "Post"];
-    const total = payload.postTotal ?? "-";
-    return [`${numeric}/${total}`, "Post"];
-  }
-  return [value, name];
-};
 
 const MyTutees = () => {
   const { version } = useDataSync();
@@ -559,7 +538,7 @@ const MyTutees = () => {
                     <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
                       <div className="h-[64px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
+                          <ComposedChart
                             data={tutee.sessions.slice(-10).map((item, idx) => ({
                               name: idx + 1,
                               pre: Number(item.pre_test_score) || 0,
@@ -577,24 +556,9 @@ const MyTutees = () => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                             <YAxis allowDecimals={false} tick={{ fontSize: 9 }} />
-                            <Tooltip formatter={formatChartTooltip} />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
-                            <Line
-                              type="monotone"
-                              dataKey="pre"
-                              name="Pre"
-                              stroke="#94a3b8"
-                              strokeWidth={2}
-                              dot={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="post"
-                              name="Post"
-                              stroke="#0ea5e9"
-                              strokeWidth={2}
-                              dot={false}
-                            />
+                            <Bar dataKey="pre" name="Pre" fill="#94a3b8" />
+                            <Bar dataKey="post" name="Post" fill="#0ea5e9" />
                             <Line
                               type="monotone"
                               dataKey="mastery"
@@ -603,7 +567,7 @@ const MyTutees = () => {
                               strokeWidth={2}
                               dot={false}
                             />
-                          </LineChart>
+                          </ComposedChart>
                         </ResponsiveContainer>
                       </div>
                       <button
@@ -804,7 +768,7 @@ const MyTutees = () => {
             <div className="mt-5">
               <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <ComposedChart
                     data={chartTutee.sessions.slice(-10).map((item, idx) => ({
                       name: idx + 1,
                       pre: Number(item.pre_test_score) || 0,
@@ -822,24 +786,9 @@ const MyTutees = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={formatChartTooltip} />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="pre"
-                      name="Pre"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="post"
-                      name="Post"
-                      stroke="#0ea5e9"
-                      strokeWidth={2}
-                      dot={false}
-                    />
+                    <Bar dataKey="pre" name="Pre" fill="#94a3b8" />
+                    <Bar dataKey="post" name="Post" fill="#0ea5e9" />
                     <Line
                       type="monotone"
                       dataKey="mastery"
@@ -848,7 +797,7 @@ const MyTutees = () => {
                       strokeWidth={2}
                       dot={false}
                     />
-                  </LineChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>

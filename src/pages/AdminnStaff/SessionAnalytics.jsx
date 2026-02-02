@@ -9,7 +9,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -47,27 +46,6 @@ const compareSessionsByDate = (a, b) => {
     return createdA - createdB;
   }
   return String(a?.date || "").localeCompare(String(b?.date || ""));
-};
-
-const formatChartTooltip = (value, name, props) => {
-  const numeric = Number(value);
-  const payload = props?.payload || {};
-  if (name === "mastery") {
-    if (Number.isNaN(numeric)) return ["-", "Mastery"];
-    const sign = numeric >= 0 ? "+" : "-";
-    return [`${sign}${Math.abs(numeric).toFixed(1)}%`, "Mastery"];
-  }
-  if (name === "pre") {
-    if (Number.isNaN(numeric)) return ["-", "Pre"];
-    const total = payload.preTotal ?? "-";
-    return [`${numeric}/${total}`, "Pre"];
-  }
-  if (name === "post") {
-    if (Number.isNaN(numeric)) return ["-", "Post"];
-    const total = payload.postTotal ?? "-";
-    return [`${numeric}/${total}`, "Post"];
-  }
-  return [value, name];
 };
 
 const SessionAnalytics = () => {
@@ -560,7 +538,6 @@ const SessionAnalytics = () => {
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <Tooltip formatter={formatChartTooltip} />
                                 <Legend wrapperStyle={{ fontSize: 9 }} />
                                 <Line
                                   type="monotone"
@@ -1056,7 +1033,6 @@ const SessionAnalytics = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                        <Tooltip formatter={formatChartTooltip} />
                         <Legend />
                         <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                         <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
