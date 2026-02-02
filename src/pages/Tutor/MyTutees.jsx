@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Bar,
   CartesianGrid,
-  ComposedChart,
   Legend,
   Line,
+  LineChart,
   ResponsiveContainer,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { supabase } from "../../supabase-client";
 import AssessmentModal from "../../components/AssessmentModal";
@@ -538,7 +535,7 @@ const MyTutees = () => {
                     <div className="w-40 rounded-lg border border-gray-200 bg-gray-50 p-2">
                       <div className="h-[64px]">
                         <ResponsiveContainer width="100%" height="100%">
-                          <ComposedChart
+                          <LineChart
                             data={tutee.sessions.slice(-10).map((item, idx) => ({
                               name: idx + 1,
                               pre: Number(item.pre_test_score) || 0,
@@ -554,8 +551,6 @@ const MyTutees = () => {
                             }))}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                            <YAxis allowDecimals={false} tick={{ fontSize: 9 }} />
                             <Legend wrapperStyle={{ fontSize: 9 }} />
                             <Line
                               type="monotone"
@@ -565,9 +560,23 @@ const MyTutees = () => {
                               strokeWidth={2}
                               dot={false}
                             />
-                            <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
-                            <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
-                          </ComposedChart>
+                            <Line
+                              type="monotone"
+                              dataKey="post"
+                              name="Post-Test"
+                              stroke="#0ea5e9"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="pre"
+                              name="Pre-Test"
+                              stroke="#94a3b8"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                          </LineChart>
                         </ResponsiveContainer>
                       </div>
                       <button
@@ -768,7 +777,7 @@ const MyTutees = () => {
             <div className="mt-5">
               <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
+                  <LineChart
                     data={chartTutee.sessions.slice(-10).map((item, idx) => ({
                       name: idx + 1,
                       pre: Number(item.pre_test_score) || 0,
@@ -784,8 +793,6 @@ const MyTutees = () => {
                     }))}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                     <Legend />
                     <Line
                       type="monotone"
@@ -795,9 +802,23 @@ const MyTutees = () => {
                       strokeWidth={2}
                       dot={false}
                     />
-                    <Bar dataKey="post" name="Post-Test" fill="#0ea5e9" />
-                    <Bar dataKey="pre" name="Pre-Test" fill="#94a3b8" />
-                  </ComposedChart>
+                    <Line
+                      type="monotone"
+                      dataKey="post"
+                      name="Post-Test"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pre"
+                      name="Pre-Test"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>

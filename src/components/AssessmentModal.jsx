@@ -105,18 +105,15 @@ const AssessmentModal = ({
             />
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
               <span>/ Total Items</span>
-              <select
+              <input
+                type="number"
+                min="1"
+                list="total-options"
                 value={preTotal}
-                onChange={(e) => setPreTotal(Number(e.target.value))}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                onChange={(e) => setPreTotal(toNumber(e.target.value))}
+                className="w-20 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
                 disabled={isBusy}
-              >
-                {totalOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+              />
               {prePercent !== null && (
                 <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
                   {Math.round(prePercent)}%
@@ -139,18 +136,15 @@ const AssessmentModal = ({
             />
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
               <span>/ Total Items</span>
-              <select
+              <input
+                type="number"
+                min="1"
+                list="total-options"
                 value={postTotal}
-                onChange={(e) => setPostTotal(Number(e.target.value))}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                onChange={(e) => setPostTotal(toNumber(e.target.value))}
+                className="w-20 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
                 disabled={isBusy}
-              >
-                {totalOptions.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
+              />
               {postPercent !== null && (
                 <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
                   {Math.round(postPercent)}%
@@ -186,6 +180,12 @@ const AssessmentModal = ({
             disabled={isBusy}
           />
         </div>
+
+        <datalist id="total-options">
+          {totalOptions.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
 
         {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
 
