@@ -803,10 +803,6 @@ const Profile = () => {
         setSaveError("Please add a profile image before saving.");
         return;
       }
-      if (!trimmedFileLink) {
-        setSaveError("Please add your file link before saving.");
-        return;
-      }
 
       if (trimmedName && trimmedName !== name) {
         const { error: nameError } = await supabase
@@ -838,7 +834,7 @@ const Profile = () => {
             specialization: trimmedSpecialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
-            file_link: form.file_link,
+            file_link: trimmedFileLink || null,
           })
           .eq("user_id", session.user.id);
 
@@ -856,7 +852,7 @@ const Profile = () => {
             specialization: trimmedSpecialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
-            file_link: form.file_link,
+            file_link: trimmedFileLink || null,
           },
         ]);
 
