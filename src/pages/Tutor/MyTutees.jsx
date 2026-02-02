@@ -564,10 +564,7 @@ const MyTutees = () => {
                         {tutee.tutee_program}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {tutee.sessions.length} sessions | Total Mastery:{" "}
-                        <span className="font-semibold text-green-600">
-                          {formatPercent(tuteeMastery)}
-                        </span>
+                        {tutee.sessions.length} sessions
                       </p>
                     </div>
                     <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
