@@ -284,7 +284,7 @@ const Header = () => {
 
   const readConfirmedPopupIds = () => {
     try {
-      const raw = sessionStorage.getItem(getConfirmedPopupKey());
+      const raw = localStorage.getItem(getConfirmedPopupKey());
       const parsed = raw ? JSON.parse(raw) : [];
       return new Set(Array.isArray(parsed) ? parsed : []);
     } catch (err) {
@@ -297,7 +297,7 @@ const Header = () => {
     try {
       const ids = readConfirmedPopupIds();
       ids.add(id);
-      sessionStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
+      localStorage.setItem(getConfirmedPopupKey(), JSON.stringify([...ids]));
     } catch (err) {
       // Ignore storage errors.
     }
@@ -464,7 +464,6 @@ const Header = () => {
       const appointmentId = extractAppointmentId(
         confirmed.notification_content || ""
       );
-      storeConfirmedPopupId(appointmentId);
       setConfirmedPopup({
         appointmentId,
         content: confirmed.notification_content || "",
@@ -573,7 +572,12 @@ const Header = () => {
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
-                onClick={() => setConfirmedPopup(null)}
+                onClick={() => {
+                  if (confirmedPopup?.appointmentId) {
+                    storeConfirmedPopupId(confirmedPopup.appointmentId);
+                  }
+                  setConfirmedPopup(null);
+                }}
                 className="rounded-full bg-[#0f5a3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0b432c]"
               >
                 Got It

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabase-client";
 import { useDataSync } from "../../contexts/DataSyncContext";
+import { Line, LineChart, ResponsiveContainer } from "recharts";
 
 const formatImprovement = (preScore, postScore, preTotal) => {
   const pre = Number(preScore);
@@ -252,6 +253,22 @@ const MyLearningJourney = () => {
     masteryValues.length > 0
       ? masteryValues.reduce((sum, value) => sum + value, 0) / masteryValues.length
       : 0;
+  const headerChartData = useMemo(() => {
+    const recent = [...allSessions]
+      .slice(-10)
+      .map((session, idx) => ({
+        name: idx + 1,
+        pre: Number(session.pre_test_score) || 0,
+        post: Number(session.post_test_score) || 0,
+        mastery:
+          formatImprovement(
+            session.pre_test_score,
+            session.post_test_score,
+            session.pre_test_total
+          ) || 0,
+      }));
+    return recent;
+  }, [allSessions]);
   const rawSessions = useMemo(() => {
     const items = [];
     tutors.forEach((tutor) => {
@@ -300,6 +317,36 @@ const MyLearningJourney = () => {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <div className="w-44 rounded-lg border border-gray-200 bg-gray-50 p-2">
+              <div className="h-[72px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={headerChartData}>
+                    <Line
+                      type="monotone"
+                      dataKey="pre"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="post"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="mastery"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-2 text-[11px] text-gray-500">Recent sessions</div>
+            </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Month</span>
               <input

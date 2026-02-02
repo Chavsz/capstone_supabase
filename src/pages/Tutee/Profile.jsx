@@ -19,6 +19,7 @@ const Profile = () => {
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [form, setForm] = useState(profile);
+  const [saveError, setSaveError] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   async function getName() {
@@ -65,7 +66,10 @@ const Profile = () => {
       };
 
       setProfile(profileData);
-      setForm(profileData);
+      setForm((prev) => ({
+        ...profileData,
+        name: prev.name || name || "",
+      }));
     } catch (err) {
       console.error(err.message);
     }
@@ -78,6 +82,7 @@ const Profile = () => {
   }, []);
 
   const handleEdit = () => {
+    setSaveError("");
     setShowEditModal(true);
   };
 
@@ -87,17 +92,31 @@ const Profile = () => {
 
   const handleSave = () => {
     runAction(async () => {
+      setSaveError("");
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      if (form.name && form.name !== name) {
+      const trimmedName = (form.name || "").trim();
+      const trimmedProgram = (form.program || "").trim();
+      const trimmedCollege = (form.college || "").trim();
+      const trimmedYear = (form.year_level || "").trim();
+      if (!trimmedName) {
+        setSaveError("Please enter your name before saving.");
+        return;
+      }
+      if (!trimmedProgram || !trimmedCollege || !trimmedYear) {
+        setSaveError("Please fill in program, college, and year level before saving.");
+        return;
+      }
+
+      if (trimmedName && trimmedName !== name) {
         const { error: nameError } = await supabase
           .from("users")
-          .update({ name: form.name })
+          .update({ name: trimmedName })
           .eq("user_id", session.user.id);
 
         if (nameError) throw nameError;
-        setName(form.name);
+        setName(trimmedName);
       }
 
       // Check if profile exists
@@ -112,9 +131,9 @@ const Profile = () => {
         const { error } = await supabase
           .from("student_profile")
           .update({
-            program: form.program,
-            college: form.college,
-            year_level: form.year_level,
+            program: trimmedProgram,
+            college: trimmedCollege,
+            year_level: trimmedYear,
             profile_image: form.profile_image,
           })
           .eq("user_id", session.user.id);
@@ -125,19 +144,20 @@ const Profile = () => {
         const { error } = await supabase
           .from("student_profile")
           .insert([
-            {
-              user_id: session.user.id,
-              program: form.program,
-              college: form.college,
-              year_level: form.year_level,
-              profile_image: form.profile_image,
-            },
+          {
+            user_id: session.user.id,
+            program: trimmedProgram,
+            college: trimmedCollege,
+            year_level: trimmedYear,
+            profile_image: form.profile_image,
+          },
           ]);
 
         if (error) throw error;
       }
 
       setProfile(form);
+      setSaveError("");
     }, "Unable to save profile.");
   };
 
@@ -423,6 +443,9 @@ const Profile = () => {
                 </div>
               </div>
 
+              {saveError && (
+                <p className="text-sm text-red-600">{saveError}</p>
+              )}
               {/* Save Button */}
               <div className="flex justify-end gap-3">
                 <button

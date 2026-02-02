@@ -84,11 +84,9 @@ const Comments = () => {
 
   const maskedNames = useMemo(() => {
     const map = new Map();
-    let counter = 1;
     comments.forEach((item) => {
       if (!map.has(item.tuteeId)) {
-        map.set(item.tuteeId, `Tutee ${counter}`);
-        counter += 1;
+        map.set(item.tuteeId, "Tutee");
       }
     });
     return map;
@@ -125,9 +123,7 @@ const Comments = () => {
                 className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm flex flex-col gap-3"
               >
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span className="font-semibold text-blue-600">
-                    {maskedNames.get(item.tuteeId) || "Tutee"}
-                  </span>
+                  <span className="font-semibold text-blue-600">Tutee</span>
                   <span className="text-[11px] text-gray-400">
                     {item.comment.length}/{MAX_COMMENT_LENGTH}
                   </span>

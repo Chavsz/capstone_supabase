@@ -1030,6 +1030,14 @@ const SessionAnalytics = () => {
                         <Legend />
                         <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
                         <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                        <Line
+                          type="monotone"
+                          dataKey="mastery"
+                          stroke="#22c55e"
+                          strokeWidth={2}
+                          dot={false}
+                          name="Mastery"
+                        />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>

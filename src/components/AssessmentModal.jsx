@@ -19,6 +19,11 @@ const computeImprovement = (preScore, postScore, preTotal) => {
   return ((post - pre) / pre) * 100;
 };
 
+const isInvalidScoreTotal = (score, total) => {
+  if (!Number.isFinite(score) || !Number.isFinite(total)) return true;
+  return total < score;
+};
+
 const AssessmentModal = ({
   isOpen,
   onClose,
@@ -201,16 +206,40 @@ const AssessmentModal = ({
             onClick={() => {
               const pre = Number(preScore);
               const post = Number(postScore);
-              if (Number.isNaN(pre) || Number.isNaN(post)) {
+              const preTotalValue = Number(preTotal);
+              const postTotalValue = Number(postTotal);
+              if (
+                preScore === "" ||
+                postScore === "" ||
+                preTotal === "" ||
+                postTotal === ""
+              ) {
+                setError("Please fill in all score fields before submitting.");
+                return;
+              }
+              if (
+                Number.isNaN(pre) ||
+                Number.isNaN(post) ||
+                Number.isNaN(preTotalValue) ||
+                Number.isNaN(postTotalValue)
+              ) {
                 setError("Please enter valid scores before submitting.");
+                return;
+              }
+              if (isInvalidScoreTotal(pre, preTotalValue)) {
+                setError("Pre-test total must be equal to or greater than the pre-test score.");
+                return;
+              }
+              if (isInvalidScoreTotal(post, postTotalValue)) {
+                setError("Post-test total must be equal to or greater than the post-test score.");
                 return;
               }
               setError("");
               onSubmit?.({
                 preScore: pre,
                 postScore: post,
-                preTotal,
-                postTotal,
+                preTotal: preTotalValue,
+                postTotal: postTotalValue,
                 notes: notes.trim() || null,
               });
             }}

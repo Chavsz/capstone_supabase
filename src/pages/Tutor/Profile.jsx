@@ -35,6 +35,7 @@ const Profile = () => {
   const [newUnavailableReason, setNewUnavailableReason] = useState("");
   const [loadingUnavailable, setLoadingUnavailable] = useState(false);
   const [showUnavailableModal, setShowUnavailableModal] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const { run: runAction, busy: actionBusy } = useActionGuard();
 
   const ALLOWED_TIME_BLOCKS = [
@@ -180,7 +181,10 @@ const Profile = () => {
 
       setProfileId(data?.profile_id || null);
       setProfile(profileData);
-      setForm(profileData);
+      setForm((prev) => ({
+        ...profileData,
+        name: prev.name || name || "",
+      }));
     } catch (err) {
       console.error(err.message);
     }
@@ -753,6 +757,7 @@ const Profile = () => {
   };
 
   const handleEdit = () => {
+    setSaveError("");
     setShowEditModal(true);
   };
 
@@ -762,12 +767,41 @@ const Profile = () => {
 
   const handleSave = () => {
     runAction(async () => {
+      setSaveError("");
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
 
       const subjectValue = form.subject?.trim() ? form.subject : "Programming";
+      const trimmedName = (form.name || "").trim();
+      const trimmedProgram = (form.program || "").trim();
+      const trimmedCollege = (form.college || "").trim();
+      const trimmedYear = (form.year_level || "").trim();
+      const trimmedSpecialization = (form.specialization || "").trim();
+
+      if (!trimmedName) {
+        setSaveError("Please enter your name before saving.");
+        return;
+      }
+      if (!trimmedProgram || !trimmedCollege || !trimmedYear) {
+        setSaveError("Please fill in program, college, and year level before saving.");
+        return;
+      }
+      if (!subjectValue || !trimmedSpecialization) {
+        setSaveError("Please fill in subject and specialization before saving.");
+        return;
+      }
+
+      if (trimmedName && trimmedName !== name) {
+        const { error: nameError } = await supabase
+          .from("users")
+          .update({ name: trimmedName })
+          .eq("user_id", session.user.id);
+
+        if (nameError) throw nameError;
+        setName(trimmedName);
+      }
 
       // Check if profile exists
       const { data: existingProfile } = await supabase
@@ -782,11 +816,11 @@ const Profile = () => {
           .from("profile")
           .update({
             nickname: form.nickname,
-            program: form.program,
-            college: form.college,
-            year_level: form.year_level,
+            program: trimmedProgram,
+            college: trimmedCollege,
+            year_level: trimmedYear,
             subject: subjectValue,
-            specialization: form.specialization,
+            specialization: trimmedSpecialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
             file_link: form.file_link,
@@ -800,11 +834,11 @@ const Profile = () => {
           {
             user_id: session.user.id,
             nickname: form.nickname,
-            program: form.program,
-            college: form.college,
-            year_level: form.year_level,
+            program: trimmedProgram,
+            college: trimmedCollege,
+            year_level: trimmedYear,
             subject: subjectValue,
-            specialization: form.specialization,
+            specialization: trimmedSpecialization,
             profile_image: form.profile_image,
             online_link: form.online_link,
             file_link: form.file_link,
@@ -815,6 +849,7 @@ const Profile = () => {
       }
 
       setProfile(form);
+      setSaveError("");
 
       // Dispatch event to notify Header component to refresh profile
       window.dispatchEvent(new CustomEvent("profileUpdated"));
@@ -1404,6 +1439,9 @@ const Profile = () => {
                
               </div>
 
+              {saveError && (
+                <p className="text-sm text-red-600">{saveError}</p>
+              )}
               {/* Save Button */}
               <div className="flex justify-end sm:justify-end">
                 <LoadingButton
