@@ -1974,7 +1974,7 @@ const Appointment = () => {
                 Confirm appointment on {confirmPayload.formData.date} from{" "}
                 {confirmPayload.startLabel} to {confirmPayload.endLabel}?
               </p>
-              <p className="mt-3 text-xs text-gray-500">
+              <p className="mt-3 text-xs text-red-600">
                 Note: appointments are auto-declined after 14 hours. Please re-login
                 to check the latest status.
               </p>
