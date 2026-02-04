@@ -18,7 +18,19 @@ const STATUS_META = {
 };
 const statusBadge = (status = "") => STATUS_META[status]?.badge || "bg-gray-100 text-gray-800";
 const formatStatusLabel = (status = "") => STATUS_META[status]?.label || status.replace(/_/g, " ");
+const AUTO_CANCEL_REASON = "This session has no status update.";
 const ITEMS_PER_PAGE = 6;
+
+const isAutoCancelEligible = (appointment) => {
+  if (!appointment || appointment.status !== "confirmed") return false;
+  if (!appointment.date) return false;
+  const dateValue = new Date(appointment.date);
+  if (Number.isNaN(dateValue.getTime())) return false;
+  const cutoff = new Date(dateValue);
+  cutoff.setDate(cutoff.getDate() + 3);
+  cutoff.setHours(23, 59, 59, 999);
+  return new Date() > cutoff;
+};
 
 const parseNotificationDetails = (content = "") => {
   if (!content) return null;
@@ -248,12 +260,18 @@ const AppointmentModal = ({
             <div className="flex justify-between items-center">
               <span className="font-semibold text-gray-700">Status:</span>
               <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
-                appointment.status
-              )}`}
-            >
-              {formatStatusLabel(appointment.status)}
-            </span>
+                className={`px-2 py-1 rounded-full text-xs font-medium ${statusBadge(
+                  appointment.status
+                )}`}
+                title={
+                  appointment.status === "cancelled" &&
+                  appointment.tutor_decline_reason === AUTO_CANCEL_REASON
+                    ? AUTO_CANCEL_REASON
+                    : ""
+                }
+              >
+                {formatStatusLabel(appointment.status)}
+              </span>
           </div>
           {(appointment.status === "declined" || appointment.status === "cancelled") && (
             <div className="mt-3 space-y-2">
@@ -577,11 +595,31 @@ const Schedule = () => {
       if (error) throw error;
 
       // Format data to match expected structure
-        const formattedData = (data || []).map(appointment => ({
+        let formattedData = (data || []).map(appointment => ({
           ...appointment,
           student_name: appointment.student?.name || null,
           tutee_decline_reason: appointment.tutee_decline_reason || null,
         }));
+
+      const staleConfirmed = formattedData.filter(isAutoCancelEligible);
+      if (staleConfirmed.length > 0) {
+        const staleIds = staleConfirmed.map((item) => item.appointment_id);
+        const { error: staleError } = await supabase
+          .from("appointment")
+          .update({ status: "cancelled", tutor_decline_reason: AUTO_CANCEL_REASON })
+          .in("appointment_id", staleIds)
+          .eq("status", "confirmed");
+        if (staleError) throw staleError;
+        formattedData = formattedData.map((appointment) =>
+          staleIds.includes(appointment.appointment_id)
+            ? {
+                ...appointment,
+                status: "cancelled",
+                tutor_decline_reason: AUTO_CANCEL_REASON,
+              }
+            : appointment
+        );
+      }
 
       setAppointments(formattedData);
 
@@ -1300,6 +1338,12 @@ const Schedule = () => {
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadge(
                             appointment.status
                           )}`}
+                          title={
+                            appointment.status === "cancelled" &&
+                            appointment.tutor_decline_reason === AUTO_CANCEL_REASON
+                              ? AUTO_CANCEL_REASON
+                              : ""
+                          }
                         >
                           {formatStatusLabel(appointment.status)}
                         </span>
