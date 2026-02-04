@@ -134,15 +134,17 @@ const AppointmentModal = ({
   const handleConfirm = async () => {
     if (!confirmLocation.trim()) {
       setConfirmError("Please provide a session location.");
-      return;
+      return false;
     }
     setConfirmError("");
     try {
       await onStatusUpdate(appointment.appointment_id, "confirmed", {
         location: confirmLocation.trim(),
       });
+      return true;
     } catch (err) {
       setConfirmError(err?.message || "Unable to confirm this appointment.");
+      return false;
     }
   };
 
@@ -158,6 +160,7 @@ const AppointmentModal = ({
       await onStatusUpdate(appointment.appointment_id, "declined", {
         reason: declineReason.trim(),
       });
+      onClose?.();
     } catch (err) {
       setDeclineError(err?.message || "Unable to decline this appointment.");
     } finally {
@@ -177,6 +180,7 @@ const AppointmentModal = ({
       await onStatusUpdate(appointment.appointment_id, "cancelled", {
         reason: cancelReason.trim(),
       });
+      onClose?.();
     } catch (err) {
       setCancelError(err?.message || "Unable to cancel this appointment.");
     } finally {
@@ -516,8 +520,11 @@ const AppointmentModal = ({
               <button
                 type="button"
                 onClick={async () => {
-                  await handleConfirm();
-                  setShowConfirmPrompt(false);
+                  const confirmed = await handleConfirm();
+                  if (confirmed) {
+                    setShowConfirmPrompt(false);
+                    onClose?.();
+                  }
                 }}
                 className="rounded-md bg-[#132c91] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0f1f6b] disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isBusy || isDeclining}

@@ -203,7 +203,7 @@ const AssessmentModal = ({
           </LoadingButton>
           <LoadingButton
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const pre = Number(preScore);
               const post = Number(postScore);
               const preTotalValue = Number(preTotal);
@@ -235,13 +235,15 @@ const AssessmentModal = ({
                 return;
               }
               setError("");
-              onSubmit?.({
+              const result = onSubmit?.({
                 preScore: pre,
                 postScore: post,
                 preTotal: preTotalValue,
                 postTotal: postTotalValue,
                 notes: notes.trim() || null,
               });
+              await Promise.resolve(result);
+              onClose?.();
             }}
             isLoading={isBusy}
             loadingText="Submitting..."

@@ -516,7 +516,7 @@ const Header = () => {
 
     updateKey();
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!session) {
           setConfirmedPopupKey("lav.confirmedPopups.anon");
