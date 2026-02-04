@@ -1097,6 +1097,9 @@ const Schedule = () => {
       if (handledNotificationId === notification.notification_id) return;
 
       const notificationContent = notification.notification_content || "";
+      const wantsPending = /pending appointment|pending request|appointment request/i.test(
+        notificationContent
+      );
       const details = parseNotificationDetails(notificationContent) || {
         appointmentId: "",
         subject: "",
@@ -1130,6 +1133,32 @@ const Schedule = () => {
           if (targetTime && appointment.start_time?.slice(0, 5) !== targetTime) return false;
           return true;
         });
+      } else if (wantsPending) {
+        const pendingCandidates = appointments.filter(
+          (appointment) => appointment.status === "pending"
+        );
+        if (pendingCandidates.length) {
+          const now = Date.now();
+          const withTime = pendingCandidates
+            .map((appointment) => ({
+              appointment,
+              time: new Date(
+                `${appointment.date}T${appointment.start_time || "00:00"}`
+              ).getTime(),
+            }))
+            .filter((item) => !Number.isNaN(item.time));
+
+          const upcoming = withTime
+            .filter((item) => item.time >= now)
+            .sort((a, b) => a.time - b.time);
+
+          if (upcoming.length) {
+            match = upcoming[0].appointment;
+          } else {
+            withTime.sort((a, b) => b.time - a.time);
+            match = withTime[0]?.appointment || null;
+          }
+        }
       } else {
         const candidates = appointments.filter(subjectMatch);
         if (candidates.length) {
@@ -1143,9 +1172,6 @@ const Schedule = () => {
       }
 
       if (!match) {
-        const wantsPending = /pending appointment|pending request|appointment request/i.test(
-          notificationContent
-        );
         const candidates = wantsPending
           ? appointments.filter((appointment) => appointment.status === "pending")
           : appointments;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MdMessage, MdSearch } from "react-icons/md";
 import { supabase } from "../../supabase-client";
 
@@ -14,7 +14,11 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [userMap, setUserMap] = useState(new Map());
-  const [appointmentInfo, setAppointmentInfo] = useState(null);
+  const [confirmedAppointments, setConfirmedAppointments] = useState([]);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const channelRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [search, setSearch] = useState("");
 
@@ -31,6 +35,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
             setMessages([]);
             setUserMap(new Map());
             setSelectedUserId(null);
+            setConfirmedAppointments([]);
           }
           return;
         }
@@ -38,36 +43,60 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         const userId = session.user.id;
         if (active) setCurrentUserId(userId);
 
-        const { data: messageRows, error: messageError } = await supabase
-          .from("messages")
-          .select("message_id, sender_id, receiver_id, body, created_at")
-          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-          .order("created_at", { ascending: true });
+        const { data: appointmentRows, error: appointmentError } = await supabase
+          .from("appointment")
+          .select(
+            "appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id, status"
+          )
+          .or(`user_id.eq.${userId},tutor_id.eq.${userId}`)
+          .eq("status", "confirmed")
+          .order("date", { ascending: true });
 
-        if (messageError) throw messageError;
+        if (appointmentError) throw appointmentError;
+
+        const confirmedRows = appointmentRows || [];
+        if (active) setConfirmedAppointments(confirmedRows);
+
+        const confirmedIds = confirmedRows
+          .map((row) => row.appointment_id)
+          .filter(Boolean);
+
+        let messageRows = [];
+        if (confirmedIds.length > 0) {
+          const { data, error } = await supabase
+            .from("messages")
+            .select(
+              "message_id, appointment_id, sender_id, receiver_id, body, created_at"
+            )
+            .in("appointment_id", confirmedIds)
+            .order("created_at", { ascending: true });
+          if (error) throw error;
+          messageRows = data || [];
+        }
 
         const rows = messageRows || [];
         if (!active) return;
         setMessages(rows);
 
-        const otherIds = Array.from(
+        const confirmedPartnerIds = Array.from(
           new Set(
-            rows
-              .map((row) => (row.sender_id === userId ? row.receiver_id : row.sender_id))
+            confirmedRows
+              .map((row) => (row.user_id === userId ? row.tutor_id : row.user_id))
               .filter(Boolean)
           )
         );
 
-        if (otherIds.length === 0) {
+        if (confirmedPartnerIds.length === 0) {
           setUserMap(new Map());
           setSelectedUserId(null);
+          setSelectedAppointmentId(null);
           return;
         }
 
         const { data: users, error: usersError } = await supabase
           .from("users")
           .select("user_id, name")
-          .in("user_id", otherIds);
+          .in("user_id", confirmedPartnerIds);
 
         if (usersError) throw usersError;
 
@@ -77,13 +106,17 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         });
 
         setUserMap(map);
-        setSelectedUserId((prev) => prev || otherIds[0]);
+        if (active) {
+          setSelectedUserId((prev) => prev || confirmedPartnerIds[0]);
+        }
       } catch (err) {
         console.error("Unable to load messages:", err.message);
         if (active) {
           setMessages([]);
           setUserMap(new Map());
           setSelectedUserId(null);
+          setSelectedAppointmentId(null);
+          setConfirmedAppointments([]);
         }
       } finally {
         if (active) setLoading(false);
@@ -99,101 +132,215 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   useEffect(() => {
     let active = true;
 
-    const fetchAppointmentDetails = async () => {
-      if (!currentUserId || !selectedUserId) {
-        setAppointmentInfo(null);
-        return;
-      }
-
+    const setupRealtime = async () => {
       try {
-        const { data, error } = await supabase
-          .from("appointment")
-          .select("appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id")
-          .or(
-            `and(user_id.eq.${currentUserId},tutor_id.eq.${selectedUserId}),and(user_id.eq.${selectedUserId},tutor_id.eq.${currentUserId})`
-          );
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (!userId || !selectedAppointmentId) return;
 
-        if (error) throw error;
-
-        const rows = data || [];
-        if (!active) return;
-
-        if (rows.length === 0) {
-          setAppointmentInfo(null);
-          return;
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
         }
 
-        const now = new Date();
-        const toDateTime = (row, timeField = "start_time") => {
-          if (!row?.date || !row?.[timeField]) return null;
-          const stamp = new Date(`${row.date}T${row[timeField]}`);
-          return Number.isNaN(stamp.getTime()) ? null : stamp;
-        };
+        const channel = supabase
+          .channel(`messages-${userId}-${selectedAppointmentId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "messages",
+              filter: `appointment_id=eq.${selectedAppointmentId},sender_id=eq.${userId}`,
+            },
+            (payload) => {
+              if (!active) return;
+              const next = payload?.new;
+              if (!next) return;
+              setMessages((prev) => {
+                if (prev.some((row) => row.message_id === next.message_id)) {
+                  return prev;
+                }
+                return [...prev, next];
+              });
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "messages",
+              filter: `appointment_id=eq.${selectedAppointmentId},receiver_id=eq.${userId}`,
+            },
+            (payload) => {
+              if (!active) return;
+              const next = payload?.new;
+              if (!next) return;
+              setMessages((prev) => {
+                if (prev.some((row) => row.message_id === next.message_id)) {
+                  return prev;
+                }
+                return [...prev, next];
+              });
+            }
+          )
+          .subscribe();
 
-        const upcoming = rows
-          .map((row) => ({ row, start: toDateTime(row) }))
-          .filter((item) => item.start && item.start >= now)
-          .sort((a, b) => a.start - b.start);
-
-        const selected = upcoming.length
-          ? upcoming[0].row
-          : rows
-              .map((row) => ({ row, start: toDateTime(row) }))
-              .filter((item) => item.start)
-              .sort((a, b) => b.start - a.start)[0]?.row;
-
-        setAppointmentInfo(selected || null);
+        channelRef.current = channel;
       } catch (err) {
-        console.error("Unable to load appointment details:", err.message);
-        if (active) setAppointmentInfo(null);
+        console.error("Unable to subscribe to messages:", err.message);
       }
     };
 
-    fetchAppointmentDetails();
+    setupRealtime();
     return () => {
       active = false;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [currentUserId, selectedUserId]);
+  }, [selectedAppointmentId]);
+
+  useEffect(() => {
+    if (!currentUserId || confirmedAppointments.length === 0) {
+      setSelectedAppointmentId(null);
+      return;
+    }
+
+    const now = new Date();
+    const toDateTime = (row, timeField = "start_time") => {
+      if (!row?.date || !row?.[timeField]) return null;
+      const stamp = new Date(`${row.date}T${row[timeField]}`);
+      return Number.isNaN(stamp.getTime()) ? null : stamp;
+    };
+
+    const upcoming = confirmedAppointments
+      .map((row) => ({ row, start: toDateTime(row) }))
+      .filter((item) => item.start && item.start >= now)
+      .sort((a, b) => a.start - b.start);
+
+    const defaultAppointment = upcoming.length
+      ? upcoming[0].row
+      : confirmedAppointments
+          .map((row) => ({ row, start: toDateTime(row) }))
+          .filter((item) => item.start)
+          .sort((a, b) => b.start - a.start)[0]?.row;
+
+    setSelectedAppointmentId((prev) => prev || defaultAppointment?.appointment_id || null);
+  }, [currentUserId, confirmedAppointments]);
 
   const conversations = useMemo(() => {
-    if (!currentUserId || messages.length === 0) return [];
+    if (!currentUserId || confirmedAppointments.length === 0) return [];
 
-    const map = new Map();
+    const lastMessageByAppointment = new Map();
     messages.forEach((row) => {
-      const otherId = row.sender_id === currentUserId ? row.receiver_id : row.sender_id;
-      if (!otherId) return;
-      const existing = map.get(otherId);
+      if (!row.appointment_id) return;
+      const existing = lastMessageByAppointment.get(row.appointment_id);
       if (!existing || new Date(row.created_at) > new Date(existing.created_at)) {
-        map.set(otherId, row);
+        lastMessageByAppointment.set(row.appointment_id, row);
       }
     });
 
-    const items = Array.from(map.entries()).map(([otherId, lastMessage]) => ({
-      id: otherId,
-      name: userMap.get(otherId) || "User",
-      preview: lastMessage.body || "",
-      timeLabel: formatTimestamp(lastMessage.created_at),
-      createdAt: lastMessage.created_at,
-    }));
+    const items = confirmedAppointments.map((appointment) => {
+      const otherId =
+        appointment.user_id === currentUserId
+          ? appointment.tutor_id
+          : appointment.user_id;
+      const lastMessage = lastMessageByAppointment.get(appointment.appointment_id);
+      const displayName = userMap.get(otherId) || "User";
+      const label = `${appointment.subject || "Subject"}${
+        appointment.topic ? ` - ${appointment.topic}` : ""
+      }`;
+      return {
+        id: appointment.appointment_id,
+        otherId,
+        name: displayName,
+        subjectLabel: label,
+        preview: lastMessage?.body || "No messages yet.",
+        timeLabel: lastMessage ? formatTimestamp(lastMessage.created_at) : "",
+        createdAt: lastMessage?.created_at || "",
+        appointment,
+      };
+    });
 
-    const filtered = items.filter((item) =>
-      item.name.toLowerCase().includes(search.trim().toLowerCase())
-    );
+    const normalizedSearch = search.trim().toLowerCase();
+    const filtered = items.filter((item) => {
+      if (!normalizedSearch) return true;
+      return (
+        item.name.toLowerCase().includes(normalizedSearch) ||
+        item.subjectLabel.toLowerCase().includes(normalizedSearch)
+      );
+    });
 
-    return filtered.sort(
-      (a, b) =>
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
-  }, [currentUserId, messages, userMap, search]);
+    return filtered.sort((a, b) => {
+      const aTime = new Date(`${a.appointment.date}T${a.appointment.start_time || "00:00"}`).getTime();
+      const bTime = new Date(`${b.appointment.date}T${b.appointment.start_time || "00:00"}`).getTime();
+      return bTime - aTime;
+    });
+  }, [currentUserId, messages, userMap, search, confirmedAppointments]);
 
   const threadMessages = useMemo(() => {
-    if (!selectedUserId || !currentUserId) return [];
-    return messages.filter(
-      (row) =>
-        (row.sender_id === currentUserId && row.receiver_id === selectedUserId) ||
-        (row.sender_id === selectedUserId && row.receiver_id === currentUserId)
-    );
-  }, [messages, currentUserId, selectedUserId]);
+    if (!selectedAppointmentId) return [];
+    return messages.filter((row) => row.appointment_id === selectedAppointmentId);
+  }, [messages, selectedAppointmentId]);
+
+  const selectedAppointment = useMemo(
+    () =>
+      confirmedAppointments.find(
+        (appointment) => appointment.appointment_id === selectedAppointmentId
+      ) || null,
+    [confirmedAppointments, selectedAppointmentId]
+  );
+
+  const selectedPartnerName = useMemo(() => {
+    if (!selectedAppointment || !currentUserId) return "";
+    const partnerId =
+      selectedAppointment.user_id === currentUserId
+        ? selectedAppointment.tutor_id
+        : selectedAppointment.user_id;
+    return userMap.get(partnerId) || "User";
+  }, [selectedAppointment, currentUserId, userMap]);
+
+  const selectedPartnerId = useMemo(() => {
+    if (!selectedAppointment || !currentUserId) return null;
+    return selectedAppointment.user_id === currentUserId
+      ? selectedAppointment.tutor_id
+      : selectedAppointment.user_id;
+  }, [selectedAppointment, currentUserId]);
+
+  const handleSendMessage = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed || !currentUserId || !selectedPartnerId || !selectedAppointmentId) {
+      return;
+    }
+    setSending(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .insert([
+          {
+            appointment_id: selectedAppointmentId,
+            sender_id: currentUserId,
+            receiver_id: selectedPartnerId,
+            body: trimmed,
+          },
+        ])
+        .select(
+          "message_id, appointment_id, sender_id, receiver_id, body, created_at"
+        )
+        .single();
+
+      if (error) throw error;
+      setMessages((prev) => [...prev, data]);
+      setDraft("");
+    } catch (err) {
+      console.error("Unable to send message:", err.message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8">
@@ -225,6 +372,10 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
             {loading ? (
               <div className="text-sm text-gray-500">Loading messages...</div>
+            ) : confirmedAppointments.length === 0 ? (
+              <div className="text-sm text-gray-500">
+                Messaging activates after the tutor confirms an appointment.
+              </div>
             ) : conversations.length === 0 ? (
               <div className="text-sm text-gray-500">No conversations yet.</div>
             ) : (
@@ -233,9 +384,12 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                   <button
                     type="button"
                     key={item.id}
-                    onClick={() => setSelectedUserId(item.id)}
+                    onClick={() => {
+                      setSelectedAppointmentId(item.id);
+                      setSelectedUserId(item.otherId || null);
+                    }}
                     className={`w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                      selectedUserId === item.id
+                      selectedAppointmentId === item.id
                         ? "border-blue-200 bg-blue-50"
                         : "border-gray-100 bg-white hover:bg-gray-50"
                     }`}
@@ -253,6 +407,9 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                           {item.name}
                         </p>
                         <p className="text-xs text-gray-500 line-clamp-1">
+                          {item.subjectLabel}
+                        </p>
+                        <p className="text-[11px] text-gray-400 line-clamp-1">
                           {item.preview}
                         </p>
                       </div>
@@ -270,9 +427,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-800">
-                  {selectedUserId
-                    ? userMap.get(selectedUserId) || "User"
-                    : "Select a chat"}
+                  {selectedAppointment ? selectedPartnerName : "Select a chat"}
                 </p>
                 <p className="text-xs text-gray-500">
                   {roleLabel === "Tutor" ? "Tutee" : "Tutor"}
@@ -284,17 +439,19 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
             </div>
 
             <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              {appointmentInfo ? (
+              {selectedAppointment ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-gray-700">
-                    {appointmentInfo.subject || "Subject"}
+                    {selectedAppointment.subject || "Subject"}
                   </span>
                   <span className="text-gray-400">•</span>
-                  <span>{appointmentInfo.topic || "Topic"}</span>
+                  <span>{selectedAppointment.topic || "Topic"}</span>
                   <span className="text-gray-400">•</span>
                   <span>
-                    {appointmentInfo.date} {appointmentInfo.start_time}
-                    {appointmentInfo.end_time ? ` - ${appointmentInfo.end_time}` : ""}
+                    {selectedAppointment.date} {selectedAppointment.start_time}
+                    {selectedAppointment.end_time
+                      ? ` - ${selectedAppointment.end_time}`
+                      : ""}
                   </span>
                 </div>
               ) : (
@@ -344,8 +501,29 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
               )}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-              Message composer will be added here.
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
+              <textarea
+                rows={2}
+                className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
+                placeholder="Type a message..."
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={!selectedAppointmentId || sending}
+              />
+              <button
+                type="button"
+                onClick={handleSendMessage}
+                disabled={!draft.trim() || !selectedAppointmentId || sending}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sending ? "Sending..." : "Send"}
+              </button>
             </div>
           </section>
         </div>
