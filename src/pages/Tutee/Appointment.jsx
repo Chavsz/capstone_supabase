@@ -1207,6 +1207,17 @@ const Appointment = () => {
   ]);
 
   useEffect(() => {
+    if (!selectedTutor) return;
+    const isStillVisible = visibleTutors.some(
+      ({ tutor }) => tutor.user_id === selectedTutor.user_id
+    );
+    if (!isStillVisible) {
+      setSelectedTutor(null);
+      setDetailsTutorId(null);
+    }
+  }, [selectedTutor, visibleTutors]);
+
+  useEffect(() => {
     const hasDetails = Boolean(
       selectedSubject ||
       formData.date ||
