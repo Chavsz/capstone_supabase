@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MdMessage, MdSearch } from "react-icons/md";
+import { MdMessage, MdSearch, MdMoreVert } from "react-icons/md";
 import { supabase } from "../../supabase-client";
 
 const formatTimestamp = (value) => {
@@ -22,6 +22,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const channelRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [search, setSearch] = useState("");
+  const [showComposerMenu, setShowComposerMenu] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -154,9 +155,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
     const setupRealtime = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id;
-        if (!userId || !selectedAppointmentId) return;
+        if (!currentUserId) return;
 
         if (channelRef.current) {
           supabase.removeChannel(channelRef.current);
@@ -164,14 +163,14 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         }
 
         const channel = supabase
-          .channel(`messages-${userId}-${selectedAppointmentId}`)
+          .channel(`messages-${currentUserId}`)
           .on(
             "postgres_changes",
             {
               event: "INSERT",
               schema: "public",
               table: "messages",
-              filter: `appointment_id=eq.${selectedAppointmentId},sender_id=eq.${userId}`,
+              filter: `sender_id=eq.${currentUserId}`,
             },
             (payload) => {
               if (!active) return;
@@ -191,7 +190,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
               event: "INSERT",
               schema: "public",
               table: "messages",
-              filter: `appointment_id=eq.${selectedAppointmentId},receiver_id=eq.${userId}`,
+              filter: `receiver_id=eq.${currentUserId}`,
             },
             (payload) => {
               if (!active) return;
@@ -221,7 +220,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         channelRef.current = null;
       }
     };
-  }, [selectedAppointmentId]);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (!currentUserId || confirmedAppointments.length === 0) {
@@ -324,8 +323,13 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
   const threadMessages = useMemo(() => {
     if (!selectedAppointmentId) return [];
-    return messages.filter((row) => row.appointment_id === selectedAppointmentId);
-  }, [messages, selectedAppointmentId]);
+    return messages
+      .filter((row) => row.appointment_id === selectedAppointmentId)
+      .map((row) => ({
+        ...row,
+        senderProfile: profileMap.get(row.sender_id) || "",
+      }));
+  }, [messages, selectedAppointmentId, profileMap]);
 
   const selectedUserAppointments = useMemo(() => {
     if (!selectedUserId || !currentUserId) return [];
@@ -456,14 +460,14 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                       setSelectedAppointmentId(null);
                       setDraft("");
                     }}
-                    className={`w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                    className={`relative w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
                       selectedUserId === item.id
                         ? "border-blue-200 bg-blue-50"
                         : "border-gray-100 bg-white hover:bg-gray-50"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {item.profileImage ? (
+                  <div className="flex items-center gap-3">
+                    {item.profileImage ? (
                         <img
                           src={item.profileImage}
                           alt={item.name}
@@ -496,7 +500,8 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
           <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 flex flex-col gap-4">
             {!selectedAppointmentId ? (
               <>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
                   {selectedUserId && selectedUserProfile ? (
                     <img
                       src={selectedUserProfile}
@@ -524,6 +529,15 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                         : "No confirmed sessions yet"}
                     </p>
                   </div>
+                  </div>
+                  {selectedUserId && (
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      View archive
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -546,13 +560,15 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                             : ""}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedAppointmentId(appointment.appointment_id)}
-                        className="self-start rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                      >
-                        View this session
-                      </button>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAppointmentId(appointment.appointment_id)}
+                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        >
+                          View this session
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {selectedUserAppointments.length === 0 && (
@@ -604,35 +620,78 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                             : "justify-start"
                         }`}
                       >
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                            message.sender_id === currentUserId
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          <p className="leading-relaxed">{message.body}</p>
-                          <p
-                            className={`mt-2 text-[11px] ${
+                        <div className="flex items-end gap-2">
+                          {message.sender_id !== currentUserId && (
+                            message.senderProfile ? (
+                              <img
+                                src={message.senderProfile}
+                                alt="Sender"
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                {(userMap.get(message.sender_id) || "U")
+                                  .split(" ")
+                                  .map((part) => part[0])
+                                  .join("")
+                                  .slice(0, 2)}
+                              </div>
+                            )
+                          )}
+                          <div
+                            className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                               message.sender_id === currentUserId
-                                ? "text-blue-100"
-                                : "text-gray-400"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {formatTimestamp(message.created_at)}
-                          </p>
+                            <p className="leading-relaxed">{message.body}</p>
+                            <p
+                              className={`mt-2 text-[11px] ${
+                                message.sender_id === currentUserId
+                                  ? "text-blue-100"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {formatTimestamp(message.created_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
-                  <textarea
-                    rows={2}
-                    className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
-                    placeholder="Type a message..."
-                    value={draft}
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-2">
+                  <div className="flex justify-end">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowComposerMenu((prev) => !prev)}
+                        className="text-gray-500 hover:text-gray-700"
+                        aria-label="More options"
+                      >
+                        <MdMoreVert />
+                      </button>
+                      {showComposerMenu && (
+                        <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setShowComposerMenu(false)}
+                          >
+                            Add to archive
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <textarea
+                      rows={2}
+                      className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
+                      placeholder="Type a message..."
+                      value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" && !event.shiftKey) {
@@ -642,14 +701,15 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     }}
                     disabled={!selectedAppointmentId || sending}
                   />
-                  <button
-                    type="button"
-                    onClick={handleSendMessage}
-                    disabled={!draft.trim() || !selectedAppointmentId || sending}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {sending ? "Sending..." : "Send"}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleSendMessage}
+                      disabled={!draft.trim() || !selectedAppointmentId || sending}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sending ? "Sending..." : "Send"}
+                    </button>
+                  </div>
                 </div>
 
                 <button

@@ -1238,7 +1238,7 @@ const Reports = () => {
                 </button>
                 {showExportMenu && (
                   <div
-                    className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10"
+                    className="absolute left-full top-0 ml-2 w-44 rounded-xl border border-gray-200 bg-white shadow-lg z-10"
                     onMouseLeave={() => setShowExportMenu(false)}
                   >
                     <button
