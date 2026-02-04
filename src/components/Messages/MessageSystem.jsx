@@ -14,6 +14,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [userMap, setUserMap] = useState(new Map());
+  const [profileMap, setProfileMap] = useState(new Map());
   const [confirmedAppointments, setConfirmedAppointments] = useState([]);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [draft, setDraft] = useState("");
@@ -34,6 +35,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
             setCurrentUserId(null);
             setMessages([]);
             setUserMap(new Map());
+            setProfileMap(new Map());
             setSelectedUserId(null);
             setConfirmedAppointments([]);
           }
@@ -106,6 +108,23 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         });
 
         setUserMap(map);
+
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profile")
+          .select("user_id, profile_image")
+          .in("user_id", confirmedPartnerIds);
+
+        if (profilesError && profilesError.code !== "PGRST116") {
+          throw profilesError;
+        }
+
+        const profileData = new Map();
+        (profiles || []).forEach((profile) => {
+          if (profile?.user_id) {
+            profileData.set(profile.user_id, profile.profile_image || "");
+          }
+        });
+        setProfileMap(profileData);
         if (active) {
           setSelectedUserId((prev) => prev || confirmedPartnerIds[0]);
         }
@@ -114,6 +133,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         if (active) {
           setMessages([]);
           setUserMap(new Map());
+          setProfileMap(new Map());
           setSelectedUserId(null);
           setSelectedAppointmentId(null);
           setConfirmedAppointments([]);
@@ -209,59 +229,82 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       return;
     }
 
-    const now = new Date();
     const toDateTime = (row, timeField = "start_time") => {
       if (!row?.date || !row?.[timeField]) return null;
       const stamp = new Date(`${row.date}T${row[timeField]}`);
       return Number.isNaN(stamp.getTime()) ? null : stamp;
     };
 
-    const upcoming = confirmedAppointments
-      .map((row) => ({ row, start: toDateTime(row) }))
-      .filter((item) => item.start && item.start >= now)
-      .sort((a, b) => a.start - b.start);
+    const latestByUser = new Map();
+    confirmedAppointments.forEach((appointment) => {
+      const otherId =
+        appointment.user_id === currentUserId
+          ? appointment.tutor_id
+          : appointment.user_id;
+      if (!otherId) return;
+      const start = toDateTime(appointment);
+      if (!start) return;
+      const existing = latestByUser.get(otherId);
+      if (!existing || start > existing.start) {
+        latestByUser.set(otherId, { appointment, start });
+      }
+    });
 
-    const defaultAppointment = upcoming.length
-      ? upcoming[0].row
-      : confirmedAppointments
-          .map((row) => ({ row, start: toDateTime(row) }))
-          .filter((item) => item.start)
-          .sort((a, b) => b.start - a.start)[0]?.row;
+    const latestAppointments = Array.from(latestByUser.values())
+      .map((entry) => entry.appointment)
+      .sort((a, b) => {
+        const aTime = toDateTime(a)?.getTime() || 0;
+        const bTime = toDateTime(b)?.getTime() || 0;
+        return bTime - aTime;
+      });
 
-    setSelectedAppointmentId((prev) => prev || defaultAppointment?.appointment_id || null);
+    const defaultAppointment = latestAppointments[0];
+    if (defaultAppointment) {
+      setSelectedUserId((prev) => {
+        if (prev) return prev;
+        return defaultAppointment.user_id === currentUserId
+          ? defaultAppointment.tutor_id
+          : defaultAppointment.user_id;
+      });
+    }
+    setSelectedAppointmentId(null);
   }, [currentUserId, confirmedAppointments]);
 
   const conversations = useMemo(() => {
     if (!currentUserId || confirmedAppointments.length === 0) return [];
 
-    const lastMessageByAppointment = new Map();
-    messages.forEach((row) => {
-      if (!row.appointment_id) return;
-      const existing = lastMessageByAppointment.get(row.appointment_id);
-      if (!existing || new Date(row.created_at) > new Date(existing.created_at)) {
-        lastMessageByAppointment.set(row.appointment_id, row);
-      }
-    });
+    const toDateTime = (row, timeField = "start_time") => {
+      if (!row?.date || !row?.[timeField]) return null;
+      const stamp = new Date(`${row.date}T${row[timeField]}`);
+      return Number.isNaN(stamp.getTime()) ? null : stamp;
+    };
 
-    const items = confirmedAppointments.map((appointment) => {
+    const latestByUser = new Map();
+    confirmedAppointments.forEach((appointment) => {
       const otherId =
         appointment.user_id === currentUserId
           ? appointment.tutor_id
           : appointment.user_id;
-      const lastMessage = lastMessageByAppointment.get(appointment.appointment_id);
+      if (!otherId) return;
+      const start = toDateTime(appointment);
+      if (!start) return;
+      const existing = latestByUser.get(otherId);
+      if (!existing || start > existing.start) {
+        latestByUser.set(otherId, { appointment, start });
+      }
+    });
+
+    const items = Array.from(latestByUser.entries()).map(([otherId, entry]) => {
       const displayName = userMap.get(otherId) || "User";
-      const label = `${appointment.subject || "Subject"}${
-        appointment.topic ? ` - ${appointment.topic}` : ""
+      const label = `${entry.appointment.subject || "Subject"}${
+        entry.appointment.topic ? ` - ${entry.appointment.topic}` : ""
       }`;
       return {
-        id: appointment.appointment_id,
-        otherId,
+        id: otherId,
         name: displayName,
         subjectLabel: label,
-        preview: lastMessage?.body || "No messages yet.",
-        timeLabel: lastMessage ? formatTimestamp(lastMessage.created_at) : "",
-        createdAt: lastMessage?.created_at || "",
-        appointment,
+        latestTime: entry.start,
+        profileImage: profileMap.get(otherId) || "",
       };
     });
 
@@ -274,17 +317,36 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       );
     });
 
-    return filtered.sort((a, b) => {
-      const aTime = new Date(`${a.appointment.date}T${a.appointment.start_time || "00:00"}`).getTime();
-      const bTime = new Date(`${b.appointment.date}T${b.appointment.start_time || "00:00"}`).getTime();
-      return bTime - aTime;
-    });
-  }, [currentUserId, messages, userMap, search, confirmedAppointments]);
+    return filtered.sort(
+      (a, b) => (b.latestTime?.getTime() || 0) - (a.latestTime?.getTime() || 0)
+    );
+  }, [currentUserId, userMap, profileMap, search, confirmedAppointments]);
 
   const threadMessages = useMemo(() => {
     if (!selectedAppointmentId) return [];
     return messages.filter((row) => row.appointment_id === selectedAppointmentId);
   }, [messages, selectedAppointmentId]);
+
+  const selectedUserAppointments = useMemo(() => {
+    if (!selectedUserId || !currentUserId) return [];
+    const rows = confirmedAppointments.filter(
+      (appointment) =>
+        (appointment.user_id === currentUserId &&
+          appointment.tutor_id === selectedUserId) ||
+        (appointment.user_id === selectedUserId &&
+          appointment.tutor_id === currentUserId)
+    );
+
+    return rows.sort((a, b) => {
+      const aTime = new Date(
+        `${a.date}T${a.start_time || "00:00"}`
+      ).getTime();
+      const bTime = new Date(
+        `${b.date}T${b.start_time || "00:00"}`
+      ).getTime();
+      return bTime - aTime;
+    });
+  }, [confirmedAppointments, selectedUserId, currentUserId]);
 
   const selectedAppointment = useMemo(
     () =>
@@ -302,6 +364,11 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         : selectedAppointment.user_id;
     return userMap.get(partnerId) || "User";
   }, [selectedAppointment, currentUserId, userMap]);
+
+  const selectedUserProfile = useMemo(() => {
+    if (!selectedUserId) return "";
+    return profileMap.get(selectedUserId) || "";
+  }, [selectedUserId, profileMap]);
 
   const selectedPartnerId = useMemo(() => {
     if (!selectedAppointment || !currentUserId) return null;
@@ -385,23 +452,32 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     type="button"
                     key={item.id}
                     onClick={() => {
-                      setSelectedAppointmentId(item.id);
-                      setSelectedUserId(item.otherId || null);
+                      setSelectedUserId(item.id);
+                      setSelectedAppointmentId(null);
+                      setDraft("");
                     }}
                     className={`w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                      selectedAppointmentId === item.id
+                      selectedUserId === item.id
                         ? "border-blue-200 bg-blue-50"
                         : "border-gray-100 bg-white hover:bg-gray-50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                        {item.name
-                          .split(" ")
-                          .map((part) => part[0])
-                          .join("")
-                          .slice(0, 2)}
-                      </div>
+                      {item.profileImage ? (
+                        <img
+                          src={item.profileImage}
+                          alt={item.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                          {item.name
+                            .split(" ")
+                            .map((part) => part[0])
+                            .join("")
+                            .slice(0, 2)}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-semibold text-gray-800">
                           {item.name}
@@ -409,14 +485,8 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                         <p className="text-xs text-gray-500 line-clamp-1">
                           {item.subjectLabel}
                         </p>
-                        <p className="text-[11px] text-gray-400 line-clamp-1">
-                          {item.preview}
-                        </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-gray-400">
-                      {item.timeLabel}
-                    </span>
                   </button>
                 ))}
               </div>
@@ -424,107 +494,176 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">
-                  {selectedAppointment ? selectedPartnerName : "Select a chat"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {roleLabel === "Tutor" ? "Tutee" : "Tutor"}
-                </p>
-              </div>
-              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                {roleLabel} view
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              {selectedAppointment ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-gray-700">
-                    {selectedAppointment.subject || "Subject"}
-                  </span>
-                  <span className="text-gray-400">•</span>
-                  <span>{selectedAppointment.topic || "Topic"}</span>
-                  <span className="text-gray-400">•</span>
-                  <span>
-                    {selectedAppointment.date} {selectedAppointment.start_time}
-                    {selectedAppointment.end_time
-                      ? ` - ${selectedAppointment.end_time}`
-                      : ""}
-                  </span>
+            {!selectedAppointmentId ? (
+              <>
+                <div className="flex items-center gap-3">
+                  {selectedUserId && selectedUserProfile ? (
+                    <img
+                      src={selectedUserProfile}
+                      alt={selectedUserId ? userMap.get(selectedUserId) || "User" : "User"}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                      {selectedUserId
+                        ? (userMap.get(selectedUserId) || "User")
+                            .split(" ")
+                            .map((part) => part[0])
+                            .join("")
+                            .slice(0, 2)
+                        : "?"}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {selectedUserId ? userMap.get(selectedUserId) || "User" : "Select a chat"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {selectedUserAppointments.length > 0
+                        ? `Latest subject: ${selectedUserAppointments[0].subject || "Subject"}`
+                        : "No confirmed sessions yet"}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <span>No appointment details available.</span>
-              )}
-            </div>
 
-            <div className="border-t border-gray-100" />
-
-            <div className="flex-1 space-y-4">
-              {loading ? (
-                <div className="text-sm text-gray-500">Loading thread...</div>
-              ) : threadMessages.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  No messages in this thread yet.
-                </div>
-              ) : (
-                threadMessages.map((message) => (
-                  <div
-                    key={message.message_id}
-                    className={`flex ${
-                      message.sender_id === currentUserId
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
+                <div className="space-y-3">
+                  {selectedUserAppointments.map((appointment) => (
                     <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                        message.sender_id === currentUserId
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
+                      key={appointment.appointment_id}
+                      className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex flex-col gap-2"
                     >
-                      <p className="leading-relaxed">{message.body}</p>
-                      <p
-                        className={`mt-2 text-[11px] ${
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
+                        <span className="font-semibold">
+                          {appointment.subject || "Subject"}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span>{appointment.topic || "Topic"}</span>
+                        <span className="text-gray-400">•</span>
+                        <span>
+                          {appointment.date} {appointment.start_time}
+                          {appointment.end_time
+                            ? ` - ${appointment.end_time}`
+                            : ""}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAppointmentId(appointment.appointment_id)}
+                        className="self-start rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                      >
+                        View this session
+                      </button>
+                    </div>
+                  ))}
+                  {selectedUserAppointments.length === 0 && (
+                    <div className="text-sm text-gray-500">
+                      Select a user with a confirmed appointment to view sessions.
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  {selectedAppointment ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-gray-700">
+                        {selectedAppointment.subject || "Subject"}
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span>{selectedAppointment.topic || "Topic"}</span>
+                      <span className="text-gray-400">•</span>
+                      <span>
+                        {selectedAppointment.date} {selectedAppointment.start_time}
+                        {selectedAppointment.end_time
+                          ? ` - ${selectedAppointment.end_time}`
+                          : ""}
+                      </span>
+                    </div>
+                  ) : (
+                    <span>No appointment details available.</span>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-100" />
+
+                <div className="flex-1 space-y-4">
+                  {loading ? (
+                    <div className="text-sm text-gray-500">Loading thread...</div>
+                  ) : threadMessages.length === 0 ? (
+                    <div className="text-sm text-gray-500">
+                      No messages in this thread yet.
+                    </div>
+                  ) : (
+                    threadMessages.map((message) => (
+                      <div
+                        key={message.message_id}
+                        className={`flex ${
                           message.sender_id === currentUserId
-                            ? "text-blue-100"
-                            : "text-gray-400"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
-                        {formatTimestamp(message.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                        <div
+                          className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                            message.sender_id === currentUserId
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          <p className="leading-relaxed">{message.body}</p>
+                          <p
+                            className={`mt-2 text-[11px] ${
+                              message.sender_id === currentUserId
+                                ? "text-blue-100"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {formatTimestamp(message.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
-              <textarea
-                rows={2}
-                className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
-                placeholder="Type a message..."
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                disabled={!selectedAppointmentId || sending}
-              />
-              <button
-                type="button"
-                onClick={handleSendMessage}
-                disabled={!draft.trim() || !selectedAppointmentId || sending}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {sending ? "Sending..." : "Send"}
-              </button>
-            </div>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
+                  <textarea
+                    rows={2}
+                    className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
+                    placeholder="Type a message..."
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    disabled={!selectedAppointmentId || sending}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendMessage}
+                    disabled={!draft.trim() || !selectedAppointmentId || sending}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAppointmentId(null);
+                    setDraft("");
+                  }}
+                  className="text-sm font-semibold text-gray-600 hover:text-gray-800"
+                >
+                  Close this session
+                </button>
+              </>
+            )}
           </section>
         </div>
       </div>
@@ -533,3 +672,4 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 };
 
 export default MessageSystem;
+
