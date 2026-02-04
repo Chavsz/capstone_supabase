@@ -1,103 +1,200 @@
-import React from "react";
-import {
-  MdMessage,
-  MdSearch,
-  MdAccessTime,
-  MdEventAvailable,
-  MdLock,
-  MdNotificationsActive,
-} from "react-icons/md";
+import React, { useEffect, useMemo, useState } from "react";
+import { MdMessage, MdSearch } from "react-icons/md";
+import { supabase } from "../../supabase-client";
 
-const conversations = [
-  {
-    id: "conv-1",
-    name: "Alex Dela Cruz",
-    role: "Tutor",
-    preview: "I'll confirm the Feb 7 session today.",
-    time: "2 min",
-    unread: 2,
-  },
-  {
-    id: "conv-2",
-    name: "Jamie Mendoza",
-    role: "Tutee",
-    preview: "Thanks! I'll prepare the worksheet.",
-    time: "11 min",
-    unread: 0,
-  },
-  {
-    id: "conv-3",
-    name: "Rina Santos",
-    role: "Tutor",
-    preview: "We can review algebra on Feb 7.",
-    time: "1 hr",
-    unread: 1,
-  },
-  {
-    id: "conv-4",
-    name: "Paolo Reyes",
-    role: "Tutee",
-    preview: "Can I share a draft before the session?",
-    time: "1 day",
-    unread: 0,
-  },
-];
-
-const sampleMessages = [
-  {
-    id: "msg-1",
-    sender: "tutor",
-    text: "Confirmed your appointment for February 7. Messaging is now open.",
-    time: "Feb 3 · 9:10 AM",
-  },
-  {
-    id: "msg-2",
-    sender: "tutee",
-    text: "Thank you! I'll send the reviewer and questions today.",
-    time: "Feb 3 · 9:12 AM",
-  },
-  {
-    id: "msg-3",
-    sender: "tutor",
-    text: "Perfect. Reminder: we start at 3:00 PM on Feb 7.",
-    time: "Feb 6 · 2:55 PM",
-  },
-  {
-    id: "msg-4",
-    sender: "system",
-    text: "Messaging window closes after the session ends on Feb 7.",
-    time: "Feb 7 · 4:30 PM",
-  },
-];
-
-const rules = [
-  {
-    stage: "Session Confirmation",
-    timing: "Tutor confirms a future date (e.g., Feb 7).",
-    details:
-      "Clicking Confirm Appointment opens messaging from the confirmation time (e.g., Feb 3).",
-  },
-  {
-    stage: "Message Activation",
-    timing: "Feb 3 → Feb 7",
-    details:
-      "Tutor and tutee can exchange messages during the active window.",
-  },
-  {
-    stage: "Session Reminder",
-    timing: "Feb 6 (24 hours before)",
-    details:
-      "System sends a reminder notification to both users.",
-  },
-  {
-    stage: "Message Expiry",
-    timing: "After the session ends on Feb 7",
-    details:
-      "Messaging deactivates; no new or editable messages allowed.",
-  },
-];
+const formatTimestamp = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
 
 const MessageSystem = ({ roleLabel = "Tutee" }) => {
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [userMap, setUserMap] = useState(new Map());
+  const [appointmentInfo, setAppointmentInfo] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) {
+          if (active) {
+            setCurrentUserId(null);
+            setMessages([]);
+            setUserMap(new Map());
+            setSelectedUserId(null);
+          }
+          return;
+        }
+
+        const userId = session.user.id;
+        if (active) setCurrentUserId(userId);
+
+        const { data: messageRows, error: messageError } = await supabase
+          .from("messages")
+          .select("message_id, sender_id, receiver_id, body, created_at")
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+          .order("created_at", { ascending: true });
+
+        if (messageError) throw messageError;
+
+        const rows = messageRows || [];
+        if (!active) return;
+        setMessages(rows);
+
+        const otherIds = Array.from(
+          new Set(
+            rows
+              .map((row) => (row.sender_id === userId ? row.receiver_id : row.sender_id))
+              .filter(Boolean)
+          )
+        );
+
+        if (otherIds.length === 0) {
+          setUserMap(new Map());
+          setSelectedUserId(null);
+          return;
+        }
+
+        const { data: users, error: usersError } = await supabase
+          .from("users")
+          .select("user_id, name")
+          .in("user_id", otherIds);
+
+        if (usersError) throw usersError;
+
+        const map = new Map();
+        (users || []).forEach((user) => {
+          map.set(user.user_id, user.name || "User");
+        });
+
+        setUserMap(map);
+        setSelectedUserId((prev) => prev || otherIds[0]);
+      } catch (err) {
+        console.error("Unable to load messages:", err.message);
+        if (active) {
+          setMessages([]);
+          setUserMap(new Map());
+          setSelectedUserId(null);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    fetchMessages();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchAppointmentDetails = async () => {
+      if (!currentUserId || !selectedUserId) {
+        setAppointmentInfo(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("appointment")
+          .select("appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id")
+          .or(
+            `and(user_id.eq.${currentUserId},tutor_id.eq.${selectedUserId}),and(user_id.eq.${selectedUserId},tutor_id.eq.${currentUserId})`
+          );
+
+        if (error) throw error;
+
+        const rows = data || [];
+        if (!active) return;
+
+        if (rows.length === 0) {
+          setAppointmentInfo(null);
+          return;
+        }
+
+        const now = new Date();
+        const toDateTime = (row, timeField = "start_time") => {
+          if (!row?.date || !row?.[timeField]) return null;
+          const stamp = new Date(`${row.date}T${row[timeField]}`);
+          return Number.isNaN(stamp.getTime()) ? null : stamp;
+        };
+
+        const upcoming = rows
+          .map((row) => ({ row, start: toDateTime(row) }))
+          .filter((item) => item.start && item.start >= now)
+          .sort((a, b) => a.start - b.start);
+
+        const selected = upcoming.length
+          ? upcoming[0].row
+          : rows
+              .map((row) => ({ row, start: toDateTime(row) }))
+              .filter((item) => item.start)
+              .sort((a, b) => b.start - a.start)[0]?.row;
+
+        setAppointmentInfo(selected || null);
+      } catch (err) {
+        console.error("Unable to load appointment details:", err.message);
+        if (active) setAppointmentInfo(null);
+      }
+    };
+
+    fetchAppointmentDetails();
+    return () => {
+      active = false;
+    };
+  }, [currentUserId, selectedUserId]);
+
+  const conversations = useMemo(() => {
+    if (!currentUserId || messages.length === 0) return [];
+
+    const map = new Map();
+    messages.forEach((row) => {
+      const otherId = row.sender_id === currentUserId ? row.receiver_id : row.sender_id;
+      if (!otherId) return;
+      const existing = map.get(otherId);
+      if (!existing || new Date(row.created_at) > new Date(existing.created_at)) {
+        map.set(otherId, row);
+      }
+    });
+
+    const items = Array.from(map.entries()).map(([otherId, lastMessage]) => ({
+      id: otherId,
+      name: userMap.get(otherId) || "User",
+      preview: lastMessage.body || "",
+      timeLabel: formatTimestamp(lastMessage.created_at),
+      createdAt: lastMessage.created_at,
+    }));
+
+    const filtered = items.filter((item) =>
+      item.name.toLowerCase().includes(search.trim().toLowerCase())
+    );
+
+    return filtered.sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+  }, [currentUserId, messages, userMap, search]);
+
+  const threadMessages = useMemo(() => {
+    if (!selectedUserId || !currentUserId) return [];
+    return messages.filter(
+      (row) =>
+        (row.sender_id === currentUserId && row.receiver_id === selectedUserId) ||
+        (row.sender_id === selectedUserId && row.receiver_id === currentUserId)
+    );
+  }, [messages, currentUserId, selectedUserId]);
+
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -108,33 +205,10 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
             <p className="text-sm text-gray-500">
-              Sample messaging view for {roleLabel.toLowerCase()} accounts.
+              Active chats for {roleLabel.toLowerCase()} accounts.
             </p>
           </div>
         </header>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6">
-          <div className="flex flex-wrap items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-2 text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full">
-                <MdAccessTime />
-                Messaging Active: Feb 3 → Feb 7
-              </span>
-              <span className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
-                <MdEventAvailable />
-                Session: Feb 7 · 3:00 PM
-              </span>
-              <span className="inline-flex items-center gap-2 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-full">
-                <MdNotificationsActive />
-                Reminder: Feb 6
-              </span>
-            </div>
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-              <MdLock />
-              Closes after session ends
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
           <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
@@ -143,143 +217,138 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                 type="text"
                 placeholder="Search message"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                disabled
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
               />
               <MdSearch className="absolute right-3 top-2.5 text-gray-400" />
             </div>
 
-            <div className="space-y-3">
-              {conversations.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${
-                    index === 0
-                      ? "border-blue-200 bg-blue-50"
-                      : "border-gray-100 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                      {item.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)}
+            {loading ? (
+              <div className="text-sm text-gray-500">Loading messages...</div>
+            ) : conversations.length === 0 ? (
+              <div className="text-sm text-gray-500">No conversations yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {conversations.map((item) => (
+                  <button
+                    type="button"
+                    key={item.id}
+                    onClick={() => setSelectedUserId(item.id)}
+                    className={`w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                      selectedUserId === item.id
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-gray-100 bg-white hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                        {item.name
+                          .split(" ")
+                          .map((part) => part[0])
+                          .join("")
+                          .slice(0, 2)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          {item.name}
+                        </p>
+                        <p className="text-xs text-gray-500 line-clamp-1">
+                          {item.preview}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{item.preview}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
                     <span className="text-[11px] text-gray-400">
-                      {item.time}
+                      {item.timeLabel}
                     </span>
-                    {item.unread > 0 && (
-                      <span className="text-[10px] font-semibold text-white bg-blue-600 rounded-full px-2 py-0.5">
-                        {item.unread}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-800">
-                  Alex Dela Cruz
+                  {selectedUserId
+                    ? userMap.get(selectedUserId) || "User"
+                    : "Select a chat"}
                 </p>
-                <p className="text-xs text-gray-500">Active now</p>
+                <p className="text-xs text-gray-500">
+                  {roleLabel === "Tutor" ? "Tutee" : "Tutor"}
+                </p>
               </div>
               <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                 {roleLabel} view
               </span>
             </div>
 
+            <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              {appointmentInfo ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-gray-700">
+                    {appointmentInfo.subject || "Subject"}
+                  </span>
+                  <span className="text-gray-400">•</span>
+                  <span>{appointmentInfo.topic || "Topic"}</span>
+                  <span className="text-gray-400">•</span>
+                  <span>
+                    {appointmentInfo.date} {appointmentInfo.start_time}
+                    {appointmentInfo.end_time ? ` - ${appointmentInfo.end_time}` : ""}
+                  </span>
+                </div>
+              ) : (
+                <span>No appointment details available.</span>
+              )}
+            </div>
+
             <div className="border-t border-gray-100" />
 
             <div className="flex-1 space-y-4">
-              {sampleMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.sender === "tutee"
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
+              {loading ? (
+                <div className="text-sm text-gray-500">Loading thread...</div>
+              ) : threadMessages.length === 0 ? (
+                <div className="text-sm text-gray-500">
+                  No messages in this thread yet.
+                </div>
+              ) : (
+                threadMessages.map((message) => (
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                      message.sender === "tutee"
-                        ? "bg-blue-600 text-white"
-                        : message.sender === "system"
-                          ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : "bg-gray-100 text-gray-700"
+                    key={message.message_id}
+                    className={`flex ${
+                      message.sender_id === currentUserId
+                        ? "justify-end"
+                        : "justify-start"
                     }`}
                   >
-                    <p className="leading-relaxed">{message.text}</p>
-                    <p
-                      className={`mt-2 text-[11px] ${
-                        message.sender === "tutee"
-                          ? "text-blue-100"
-                          : "text-gray-400"
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                        message.sender_id === currentUserId
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700"
                       }`}
                     >
-                      {message.time}
-                    </p>
+                      <p className="leading-relaxed">{message.body}</p>
+                      <p
+                        className={`mt-2 text-[11px] ${
+                          message.sender_id === currentUserId
+                            ? "text-blue-100"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {formatTimestamp(message.created_at)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-              Sample message composer (disabled after session ends).
+              Message composer will be added here.
             </div>
           </section>
         </div>
-
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Message System Rules
-              </h2>
-              <p className="text-sm text-gray-500">
-                Summary of the messaging window and lifecycle.
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wide text-gray-400 border-b border-gray-200">
-                  <th className="py-3 pr-4">Stage</th>
-                  <th className="py-3 pr-4">Timing</th>
-                  <th className="py-3">Behavior</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.map((rule) => (
-                  <tr key={rule.stage} className="border-b border-gray-100">
-                    <td className="py-3 pr-4 font-semibold text-gray-700">
-                      {rule.stage}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-600">
-                      {rule.timing}
-                    </td>
-                    <td className="py-3 text-gray-600">{rule.details}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </div>
     </div>
   );
