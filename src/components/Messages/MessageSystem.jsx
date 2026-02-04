@@ -308,24 +308,44 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
   const archivedAppointmentIds = useMemo(() => {
     const ids = new Set();
-    messagesByAppointment.forEach((list, appointmentId) => {
-      if (!list.length) return;
+    confirmedAppointments.forEach((appointment) => {
+      if (!appointment.appointment_id) return;
+      const list = messagesByAppointment.get(appointment.appointment_id) || [];
+      if (list.length === 0) {
+        ids.add(appointment.appointment_id);
+        return;
+      }
       const allArchived = list.every((item) => archivedMessageIds.has(item.message_id));
-      if (allArchived) ids.add(appointmentId);
+      if (allArchived) ids.add(appointment.appointment_id);
     });
     return ids;
-  }, [messagesByAppointment, archivedMessageIds]);
+  }, [messagesByAppointment, archivedMessageIds, confirmedAppointments]);
+
+  const unarchivedAppointmentIds = useMemo(() => {
+    const ids = new Set();
+    confirmedAppointments.forEach((appointment) => {
+      if (!appointment.appointment_id) return;
+      const list = messagesByAppointment.get(appointment.appointment_id) || [];
+      if (list.length === 0) {
+        ids.add(appointment.appointment_id);
+        return;
+      }
+      const hasUnarchived = list.some((item) => !archivedMessageIds.has(item.message_id));
+      if (hasUnarchived) ids.add(appointment.appointment_id);
+    });
+    return ids;
+  }, [messagesByAppointment, archivedMessageIds, confirmedAppointments]);
 
   const activeAppointmentIds = useMemo(() => {
     const ids = new Set();
     confirmedAppointments.forEach((appointment) => {
       if (!appointment.appointment_id) return;
-      if (!archivedAppointmentIds.has(appointment.appointment_id)) {
+      if (unarchivedAppointmentIds.has(appointment.appointment_id)) {
         ids.add(appointment.appointment_id);
       }
     });
     return ids;
-  }, [confirmedAppointments, archivedAppointmentIds]);
+  }, [confirmedAppointments, unarchivedAppointmentIds]);
 
   const conversations = useMemo(() => {
     if (!currentUserId || confirmedAppointments.length === 0) return [];
