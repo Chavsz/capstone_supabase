@@ -13,6 +13,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [archivedMessageIds, setArchivedMessageIds] = useState(new Set());
   const [userMap, setUserMap] = useState(new Map());
   const [profileMap, setProfileMap] = useState(new Map());
   const [confirmedAppointments, setConfirmedAppointments] = useState([]);
@@ -22,7 +23,8 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const channelRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [search, setSearch] = useState("");
-  const [showComposerMenu, setShowComposerMenu] = useState(false);
+  const [activeSessionMenuId, setActiveSessionMenuId] = useState(null);
+  const [viewArchive, setViewArchive] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +83,18 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         if (!active) return;
         setMessages(rows);
 
+        const { data: archivedRows, error: archiveError } = await supabase
+          .from("message_archive")
+          .select("message_id")
+          .eq("user_id", userId);
+
+        if (archiveError) throw archiveError;
+
+        const archivedSet = new Set(
+          (archivedRows || []).map((row) => row.message_id).filter(Boolean)
+        );
+        if (active) setArchivedMessageIds(archivedSet);
+
         const confirmedPartnerIds = Array.from(
           new Set(
             confirmedRows
@@ -133,6 +147,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         console.error("Unable to load messages:", err.message);
         if (active) {
           setMessages([]);
+          setArchivedMessageIds(new Set());
           setUserMap(new Map());
           setProfileMap(new Map());
           setSelectedUserId(null);
@@ -269,6 +284,49 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     setSelectedAppointmentId(null);
   }, [currentUserId, confirmedAppointments]);
 
+  const appointmentsById = useMemo(() => {
+    const map = new Map();
+    confirmedAppointments.forEach((appointment) => {
+      if (appointment.appointment_id) {
+        map.set(appointment.appointment_id, appointment);
+      }
+    });
+    return map;
+  }, [confirmedAppointments]);
+
+  const messagesByAppointment = useMemo(() => {
+    const map = new Map();
+    messages.forEach((message) => {
+      if (!message.appointment_id) return;
+      if (!map.has(message.appointment_id)) {
+        map.set(message.appointment_id, []);
+      }
+      map.get(message.appointment_id).push(message);
+    });
+    return map;
+  }, [messages]);
+
+  const archivedAppointmentIds = useMemo(() => {
+    const ids = new Set();
+    messagesByAppointment.forEach((list, appointmentId) => {
+      if (!list.length) return;
+      const allArchived = list.every((item) => archivedMessageIds.has(item.message_id));
+      if (allArchived) ids.add(appointmentId);
+    });
+    return ids;
+  }, [messagesByAppointment, archivedMessageIds]);
+
+  const activeAppointmentIds = useMemo(() => {
+    const ids = new Set();
+    confirmedAppointments.forEach((appointment) => {
+      if (!appointment.appointment_id) return;
+      if (!archivedAppointmentIds.has(appointment.appointment_id)) {
+        ids.add(appointment.appointment_id);
+      }
+    });
+    return ids;
+  }, [confirmedAppointments, archivedAppointmentIds]);
+
   const conversations = useMemo(() => {
     if (!currentUserId || confirmedAppointments.length === 0) return [];
 
@@ -280,6 +338,11 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
     const latestByUser = new Map();
     confirmedAppointments.forEach((appointment) => {
+      if (!appointment.appointment_id) return;
+      const include = viewArchive
+        ? archivedAppointmentIds.has(appointment.appointment_id)
+        : activeAppointmentIds.has(appointment.appointment_id);
+      if (!include) return;
       const otherId =
         appointment.user_id === currentUserId
           ? appointment.tutor_id
@@ -319,17 +382,28 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     return filtered.sort(
       (a, b) => (b.latestTime?.getTime() || 0) - (a.latestTime?.getTime() || 0)
     );
-  }, [currentUserId, userMap, profileMap, search, confirmedAppointments]);
+  }, [
+    currentUserId,
+    userMap,
+    profileMap,
+    search,
+    confirmedAppointments,
+    activeAppointmentIds,
+    archivedAppointmentIds,
+    viewArchive,
+  ]);
 
   const threadMessages = useMemo(() => {
     if (!selectedAppointmentId) return [];
-    return messages
-      .filter((row) => row.appointment_id === selectedAppointmentId)
-      .map((row) => ({
-        ...row,
-        senderProfile: profileMap.get(row.sender_id) || "",
-      }));
-  }, [messages, selectedAppointmentId, profileMap]);
+    const list = messagesByAppointment.get(selectedAppointmentId) || [];
+    const filtered = viewArchive
+      ? list.filter((row) => archivedMessageIds.has(row.message_id))
+      : list.filter((row) => !archivedMessageIds.has(row.message_id));
+    return filtered.map((row) => ({
+      ...row,
+      senderProfile: profileMap.get(row.sender_id) || "",
+    }));
+  }, [messagesByAppointment, selectedAppointmentId, profileMap, archivedMessageIds, viewArchive]);
 
   const selectedUserAppointments = useMemo(() => {
     if (!selectedUserId || !currentUserId) return [];
@@ -341,7 +415,14 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
           appointment.tutor_id === currentUserId)
     );
 
-    return rows.sort((a, b) => {
+    const filtered = rows.filter((appointment) => {
+      if (!appointment.appointment_id) return false;
+      return viewArchive
+        ? archivedAppointmentIds.has(appointment.appointment_id)
+        : activeAppointmentIds.has(appointment.appointment_id);
+    });
+
+    return filtered.sort((a, b) => {
       const aTime = new Date(
         `${a.date}T${a.start_time || "00:00"}`
       ).getTime();
@@ -350,7 +431,14 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       ).getTime();
       return bTime - aTime;
     });
-  }, [confirmedAppointments, selectedUserId, currentUserId]);
+  }, [
+    confirmedAppointments,
+    selectedUserId,
+    currentUserId,
+    viewArchive,
+    activeAppointmentIds,
+    archivedAppointmentIds,
+  ]);
 
   const selectedAppointment = useMemo(
     () =>
@@ -380,6 +468,58 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       ? selectedAppointment.tutor_id
       : selectedAppointment.user_id;
   }, [selectedAppointment, currentUserId]);
+
+  const handleArchiveSession = async (appointmentId) => {
+    if (!currentUserId) return;
+    const sessionMessages = messagesByAppointment.get(appointmentId) || [];
+    if (sessionMessages.length === 0) return;
+
+    const rows = sessionMessages.map((message) => ({
+      user_id: currentUserId,
+      message_id: message.message_id,
+    }));
+
+    const { error } = await supabase
+      .from("message_archive")
+      .upsert(rows, { onConflict: "user_id,message_id" });
+
+    if (error) {
+      console.error("Unable to archive messages:", error.message);
+      return;
+    }
+
+    setArchivedMessageIds((prev) => {
+      const next = new Set(prev);
+      sessionMessages.forEach((message) => next.add(message.message_id));
+      return next;
+    });
+    setActiveSessionMenuId(null);
+  };
+
+  const handleUnarchiveSession = async (appointmentId) => {
+    if (!currentUserId) return;
+    const sessionMessages = messagesByAppointment.get(appointmentId) || [];
+    if (sessionMessages.length === 0) return;
+
+    const messageIds = sessionMessages.map((message) => message.message_id);
+    const { error } = await supabase
+      .from("message_archive")
+      .delete()
+      .eq("user_id", currentUserId)
+      .in("message_id", messageIds);
+
+    if (error) {
+      console.error("Unable to unarchive messages:", error.message);
+      return;
+    }
+
+    setArchivedMessageIds((prev) => {
+      const next = new Set(prev);
+      messageIds.forEach((id) => next.delete(id));
+      return next;
+    });
+    setActiveSessionMenuId(null);
+  };
 
   const handleSendMessage = async () => {
     const trimmed = draft.trim();
@@ -526,16 +666,24 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     <p className="text-xs text-gray-500">
                       {selectedUserAppointments.length > 0
                         ? `Latest subject: ${selectedUserAppointments[0].subject || "Subject"}`
-                        : "No confirmed sessions yet"}
+                        : viewArchive
+                          ? "No archived sessions yet"
+                          : "No confirmed sessions yet"}
                     </p>
                   </div>
                   </div>
                   {selectedUserId && (
                     <button
                       type="button"
+                      onClick={() => {
+                        setViewArchive((prev) => !prev);
+                        setSelectedAppointmentId(null);
+                        setActiveSessionMenuId(null);
+                        setDraft("");
+                      }}
                       className="text-sm font-semibold text-blue-600 hover:text-blue-800"
                     >
-                      View archive
+                      {viewArchive ? "Back to inbox" : "View archive"}
                     </button>
                   )}
                 </div>
@@ -546,24 +694,60 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                       key={appointment.appointment_id}
                       className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex flex-col gap-2"
                     >
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
-                        <span className="font-semibold">
-                          {appointment.subject || "Subject"}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span>{appointment.topic || "Topic"}</span>
-                        <span className="text-gray-400">•</span>
-                        <span>
-                          {appointment.date} {appointment.start_time}
-                          {appointment.end_time
-                            ? ` - ${appointment.end_time}`
-                            : ""}
-                        </span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
+                          <span className="font-semibold">
+                            {appointment.subject || "Subject"}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span>{appointment.topic || "Topic"}</span>
+                          <span className="text-gray-400">•</span>
+                          <span>
+                            {appointment.date} {appointment.start_time}
+                            {appointment.end_time
+                              ? ` - ${appointment.end_time}`
+                              : ""}
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveSessionMenuId((prev) =>
+                                prev === appointment.appointment_id
+                                  ? null
+                                  : appointment.appointment_id
+                              )
+                            }
+                            className="text-gray-500 hover:text-gray-700"
+                            aria-label="Session options"
+                          >
+                            <MdMoreVert />
+                          </button>
+                          {activeSessionMenuId === appointment.appointment_id && (
+                            <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() =>
+                                  viewArchive
+                                    ? handleUnarchiveSession(appointment.appointment_id)
+                                    : handleArchiveSession(appointment.appointment_id)
+                                }
+                              >
+                                {viewArchive ? "Unarchive chat" : "Add to archive"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-end">
                         <button
                           type="button"
-                          onClick={() => setSelectedAppointmentId(appointment.appointment_id)}
+                          onClick={() => {
+                            setSelectedAppointmentId(appointment.appointment_id);
+                            setActiveSessionMenuId(null);
+                          }}
                           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                         >
                           View this session
@@ -662,45 +846,22 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-2">
-                  <div className="flex justify-end">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowComposerMenu((prev) => !prev)}
-                        className="text-gray-500 hover:text-gray-700"
-                        aria-label="More options"
-                      >
-                        <MdMoreVert />
-                      </button>
-                      {showComposerMenu && (
-                        <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
-                          <button
-                            type="button"
-                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            onClick={() => setShowComposerMenu(false)}
-                          >
-                            Add to archive
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-end gap-2">
+                {!viewArchive && (
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
                     <textarea
                       rows={2}
                       className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
                       placeholder="Type a message..."
                       value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={!selectedAppointmentId || sending}
-                  />
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={!selectedAppointmentId || sending}
+                    />
                     <button
                       type="button"
                       onClick={handleSendMessage}
@@ -710,7 +871,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                       {sending ? "Sending..." : "Send"}
                     </button>
                   </div>
-                </div>
+                )}
 
                 <button
                   type="button"
@@ -732,4 +893,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 };
 
 export default MessageSystem;
+
+
 
