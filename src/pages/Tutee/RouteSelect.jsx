@@ -92,6 +92,13 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/messages"
+        Icon={mdIcons.MdMessage}
+        title="Messages"
+        isActive={location.pathname === "/dashboard/messages"}
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/profile"
         Icon={mdIcons.MdPersonOutline}
         title="Profile"

@@ -22,6 +22,7 @@ import TuteeAppointment from "./pages/Tutee/Appointment";
 import TuteeMyClasses from "./pages/Tutee/MyClasses";
 import TuteeSwitch from "./pages/Tutee/Switch";
 import TuteeMyLearningJourney from "./pages/Tutee/MyLearningJourney";
+import TuteeMessages from "./pages/Tutee/Messages";
 
 // Tutor Pages
 import TutorDashboard from "./pages/Tutor/TutorDashboard";
@@ -32,6 +33,7 @@ import TutorComments from "./pages/Tutor/Comments";
 import TutorReports from "./pages/Tutor/Reports";
 import TutorMyClasses from "./pages/Tutor/MyClasses";
 import TutorMyTutees from "./pages/Tutor/MyTutees";
+import TutorMessages from "./pages/Tutor/Messages";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminnStaff/Dashboard";
@@ -231,6 +233,19 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
               currentRole={currentRole}
               loading={loading}
               element={<TuteeMyLearningJourney />}
+            />
+          }
+        />
+        <Route
+          path="messages"
+          element={
+            <RoleRoute
+              allowedRoles={["student", "tutor"]}
+              currentRole={currentRole}
+              loading={loading}
+              element={
+                currentRole === "tutor" ? <TutorMessages /> : <TuteeMessages />
+              }
             />
           }
         />

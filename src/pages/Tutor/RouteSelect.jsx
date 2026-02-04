@@ -50,6 +50,12 @@ const RouteSelect = ({ onClose }) => {
         onClose={onClose}
       />
       <Route
+        to="/dashboard/messages"
+        Icon={mdIcons.MdMessage}
+        title="Messages"
+        onClose={onClose}
+      />
+      <Route
         to="/dashboard/profile"
         Icon={mdIcons.MdPersonOutline}
         title="Profile"
