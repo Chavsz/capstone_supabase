@@ -569,6 +569,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     if (!currentUserId) return;
     const sessionMessages = messagesByAppointment.get(appointmentId) || [];
     if (sessionMessages.length === 0) return;
+    if (!window.confirm("Remove this session from archive?")) return;
 
     const messageIds = sessionMessages.map((message) => message.message_id);
     const { error } = await supabase
