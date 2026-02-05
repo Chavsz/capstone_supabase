@@ -340,6 +340,24 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     return ids;
   }, [messagesByAppointment, archivedMessageIds, confirmedAppointments]);
 
+  const archivedAppointmentsList = useMemo(() => {
+    return confirmedAppointments
+      .filter((appointment) =>
+        appointment.appointment_id
+          ? archivedAppointmentIds.has(appointment.appointment_id)
+          : false
+      )
+      .sort((a, b) => {
+        const aTime = new Date(
+          `${a.date}T${a.start_time || "00:00"}`
+        ).getTime();
+        const bTime = new Date(
+          `${b.date}T${b.start_time || "00:00"}`
+        ).getTime();
+        return bTime - aTime;
+      });
+  }, [confirmedAppointments, archivedAppointmentIds]);
+
   const unarchivedAppointmentIds = useMemo(() => {
     const ids = new Set();
     confirmedAppointments.forEach((appointment) => {
@@ -523,6 +541,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     if (!currentUserId) return;
     const sessionMessages = messagesByAppointment.get(appointmentId) || [];
     if (sessionMessages.length === 0) return;
+    if (!window.confirm("Add this session to archive?")) return;
 
     const rows = sessionMessages.map((message) => ({
       user_id: currentUserId,
@@ -647,77 +666,190 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
           </button>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-          <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search message"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <MdSearch className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
+        <div className={`grid gap-6 ${viewArchive ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[320px_1fr]"}`}>
+          {!viewArchive && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search message"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+                <MdSearch className="absolute right-3 top-2.5 text-gray-400" />
+              </div>
 
-            {loading ? (
-              <div className="text-sm text-gray-500">Loading messages...</div>
-            ) : confirmedAppointments.length === 0 ? (
-              <div className="text-sm text-gray-500">
-                Messaging activates after the tutor confirms an appointment.
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="text-sm text-gray-500">No conversations yet.</div>
-            ) : (
-              <div className="space-y-3">
-                {conversations.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    onClick={() => {
-                      setSelectedUserId(item.id);
-                      setSelectedAppointmentId(null);
-                      setDraft("");
-                    }}
-                    className={`relative w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                      selectedUserId === item.id
-                        ? "border-blue-200 bg-blue-50"
-                        : "border-gray-100 bg-white hover:bg-gray-50"
-                    }`}
-                  >
-                  <div className="flex items-center gap-3">
-                    {item.profileImage ? (
-                        <img
-                          src={item.profileImage}
-                          alt={item.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                          {item.name
-                            .split(" ")
-                            .map((part) => part[0])
-                            .join("")
-                            .slice(0, 2)}
+              {loading ? (
+                <div className="text-sm text-gray-500">Loading messages...</div>
+              ) : confirmedAppointments.length === 0 ? (
+                <div className="text-sm text-gray-500">
+                  Messaging activates after the tutor confirms an appointment.
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="text-sm text-gray-500">No conversations yet.</div>
+              ) : (
+                <div className="space-y-3">
+                  {conversations.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedUserId(item.id);
+                        setSelectedAppointmentId(null);
+                        setDraft("");
+                      }}
+                      className={`relative w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                        selectedUserId === item.id
+                          ? "border-blue-200 bg-blue-50"
+                          : "border-gray-100 bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.profileImage ? (
+                          <img
+                            src={item.profileImage}
+                            alt={item.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                            {item.name
+                              .split(" ")
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-gray-500 line-clamp-1">
+                            {item.name} - {item.subjectLabel}
+                          </p>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500 line-clamp-1">
-                          {item.name} - {item.subjectLabel}
-                        </p>
                       </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6 flex flex-col gap-4">
-            {!selectedAppointmentId ? (
+            {viewArchive && !selectedAppointmentId ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">Archive</p>
+                    <p className="text-xs text-gray-500">
+                      All archived sessions across tutors.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {archivedAppointmentsList.length === 0 ? (
+                    <div className="text-sm text-gray-500">
+                      No archived sessions yet.
+                    </div>
+                  ) : (
+                    archivedAppointmentsList.map((appointment) => {
+                      const otherId =
+                        appointment.user_id === currentUserId
+                          ? appointment.tutor_id
+                          : appointment.user_id;
+                      const name = userMap.get(otherId) || "User";
+                      const profileImage = profileMap.get(otherId) || "";
+                      return (
+                        <div
+                          key={appointment.appointment_id}
+                          className="rounded-xl border border-gray-200 bg-white px-4 py-4 flex flex-col gap-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              {profileImage ? (
+                                <img
+                                  src={profileImage}
+                                  alt={name}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                                  {name
+                                    .split(" ")
+                                    .map((part) => part[0])
+                                    .join("")
+                                    .slice(0, 2)}
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {appointment.subject || "Subject"} -{" "}
+                                  {appointment.topic || "Topic"}
+                                </p>
+                                <p className="text-[11px] text-gray-400">
+                                  {appointment.date} {appointment.start_time}
+                                  {appointment.end_time
+                                    ? ` - ${appointment.end_time}`
+                                    : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="relative" ref={sessionMenuRef}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveSessionMenuId((prev) =>
+                                    prev === appointment.appointment_id
+                                      ? null
+                                      : appointment.appointment_id
+                                  )
+                                }
+                                className="text-gray-500 hover:text-gray-700"
+                                aria-label="Session options"
+                              >
+                                <MdMoreVert />
+                              </button>
+                              {activeSessionMenuId === appointment.appointment_id && (
+                                <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                                  <button
+                                    type="button"
+                                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    onClick={() =>
+                                      handleUnarchiveSession(appointment.appointment_id)
+                                    }
+                                  >
+                                    Unarchive chat
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedAppointmentId(appointment.appointment_id);
+                                setSelectedUserId(otherId);
+                                setActiveSessionMenuId(null);
+                              }}
+                              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                            >
+                              View this session
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            ) : !selectedAppointmentId ? (
               <>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
