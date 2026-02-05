@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MdMessage, MdSearch, MdMoreVert } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
 const formatTimestamp = (value) => {
@@ -10,6 +11,7 @@ const formatTimestamp = (value) => {
 };
 
 const MessageSystem = ({ roleLabel = "Tutee" }) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -21,6 +23,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const channelRef = useRef(null);
+  const sessionMenuRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [search, setSearch] = useState("");
   const [activeSessionMenuId, setActiveSessionMenuId] = useState(null);
@@ -51,7 +54,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
         const { data: appointmentRows, error: appointmentError } = await supabase
           .from("appointment")
           .select(
-            "appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id, status"
+            "appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id, status, tutor_decline_reason, tutee_decline_reason"
           )
           .or(`user_id.eq.${userId},tutor_id.eq.${userId}`)
           .eq("status", "confirmed")
@@ -162,6 +165,22 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     fetchMessages();
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        sessionMenuRef.current &&
+        !sessionMenuRef.current.contains(event.target)
+      ) {
+        setActiveSessionMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -359,10 +378,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     const latestByUser = new Map();
     confirmedAppointments.forEach((appointment) => {
       if (!appointment.appointment_id) return;
-      const include = viewArchive
-        ? archivedAppointmentIds.has(appointment.appointment_id)
-        : activeAppointmentIds.has(appointment.appointment_id);
-      if (!include) return;
       const otherId =
         appointment.user_id === currentUserId
           ? appointment.tutor_id
@@ -408,9 +423,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     profileMap,
     search,
     confirmedAppointments,
-    activeAppointmentIds,
-    archivedAppointmentIds,
-    viewArchive,
   ]);
 
   const threadMessages = useMemo(() => {
@@ -489,6 +501,24 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       : selectedAppointment.user_id;
   }, [selectedAppointment, currentUserId]);
 
+  const isSessionClosed = useMemo(() => {
+    if (!selectedAppointment) return false;
+    if (selectedAppointment.status === "cancelled") return true;
+    if (!selectedAppointment.date || !selectedAppointment.end_time) return false;
+    const endAt = new Date(`${selectedAppointment.date}T${selectedAppointment.end_time}`);
+    if (Number.isNaN(endAt.getTime())) return false;
+    return Date.now() > endAt.getTime();
+  }, [selectedAppointment]);
+
+  const sessionCancelReason = useMemo(() => {
+    if (!selectedAppointment || selectedAppointment.status !== "cancelled") return "";
+    return (
+      selectedAppointment.tutor_decline_reason ||
+      selectedAppointment.tutee_decline_reason ||
+      "Session was cancelled."
+    );
+  }, [selectedAppointment]);
+
   const handleArchiveSession = async (appointmentId) => {
     if (!currentUserId) return;
     const sessionMessages = messagesByAppointment.get(appointmentId) || [];
@@ -543,7 +573,13 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
   const handleSendMessage = async () => {
     const trimmed = draft.trim();
-    if (!trimmed || !currentUserId || !selectedPartnerId || !selectedAppointmentId) {
+    if (
+      !trimmed ||
+      !currentUserId ||
+      !selectedPartnerId ||
+      !selectedAppointmentId ||
+      isSessionClosed
+    ) {
       return;
     }
     setSending(true);
@@ -573,19 +609,42 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     }
   };
 
+  const handleViewAppointmentDetails = (appointmentId) => {
+    const targetPath = roleLabel === "Tutor" ? "/dashboard/schedule" : "/dashboard/schedules";
+    const notification = {
+      notification_id: `msg-${appointmentId}`,
+      notification_content: `Appointment details [appointment_id:${appointmentId}]`,
+    };
+    navigate(targetPath, { state: { notification } });
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <header className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-            <MdMessage />
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+              <MdMessage />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
+              <p className="text-sm text-gray-500">
+                Active chats for {roleLabel.toLowerCase()} accounts.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Messages</h1>
-            <p className="text-sm text-gray-500">
-              Active chats for {roleLabel.toLowerCase()} accounts.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setViewArchive((prev) => !prev);
+              setSelectedAppointmentId(null);
+              setActiveSessionMenuId(null);
+              setDraft("");
+            }}
+            className="self-start rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition"
+          >
+            {viewArchive ? "Back to inbox" : "View archive"}
+          </button>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
@@ -647,7 +706,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                           {item.name}
                         </p>
                         <p className="text-xs text-gray-500 line-clamp-1">
-                          {item.subjectLabel}
+                          {item.name} - {item.subjectLabel}
                         </p>
                       </div>
                     </div>
@@ -692,20 +751,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     </p>
                   </div>
                   </div>
-                  {selectedUserId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewArchive((prev) => !prev);
-                        setSelectedAppointmentId(null);
-                        setActiveSessionMenuId(null);
-                        setDraft("");
-                      }}
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-800"
-                    >
-                      {viewArchive ? "Back to inbox" : "View archive"}
-                    </button>
-                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -729,7 +774,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                               : ""}
                           </span>
                         </div>
-                        <div className="relative">
+                        <div className="relative" ref={sessionMenuRef}>
                           <button
                             type="button"
                             onClick={() =>
@@ -746,6 +791,16 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                           </button>
                           {activeSessionMenuId === appointment.appointment_id && (
                             <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                  setActiveSessionMenuId(null);
+                                  handleViewAppointmentDetails(appointment.appointment_id);
+                                }}
+                              >
+                                View appointment details
+                              </button>
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -804,11 +859,18 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     <span>No appointment details available.</span>
                   )}
                 </div>
+                {selectedAppointment?.status === "cancelled" && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    Session cancelled. Reason: {sessionCancelReason}
+                  </div>
+                )}
 
                 <div className="border-t border-gray-100" />
 
                 <div className="flex-1 space-y-4">
-                  {loading ? (
+                  {viewArchive ? (
+                    <div className="text-sm text-gray-500">Empty chat.</div>
+                  ) : loading ? (
                     <div className="text-sm text-gray-500">Loading thread...</div>
                   ) : threadMessages.length === 0 ? (
                     <div className="text-sm text-gray-500">
@@ -871,7 +933,11 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     <textarea
                       rows={2}
                       className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
-                      placeholder="Type a message..."
+                      placeholder={
+                        isSessionClosed
+                          ? "Messaging closed after session end."
+                          : "Type a message..."
+                      }
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
                       onKeyDown={(event) => {
@@ -880,12 +946,17 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                           handleSendMessage();
                         }
                       }}
-                      disabled={!selectedAppointmentId || sending}
+                      disabled={!selectedAppointmentId || sending || isSessionClosed}
                     />
                     <button
                       type="button"
                       onClick={handleSendMessage}
-                      disabled={!draft.trim() || !selectedAppointmentId || sending}
+                      disabled={
+                        !draft.trim() ||
+                        !selectedAppointmentId ||
+                        sending ||
+                        isSessionClosed
+                      }
                       className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {sending ? "Sending..." : "Send"}
