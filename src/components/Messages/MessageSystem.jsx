@@ -589,6 +589,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       return next;
     });
     setActiveSessionMenuId(null);
+    setViewArchive(false);
   };
 
   const handleSendMessage = async () => {
