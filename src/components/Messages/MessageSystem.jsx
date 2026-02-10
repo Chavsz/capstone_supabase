@@ -23,7 +23,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const channelRef = useRef(null);
-  const sessionMenuRef = useRef(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [search, setSearch] = useState("");
   const [activeSessionMenuId, setActiveSessionMenuId] = useState(null);
@@ -170,10 +169,8 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        sessionMenuRef.current &&
-        !sessionMenuRef.current.contains(event.target)
-      ) {
+      const menuRoot = event.target.closest("[data-session-menu]");
+      if (!menuRoot) {
         setActiveSessionMenuId(null);
       }
     };
@@ -802,7 +799,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                                 </p>
                               </div>
                             </div>
-                            <div className="relative" ref={sessionMenuRef}>
+                            <div className="relative" data-session-menu>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -908,7 +905,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                               : ""}
                           </span>
                         </div>
-                        <div className="relative" ref={sessionMenuRef}>
+                        <div className="relative" data-session-menu>
                           <button
                             type="button"
                             onClick={() =>
