@@ -753,6 +753,48 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     <div className="text-sm text-gray-500">
                       No archived sessions yet.
                     </div>
+                    {!viewArchive && (
+                      <div className="mt-2 flex justify-end" data-session-menu>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveSessionMenuId((prev) =>
+                                prev === "session-header" ? null : "session-header"
+                              )
+                            }
+                            className="text-gray-500 hover:text-gray-700"
+                            aria-label="Session options"
+                          >
+                            <MdMoreVert />
+                          </button>
+                          {activeSessionMenuId === "session-header" && (
+                            <div className="absolute right-0 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                  setActiveSessionMenuId(null);
+                                  handleViewAppointmentDetails(selectedAppointmentId);
+                                }}
+                              >
+                                View appointment details
+                              </button>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                  setActiveSessionMenuId(null);
+                                  handleArchiveSession(selectedAppointmentId);
+                                }}
+                              >
+                                Add to archive
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   ) : (
                     archivedAppointmentsList.map((appointment) => {
                       const otherId =
@@ -1060,80 +1102,38 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                 </div>
 
                 {!viewArchive && (
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex flex-col gap-2">
-                    <div className="flex justify-end">
-                      <div className="relative" data-session-menu>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setActiveSessionMenuId((prev) =>
-                              prev === "composer" ? null : "composer"
-                            )
-                          }
-                          className="text-gray-500 hover:text-gray-700"
-                          aria-label="Composer options"
-                        >
-                          <MdMoreVert />
-                        </button>
-                        {activeSessionMenuId === "composer" && (
-                          <div className="absolute right-0 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              onClick={() => {
-                                setActiveSessionMenuId(null);
-                                handleViewAppointmentDetails(selectedAppointmentId);
-                              }}
-                            >
-                              View appointment details
-                            </button>
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              onClick={() => {
-                                setActiveSessionMenuId(null);
-                                handleArchiveSession(selectedAppointmentId);
-                              }}
-                            >
-                              Add to archive
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <textarea
-                        rows={2}
-                        className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
-                        placeholder={
-                          isSessionClosed
-                            ? "Messaging closed after session end."
-                            : "Type a message..."
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 flex items-end gap-2">
+                    <textarea
+                      rows={2}
+                      className="w-full resize-none bg-transparent text-sm text-gray-700 focus:outline-none"
+                      placeholder={
+                        isSessionClosed
+                          ? "Messaging closed after session end."
+                          : "Type a message..."
+                      }
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          handleSendMessage();
                         }
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" && !event.shiftKey) {
-                            event.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        disabled={!selectedAppointmentId || sending || isSessionClosed}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSendMessage}
-                        disabled={
-                          !draft.trim() ||
-                          !selectedAppointmentId ||
-                          sending ||
-                          isSessionClosed
-                        }
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {sending ? "Sending..." : "Send"}
-                      </button>
-                    </div>
+                      }}
+                      disabled={!selectedAppointmentId || sending || isSessionClosed}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendMessage}
+                      disabled={
+                        !draft.trim() ||
+                        !selectedAppointmentId ||
+                        sending ||
+                        isSessionClosed
+                      }
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sending ? "Sending..." : "Send"}
+                    </button>
                   </div>
                 )}
 
