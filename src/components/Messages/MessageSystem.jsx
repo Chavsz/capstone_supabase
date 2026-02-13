@@ -753,48 +753,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     <div className="text-sm text-gray-500">
                       No archived sessions yet.
                     </div>
-                    {!viewArchive && (
-                      <div className="mt-2 flex justify-end" data-session-menu>
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setActiveSessionMenuId((prev) =>
-                                prev === "session-header" ? null : "session-header"
-                              )
-                            }
-                            className="text-gray-500 hover:text-gray-700"
-                            aria-label="Session options"
-                          >
-                            <MdMoreVert />
-                          </button>
-                          {activeSessionMenuId === "session-header" && (
-                            <div className="absolute right-0 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                onClick={() => {
-                                  setActiveSessionMenuId(null);
-                                  handleViewAppointmentDetails(selectedAppointmentId);
-                                }}
-                              >
-                                View appointment details
-                              </button>
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                onClick={() => {
-                                  setActiveSessionMenuId(null);
-                                  handleArchiveSession(selectedAppointmentId);
-                                }}
-                              >
-                                Add to archive
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   ) : (
                     archivedAppointmentsList.map((appointment) => {
                       const otherId =
