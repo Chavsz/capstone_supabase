@@ -56,7 +56,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
             "appointment_id, subject, topic, date, start_time, end_time, user_id, tutor_id, status, tutor_decline_reason, tutee_decline_reason"
           )
           .or(`user_id.eq.${userId},tutor_id.eq.${userId}`)
-          .eq("status", "confirmed")
+          .in("status", ["confirmed", "started", "awaiting_feedback", "completed", "cancelled"])
           .order("date", { ascending: true });
 
         if (appointmentError) throw appointmentError;
