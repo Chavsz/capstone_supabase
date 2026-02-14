@@ -748,77 +748,81 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
               ) : conversations.length === 0 ? (
                 <div className="text-sm text-gray-500">No conversations yet.</div>
               ) : (
-                <div className="space-y-3">
-                  {pagedConversations.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedUserId(item.id);
-                        setSelectedAppointmentId(null);
-                        setDraft("");
-                      }}
-                      className={`relative w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                        selectedUserId === item.id
-                          ? "border-blue-200 bg-blue-50"
-                          : "border-gray-100 bg-white hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {item.profileImage ? (
-                          <img
-                            src={item.profileImage}
-                            alt={item.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                            {item.name
-                              .split(" ")
-                              .map((part) => part[0])
-                              .join("")
-                              .slice(0, 2)}
+                <>
+                  <div className="space-y-3">
+                    {pagedConversations.map((item) => (
+                      <button
+                        type="button"
+                        key={item.id}
+                        onClick={() => {
+                          setSelectedUserId(item.id);
+                          setSelectedAppointmentId(null);
+                          setDraft("");
+                        }}
+                        className={`relative w-full text-left flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                          selectedUserId === item.id
+                            ? "border-blue-200 bg-blue-50"
+                            : "border-gray-100 bg-white hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.profileImage ? (
+                            <img
+                              src={item.profileImage}
+                              alt={item.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
+                              {item.name
+                                .split(" ")
+                                .map((part) => part[0])
+                                .join("")
+                                .slice(0, 2)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-gray-500 line-clamp-1">
+                              {item.name} - {item.subjectLabel}
+                            </p>
                           </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">
-                            {item.name}
-                          </p>
-                          <p className="text-xs text-gray-500 line-clamp-1">
-                            {item.name} - {item.subjectLabel}
-                          </p>
                         </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                {conversations.length > PAGE_SIZE && (
-                  <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
-                    <button
-                      type="button"
-                      onClick={() => setConversationPage((prev) => Math.max(1, prev - 1))}
-                      disabled={conversationPage === 1}
-                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <span>
-                      Page {conversationPage} of {totalConversationPages}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setConversationPage((prev) =>
-                          Math.min(totalConversationPages, prev + 1)
-                        )
-                      }
-                      disabled={conversationPage === totalConversationPages}
-                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
+                      </button>
+                    ))}
                   </div>
-                )}
+                  {conversations.length > PAGE_SIZE && (
+                    <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConversationPage((prev) => Math.max(1, prev - 1))
+                        }
+                        disabled={conversationPage === 1}
+                        className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span>
+                        Page {conversationPage} of {totalConversationPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConversationPage((prev) =>
+                            Math.min(totalConversationPages, prev + 1)
+                          )
+                        }
+                        disabled={conversationPage === totalConversationPages}
+                        className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </section>
           )}
