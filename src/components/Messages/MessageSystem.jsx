@@ -3,6 +3,8 @@ import { MdMessage, MdSearch, MdMoreVert } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase-client";
 
+const PAGE_SIZE = 3;
+
 const formatTimestamp = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -27,6 +29,9 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
   const [search, setSearch] = useState("");
   const [activeSessionMenuId, setActiveSessionMenuId] = useState(null);
   const [viewArchive, setViewArchive] = useState(false);
+  const [conversationPage, setConversationPage] = useState(1);
+  const [archivePage, setArchivePage] = useState(1);
+  const [sessionPage, setSessionPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -300,15 +305,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     setSelectedAppointmentId(null);
   }, [currentUserId, confirmedAppointments]);
 
-  const appointmentsById = useMemo(() => {
-    const map = new Map();
-    confirmedAppointments.forEach((appointment) => {
-      if (appointment.appointment_id) {
-        map.set(appointment.appointment_id, appointment);
-      }
-    });
-    return map;
-  }, [confirmedAppointments]);
 
   const messagesByAppointment = useMemo(() => {
     const map = new Map();
@@ -440,6 +436,19 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     confirmedAppointments,
   ]);
 
+  const totalConversationPages = Math.max(
+    1,
+    Math.ceil(conversations.length / PAGE_SIZE)
+  );
+  const pagedConversations = useMemo(
+    () =>
+      conversations.slice(
+        (conversationPage - 1) * PAGE_SIZE,
+        conversationPage * PAGE_SIZE
+      ),
+    [conversations, conversationPage]
+  );
+
   const threadMessages = useMemo(() => {
     if (!selectedAppointmentId) return [];
     const list = messagesByAppointment.get(selectedAppointmentId) || [];
@@ -487,6 +496,62 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
     archivedAppointmentIds,
   ]);
 
+  const totalArchivePages = Math.max(
+    1,
+    Math.ceil(archivedAppointmentsList.length / PAGE_SIZE)
+  );
+  const pagedArchivedAppointments = useMemo(
+    () =>
+      archivedAppointmentsList.slice(
+        (archivePage - 1) * PAGE_SIZE,
+        archivePage * PAGE_SIZE
+      ),
+    [archivedAppointmentsList, archivePage]
+  );
+
+  const totalSessionPages = Math.max(
+    1,
+    Math.ceil(selectedUserAppointments.length / PAGE_SIZE)
+  );
+  const pagedSelectedUserAppointments = useMemo(
+    () =>
+      selectedUserAppointments.slice(
+        (sessionPage - 1) * PAGE_SIZE,
+        sessionPage * PAGE_SIZE
+      ),
+    [selectedUserAppointments, sessionPage]
+  );
+
+  useEffect(() => {
+    setConversationPage(1);
+  }, [search, viewArchive]);
+
+  useEffect(() => {
+    setArchivePage(1);
+  }, [archivedAppointmentsList.length, viewArchive]);
+
+  useEffect(() => {
+    setSessionPage(1);
+  }, [selectedUserId, selectedUserAppointments.length, viewArchive]);
+
+  useEffect(() => {
+    if (conversationPage > totalConversationPages) {
+      setConversationPage(totalConversationPages);
+    }
+  }, [conversationPage, totalConversationPages]);
+
+  useEffect(() => {
+    if (archivePage > totalArchivePages) {
+      setArchivePage(totalArchivePages);
+    }
+  }, [archivePage, totalArchivePages]);
+
+  useEffect(() => {
+    if (sessionPage > totalSessionPages) {
+      setSessionPage(totalSessionPages);
+    }
+  }, [sessionPage, totalSessionPages]);
+
   const selectedAppointment = useMemo(
     () =>
       confirmedAppointments.find(
@@ -494,15 +559,6 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       ) || null,
     [confirmedAppointments, selectedAppointmentId]
   );
-
-  const selectedPartnerName = useMemo(() => {
-    if (!selectedAppointment || !currentUserId) return "";
-    const partnerId =
-      selectedAppointment.user_id === currentUserId
-        ? selectedAppointment.tutor_id
-        : selectedAppointment.user_id;
-    return userMap.get(partnerId) || "User";
-  }, [selectedAppointment, currentUserId, userMap]);
 
   const selectedUserProfile = useMemo(() => {
     if (!selectedUserId) return "";
@@ -693,7 +749,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                 <div className="text-sm text-gray-500">No conversations yet.</div>
               ) : (
                 <div className="space-y-3">
-                  {conversations.map((item) => (
+                  {pagedConversations.map((item) => (
                     <button
                       type="button"
                       key={item.id}
@@ -736,6 +792,33 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     </button>
                   ))}
                 </div>
+                {conversations.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
+                    <button
+                      type="button"
+                      onClick={() => setConversationPage((prev) => Math.max(1, prev - 1))}
+                      disabled={conversationPage === 1}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {conversationPage} of {totalConversationPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setConversationPage((prev) =>
+                          Math.min(totalConversationPages, prev + 1)
+                        )
+                      }
+                      disabled={conversationPage === totalConversationPages}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               )}
             </section>
           )}
@@ -758,7 +841,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                       No archived sessions yet.
                     </div>
                   ) : (
-                    archivedAppointmentsList.map((appointment) => {
+                    pagedArchivedAppointments.map((appointment) => {
                       const otherId =
                         appointment.user_id === currentUserId
                           ? appointment.tutor_id
@@ -851,6 +934,31 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     })
                   )}
                 </div>
+                {archivedAppointmentsList.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
+                    <button
+                      type="button"
+                      onClick={() => setArchivePage((prev) => Math.max(1, prev - 1))}
+                      disabled={archivePage === 1}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {archivePage} of {totalArchivePages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setArchivePage((prev) => Math.min(totalArchivePages, prev + 1))
+                      }
+                      disabled={archivePage === totalArchivePages}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             ) : !selectedAppointmentId ? (
               <>
@@ -889,7 +997,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                 </div>
 
                 <div className="space-y-3">
-                  {selectedUserAppointments.map((appointment) => (
+                  {pagedSelectedUserAppointments.map((appointment) => (
                     <div
                       key={appointment.appointment_id}
                       className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex flex-col gap-2"
@@ -971,6 +1079,33 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
                     </div>
                   )}
                 </div>
+                {selectedUserAppointments.length > PAGE_SIZE && (
+                  <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
+                    <button
+                      type="button"
+                      onClick={() => setSessionPage((prev) => Math.max(1, prev - 1))}
+                      disabled={sessionPage === 1}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {sessionPage} of {totalSessionPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSessionPage((prev) =>
+                          Math.min(totalSessionPages, prev + 1)
+                        )
+                      }
+                      disabled={sessionPage === totalSessionPages}
+                      className="px-2 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <>
