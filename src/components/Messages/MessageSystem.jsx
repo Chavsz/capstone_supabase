@@ -560,6 +560,10 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
       return next;
     });
     setActiveSessionMenuId(null);
+    if (selectedAppointmentId === appointmentId) {
+      setSelectedAppointmentId(null);
+      setDraft("");
+    }
   };
 
   const handleUnarchiveSession = async (appointmentId) => {
