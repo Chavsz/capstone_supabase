@@ -972,19 +972,61 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
               <>
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
                   {selectedAppointment ? (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-gray-700">
                         {selectedAppointment.subject || "Subject"}
                       </span>
                       <span className="text-gray-400">•</span>
                       <span>{selectedAppointment.topic || "Topic"}</span>
                       <span className="text-gray-400">•</span>
-                      <span>
-                        {selectedAppointment.date} {selectedAppointment.start_time}
-                        {selectedAppointment.end_time
-                          ? ` - ${selectedAppointment.end_time}`
-                          : ""}
-                      </span>
+                        <span>
+                          {selectedAppointment.date} {selectedAppointment.start_time}
+                          {selectedAppointment.end_time
+                            ? ` - ${selectedAppointment.end_time}`
+                            : ""}
+                        </span>
+                      </div>
+                      {!viewArchive && (
+                        <div className="relative" data-session-menu>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveSessionMenuId((prev) =>
+                                prev === "session-header" ? null : "session-header"
+                              )
+                            }
+                            className="text-gray-500 hover:text-gray-700"
+                            aria-label="Session options"
+                          >
+                            <MdMoreVert />
+                          </button>
+                          {activeSessionMenuId === "session-header" && (
+                            <div className="absolute right-0 mt-2 w-52 rounded-lg border border-gray-200 bg-white shadow-lg z-10">
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                  setActiveSessionMenuId(null);
+                                  handleViewAppointmentDetails(selectedAppointmentId);
+                                }}
+                              >
+                                View appointment details
+                              </button>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => {
+                                  setActiveSessionMenuId(null);
+                                  handleArchiveSession(selectedAppointmentId);
+                                }}
+                              >
+                                Add to archive
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span>No appointment details available.</span>
