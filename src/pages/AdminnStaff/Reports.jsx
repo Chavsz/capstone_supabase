@@ -1206,9 +1206,13 @@ const Reports = () => {
 
   if (loading && !hasLoaded) {
     return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-2xl font-bold text-gray-700">Reports</h1>
-        <p className="text-gray-500 mt-2 text-sm">Loading analytics...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9f0]">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#3480eb] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-[#323335] text-sm">Loading Reports...</p>
+        </div>
       </div>
     );
   }

@@ -1213,9 +1213,13 @@ const Schedule = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <h1 className="text-gray-600 font-bold text-2xl">Appointments</h1>
-        <div className="mt-6 text-center">Loading appointments...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9f0]">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#3480eb] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-[#323335] text-sm">Loading appointments...</p>
+        </div>
       </div>
     );
   }

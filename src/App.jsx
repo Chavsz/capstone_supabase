@@ -50,8 +50,13 @@ import AdminSessionAnalytics from "./pages/AdminnStaff/SessionAnalytics";
 function RoleBasedLayout({ setAuth, currentRole, loading }) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-blue-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9f0]">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#3480eb] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-[#323335] text-sm">Loading appointments...</p>
+        </div>
       </div>
     );
   }
@@ -119,9 +124,14 @@ function AppRoutes({ isAuthenticated, setAuth, currentRole, loading }) {
   const { userDetails } = useUserDetails();
   const isSuperadmin = Boolean(userDetails?.is_superadmin);
   const loadingScreen = (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-blue-600">Loading...</div>
-    </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#f8f9f0]">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#3480eb] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-[#323335] text-sm">Loading appointments...</p>
+        </div>
+      </div>
   );
 
   return (

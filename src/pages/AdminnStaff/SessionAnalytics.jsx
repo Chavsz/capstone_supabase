@@ -282,7 +282,7 @@ const SessionAnalytics = () => {
         const averageGain =
           improvements.length > 0
             ? improvements.reduce((sum, value) => sum + value, 0) /
-              improvements.length
+            improvements.length
             : 0;
         const totalMastery = computeTotalMastery(tutor.sessions);
         return {
@@ -329,12 +329,12 @@ const SessionAnalytics = () => {
       activeSubject === "All"
         ? leaderboard
         : leaderboard.filter((row) => row.tutor_subject === activeSubject);
-      const withStats = scopedRows.map((row) => {
-        const subjectSessions =
-          activeSubject === "All"
-            ? row.sessions
-            : row.sessions.filter((session) => session.subject === activeSubject);
-        const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
+    const withStats = scopedRows.map((row) => {
+      const subjectSessions =
+        activeSubject === "All"
+          ? row.sessions
+          : row.sessions.filter((session) => session.subject === activeSubject);
+      const sortedSubjectSessions = [...subjectSessions].sort(compareSessionsByDate);
       const improvements = subjectSessions
         .map((session) =>
           computeImprovement(
@@ -349,40 +349,39 @@ const SessionAnalytics = () => {
         const post = Number(session.post_test_score);
         return Number.isFinite(pre) && Number.isFinite(post);
       });
-        const averageGain =
-          improvements.length > 0
-            ? improvements.reduce((sum, value) => sum + value, 0) /
-              improvements.length
-            : 0;
-        const totalMastery = computeTotalMastery(subjectSessions);
-        return {
-          ...row,
-          effectiveSessions: subjectSessions.length,
-          effectiveAverageGain: averageGain,
-          effectiveTotalMastery: totalMastery,
-          effectiveHasScores: hasScores,
-          effectiveLastSession:
-            sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
-        };
-      });
+      const averageGain =
+        improvements.length > 0
+          ? improvements.reduce((sum, value) => sum + value, 0) /
+          improvements.length
+          : 0;
+      const totalMastery = computeTotalMastery(subjectSessions);
+      return {
+        ...row,
+        effectiveSessions: subjectSessions.length,
+        effectiveAverageGain: averageGain,
+        effectiveTotalMastery: totalMastery,
+        effectiveHasScores: hasScores,
+        effectiveLastSession:
+          sortedSubjectSessions[sortedSubjectSessions.length - 1] || null,
+      };
+    });
     const sorted = [...withStats].sort((a, b) => b.effectiveAverageGain - a.effectiveAverageGain);
     const normalized = searchQuery.trim().toLowerCase();
     const searched = normalized
       ? sorted.filter((row) => {
-          const sessionText = (activeSubject === "All"
-            ? row.sessions
-            : row.sessions.filter((session) => session.subject === activeSubject))
-            .map(
-              (session) =>
-                `${session.subject} ${session.topic || ""} ${session.tutor_notes || ""} ${
-                  session.student_name || ""
-                }`
-            )
-            .join(" ")
-            .toLowerCase();
-          const haystack = `${row.tutor_name} ${row.tutor_subject || ""} ${sessionText}`.toLowerCase();
-          return haystack.includes(normalized);
-        })
+        const sessionText = (activeSubject === "All"
+          ? row.sessions
+          : row.sessions.filter((session) => session.subject === activeSubject))
+          .map(
+            (session) =>
+              `${session.subject} ${session.topic || ""} ${session.tutor_notes || ""} ${session.student_name || ""
+              }`
+          )
+          .join(" ")
+          .toLowerCase();
+        const haystack = `${row.tutor_name} ${row.tutor_subject || ""} ${sessionText}`.toLowerCase();
+        return haystack.includes(normalized);
+      })
       : sorted;
     const sortedByKey = [...searched];
     sortedByKey.sort((a, b) => {
@@ -464,6 +463,19 @@ const SessionAnalytics = () => {
     chartPageSafe * 10
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9f0]">
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-[#3480eb] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-4 text-[#323335] text-sm">Loading Analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="mb-6">
@@ -474,616 +486,697 @@ const SessionAnalytics = () => {
           Track tutor effectiveness using pre- and post-test scores.
         </p>
       </div>
-
-      {loading ? (
-        <div className="text-center text-gray-500">Loading analytics...</div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex flex-col items-end gap-2 sm:hidden">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>Month</span>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setRawPage(1);
-                setRawModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
-            >
-              <span className="text-green-600 font-bold">
-                {rawSessions.length}
-              </span>
-              View Sessions Test Result (Raw)
-            </button>
+      <div className="space-y-6">
+        <div className="flex flex-col items-end gap-2 sm:hidden">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>Month</span>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+            />
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-700">
-                ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
-              </h2>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>Month</span>
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRawPage(1);
-                    setRawModalOpen(true);
-                  }}
-                  className="hidden sm:inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
-                >
-                  <span className="text-green-600 font-bold">
-                    {rawSessions.length}
-                  </span>{" "}
-                  Sessions Test Result (Raw)
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {subjectTabs.map((subject) => (
-                <button
-                  key={subject}
-                  type="button"
-                  onClick={() => setActiveSubject(subject)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    activeSubject === subject
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {subject}
-                </button>
-              ))}
-            </div>
-
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tutor or tutee"
-                className="w-full sm:max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <button
+            type="button"
+            onClick={() => {
+              setRawPage(1);
+              setRawModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+          >
+            <span className="text-green-600 font-bold">
+              {rawSessions.length}
+            </span>
+            View Sessions Test Result (Raw)
+          </button>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 min-h-0 sm:min-h-[calc(100vh-260px)]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700">
+              ADMIN: TUTOR EFFECTIVENESS LEADERBOARD
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>Sort by</span>
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value)}
+                <span>Month</span>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
                   className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                >
-                  <option value="rank">Rank</option>
-                  <option value="tutor">Tutor</option>
-                  <option value="sessions">Sessions</option>
-                  <option value="avg">Avg Gain</option>
-                </select>
+                />
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRawPage(1);
+                  setRawModalOpen(true);
+                }}
+                className="hidden sm:inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+              >
+                <span className="text-green-600 font-bold">
+                  {rawSessions.length}
+                </span>{" "}
+                Sessions Test Result (Raw)
+              </button>
             </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {subjectTabs.map((subject) => (
+              <button
+                key={subject}
+                type="button"
+                onClick={() => setActiveSubject(subject)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${activeSubject === subject
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+              >
+                {subject}
+              </button>
+            ))}
+          </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {pagedLeaderboard.length === 0 ? (
-                <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
-                  No tutors available.
-                </div>
-              ) : (
-                pagedLeaderboard.map((row, index) => {
-                  const subjectSessions =
-                    activeSubject === "All"
-                      ? row.sessions
-                      : row.sessions.filter((session) => session.subject === activeSubject);
-                  const chartData = subjectSessions.slice(-6).map((session, idx) => ({
-                    name: idx + 1,
-                    pre: Number(session.pre_test_score) || 0,
-                    post: Number(session.post_test_score) || 0,
-                    preTotal: session.pre_test_total ?? "-",
-                    postTotal: session.post_test_total ?? "-",
-                  }));
-                  return (
-                    <div
-                      key={row.tutor_id}
-                      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                            {row.tutor_image ? (
-                              <img
-                                src={row.tutor_image}
-                                alt={row.tutor_name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-blue-700 font-bold">
-                                {(row.tutor_name || "T").charAt(0).toUpperCase()}
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tutor or tutee"
+              className="w-full sm:max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Sort by</span>
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+              >
+                <option value="rank">Rank</option>
+                <option value="tutor">Tutor</option>
+                <option value="sessions">Sessions</option>
+                <option value="avg">Avg Gain</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {pagedLeaderboard.length === 0 ? (
+              <div className="col-span-full rounded-lg border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+                No tutors available.
+              </div>
+            ) : (
+              pagedLeaderboard.map((row, index) => {
+                const subjectSessions =
+                  activeSubject === "All"
+                    ? row.sessions
+                    : row.sessions.filter((session) => session.subject === activeSubject);
+                const chartData = subjectSessions.slice(-6).map((session, idx) => ({
+                  name: idx + 1,
+                  pre: Number(session.pre_test_score) || 0,
+                  post: Number(session.post_test_score) || 0,
+                  preTotal: session.pre_test_total ?? "-",
+                  postTotal: session.post_test_total ?? "-",
+                }));
+                return (
+                  <div
+                    key={row.tutor_id}
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                          {row.tutor_image ? (
+                            <img
+                              src={row.tutor_image}
+                              alt={row.tutor_name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-blue-700 font-bold">
+                              {(row.tutor_name || "T").charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            {row.effectiveHasScores && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                                #{rankMap[row.tutor_id]}
+                              </span>
+                            )}
+                            {activeSubject === "All" && row.tutor_subject && (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                {row.tutor_subject}
                               </span>
                             )}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                              {row.effectiveHasScores && (
-                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                                  #{rankMap[row.tutor_id]}
-                                </span>
-                              )}
-                              {activeSubject === "All" && row.tutor_subject && (
-                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                  {row.tutor_subject}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="text-base font-semibold text-gray-800">
-                              {row.tutor_name}
-                            </h3>
-                            <p className="text-xs text-gray-500">
-                              {row.effectiveSessions} sessions | Total Mastery:{" "}
-                              <span className="font-semibold text-green-600">
-                                {formatPercent(row.effectiveTotalMastery)}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
-                          <div className="h-[120px] sm:h-[72px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <Legend wrapperStyle={{ fontSize: 9 }} />
-                                <Tooltip content={renderScoreTooltip} />
-                                <Line
-                                  type="monotone"
-                                  dataKey="pre"
-                                  name="Pre"
-                                  stroke="#94a3b8"
-                                  strokeWidth={2}
-                                  dot={false}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="post"
-                                  name="Post"
-                                  stroke="#0ea5e9"
-                                  strokeWidth={2}
-                                  dot={false}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="mt-2 flex items-center justify-end text-[11px] text-gray-500">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setChartTutor(row);
-                                setChartPage(1);
-                              }}
-                              className="font-semibold text-blue-600 hover:text-blue-800"
-                            >
-                              View chart
-                            </button>
-                          </div>
+                          <h3 className="text-base font-semibold text-gray-800">
+                            {row.tutor_name}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {row.effectiveSessions} sessions | Total Mastery:{" "}
+                            <span className="font-semibold text-green-600">
+                              {formatPercent(row.effectiveTotalMastery)}
+                            </span>
+                          </p>
                         </div>
                       </div>
-
-                      <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>{row.effectiveLastSession?.date || "-"}</span>
-                          <span>
-                            {row.effectiveLastSession?.start_time
-                              ? row.effectiveLastSession.start_time.slice(0, 5)
-                              : ""}
-                          </span>
+                      <div className="w-full sm:w-40 rounded-lg border border-gray-200 bg-gray-50 p-2 sm:mt-0">
+                        <div className="h-[120px] sm:h-[72px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <Legend wrapperStyle={{ fontSize: 9 }} />
+                              <Tooltip content={renderScoreTooltip} />
+                              <Line
+                                type="monotone"
+                                dataKey="pre"
+                                name="Pre"
+                                stroke="#94a3b8"
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="post"
+                                name="Post"
+                                stroke="#0ea5e9"
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
                         </div>
-                        <div className="mt-1 flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold text-gray-800">
-                              {row.effectiveLastSession?.subject || "No session at the moment"}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {row.effectiveLastSession?.topic || "-"}
-                            </p>
-                          </div>
-                          <div className="text-right text-xs">
-                            <p>
-                              Pre:{" "}
-                              {formatScoreWithTotal(
-                                row.effectiveLastSession?.pre_test_score,
-                                row.effectiveLastSession?.pre_test_total
-                              )}
-                            </p>
-                            <p>
-                              Post:{" "}
-                              {formatScoreWithTotal(
-                                row.effectiveLastSession?.post_test_score,
-                                row.effectiveLastSession?.post_test_total
-                              )}
-                            </p>
-                            <p className="text-green-600 font-semibold">+0.0%</p>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex justify-end gap-2">
+                        <div className="mt-2 flex items-center justify-end text-[11px] text-gray-500">
                           <button
                             type="button"
-                            onClick={() =>
-                              setNotesModal({
-                                tutor_name: row.tutor_name,
-                                subject: row.effectiveLastSession?.subject || "-",
-                                topic: row.effectiveLastSession?.topic || "-",
-                                notes: row.effectiveLastSession?.tutor_notes || "",
-                              })
-                            }
-                            className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                            onClick={() => {
+                              setChartTutor(row);
+                              setChartPage(1);
+                            }}
+                            className="font-semibold text-blue-600 hover:text-blue-800"
                           >
-                            View notes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedTutor(row)}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                          >
-                            View all sessions
+                            View chart
                           </button>
                         </div>
                       </div>
                     </div>
-                  );
-                })
+
+                    <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>{row.effectiveLastSession?.date || "-"}</span>
+                        <span>
+                          {row.effectiveLastSession?.start_time
+                            ? row.effectiveLastSession.start_time.slice(0, 5)
+                            : ""}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-800">
+                            {row.effectiveLastSession?.subject || "No session at the moment"}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {row.effectiveLastSession?.topic || "-"}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs">
+                          <p>
+                            Pre:{" "}
+                            {formatScoreWithTotal(
+                              row.effectiveLastSession?.pre_test_score,
+                              row.effectiveLastSession?.pre_test_total
+                            )}
+                          </p>
+                          <p>
+                            Post:{" "}
+                            {formatScoreWithTotal(
+                              row.effectiveLastSession?.post_test_score,
+                              row.effectiveLastSession?.post_test_total
+                            )}
+                          </p>
+                          <p className="text-green-600 font-semibold">+0.0%</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNotesModal({
+                              tutor_name: row.tutor_name,
+                              subject: row.effectiveLastSession?.subject || "-",
+                              topic: row.effectiveLastSession?.topic || "-",
+                              notes: row.effectiveLastSession?.tutor_notes || "",
+                            })
+                          }
+                          className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                        >
+                          View notes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTutor(row)}
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                        >
+                          View all sessions
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+        {!loading && totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+            <button
+              type="button"
+              className={`px-3 py-1 rounded border ${currentPageSafe === 1
+                  ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                }`}
+              disabled={currentPageSafe === 1}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            >
+              Previous
+            </button>
+            <span className="text-xs text-gray-500">
+              Page {currentPageSafe} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className={`px-3 py-1 rounded border ${currentPageSafe === totalPages
+                  ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                }`}
+              disabled={currentPageSafe === totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {selectedTutor && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                    {selectedTutor.tutor_image ? (
+                      <img
+                        src={selectedTutor.tutor_image}
+                        alt={selectedTutor.tutor_name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-blue-700 font-bold">
+                        {(selectedTutor.tutor_name || "T").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-800">
+                      {selectedTutor.tutor_name}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {activeSubject === "All" ? "All subjects" : activeSubject} sessions
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTutor(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Close sessions"
+                >
+                  x
+                </button>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
+                <table className="w-full text-sm min-w-[720px] sm:min-w-0">
+                  <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                      <th className="text-left px-4 py-3">Date</th>
+                      <th className="text-left px-4 py-3">Tutee</th>
+                      <th className="text-left px-4 py-3">Subject</th>
+                      <th className="text-left px-4 py-3">Specialization</th>
+                      <th className="text-center px-4 py-3">Pre</th>
+                      <th className="text-center px-4 py-3">Post</th>
+                      <th className="text-center px-4 py-3">Avg Gain</th>
+                      <th className="text-center px-4 py-3">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSessions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="px-4 py-6 text-center text-sm text-gray-500"
+                        >
+                          No sessions available for this tutor.
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedSessions.map((session) => {
+                        const improvement = computeImprovement(
+                          session.pre_test_score,
+                          session.post_test_score,
+                          session.pre_test_total
+                        );
+                        return (
+                          <tr
+                            key={session.appointment_id || session.evaluation_id}
+                            className="border-t border-gray-100"
+                          >
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.date || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.student_name || "Unknown"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-700">
+                              {session.subject || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.topic || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {formatScoreWithTotal(
+                                session.pre_test_score,
+                                session.pre_test_total
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {formatScoreWithTotal(
+                                session.post_test_score,
+                                session.post_test_total
+                              )}
+                            </td>
+                            <td
+                              className={`px-4 py-3 text-center text-sm font-semibold ${improvement === null || improvement >= 0
+                                  ? "text-green-600"
+                                  : "text-orange-600"
+                                }`}
+                            >
+                              {improvement === null
+                                ? "+0.0%"
+                                : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setNotesModal({
+                                    tutor_name: selectedTutor.tutor_name,
+                                    subject: session.subject,
+                                    topic: session.topic,
+                                    notes: session.tutor_notes || "",
+                                  })
+                                }
+                                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {notesModal && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
+                <button
+                  type="button"
+                  onClick={() => setNotesModal(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Close notes"
+                >
+                  x
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                {notesModal.tutor_name} - {notesModal.subject} - {notesModal.topic}
+              </p>
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
+                {notesModal.notes ? notesModal.notes : "No notes provided yet."}
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setNotesModal(null)}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {rawModalOpen && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-lg font-bold text-gray-800">
+                  <span className="text-green-600 font-semibold">
+                    {rawSessions.length}
+                  </span>{" "}
+                  Sessions Test Result (Raw)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setRawModalOpen(false)}
+                  className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                  aria-label="Close raw sessions"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
+                <table className="w-full text-sm min-w-[720px] sm:min-w-0">
+                  <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                    <tr>
+                      <th className="text-left px-4 py-3">Date</th>
+                      <th className="text-left px-4 py-3">Tutor</th>
+                      <th className="text-left px-4 py-3">Tutee</th>
+                      <th className="text-left px-4 py-3">Subject</th>
+                      <th className="text-left px-4 py-3">Specialization</th>
+                      <th className="text-center px-4 py-3">Pre</th>
+                      <th className="text-center px-4 py-3">Post</th>
+                      <th className="text-center px-4 py-3">Avg Gain</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rawPagedSessions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={8}
+                          className="px-4 py-6 text-center text-sm text-gray-500"
+                        >
+                          No sessions available.
+                        </td>
+                      </tr>
+                    ) : (
+                      rawPagedSessions.map((session) => {
+                        const improvement = computeImprovement(
+                          session.pre_test_score,
+                          session.post_test_score,
+                          session.pre_test_total
+                        );
+                        return (
+                          <tr
+                            key={session.evaluation_id || session.appointment_id}
+                            className="border-t border-gray-100"
+                          >
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.date || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-700">
+                              {session.tutor_name || "Unknown"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.student_name || "Unknown"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-700">
+                              {session.subject || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-left text-gray-600">
+                              {session.topic || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {formatScoreWithTotal(
+                                session.pre_test_score,
+                                session.pre_test_total
+                              ) === "-" ? (
+                                <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
+                              ) : (
+                                formatScoreWithTotal(
+                                  session.pre_test_score,
+                                  session.pre_test_total
+                                )
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {formatScoreWithTotal(
+                                session.post_test_score,
+                                session.post_test_total
+                              ) === "-" ? (
+                                <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
+                              ) : (
+                                formatScoreWithTotal(
+                                  session.post_test_score,
+                                  session.post_test_total
+                                )
+                              )}
+                            </td>
+                            <td
+                              className={`px-4 py-3 text-center text-sm font-semibold ${improvement === null || improvement >= 0
+                                  ? "text-green-600"
+                                  : "text-orange-600"
+                                }`}
+                            >
+                              {improvement === null
+                                ? "+0.0%"
+                                : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {rawTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded border ${rawPageSafe === 1
+                        ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                      }`}
+                    disabled={rawPageSafe === 1}
+                    onClick={() => setRawPage((prev) => Math.max(prev - 1, 1))}
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    Page {rawPageSafe} of {rawTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded border ${rawPageSafe === rawTotalPages
+                        ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
+                      }`}
+                    disabled={rawPageSafe === rawTotalPages}
+                    onClick={() => setRawPage((prev) => Math.min(prev + 1, rawTotalPages))}
+                  >
+                    Next
+                  </button>
+                </div>
               )}
             </div>
           </div>
-          {!loading && totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
-              <button
-                type="button"
-                className={`px-3 py-1 rounded border ${
-                  currentPageSafe === 1
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                }`}
-                disabled={currentPageSafe === 1}
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              >
-                Previous
-              </button>
-              <span className="text-xs text-gray-500">
-                Page {currentPageSafe} of {totalPages}
-              </span>
-              <button
-                type="button"
-                className={`px-3 py-1 rounded border ${
-                  currentPageSafe === totalPages
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                }`}
-                disabled={currentPageSafe === totalPages}
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              >
-                Next
-              </button>
-            </div>
-          )}
+        )}
 
-          {selectedTutor && (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                      {selectedTutor.tutor_image ? (
-                        <img
-                          src={selectedTutor.tutor_image}
-                          alt={selectedTutor.tutor_name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-blue-700 font-bold">
-                          {(selectedTutor.tutor_name || "T").charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-800">
-                        {selectedTutor.tutor_name}
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        {activeSubject === "All" ? "All subjects" : activeSubject} sessions
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTutor(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close sessions"
-                  >
-                    x
-                  </button>
-                </div>
-
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
-                  <table className="w-full text-sm min-w-[720px] sm:min-w-0">
-                    <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                      <tr>
-                        <th className="text-left px-4 py-3">Date</th>
-                        <th className="text-left px-4 py-3">Tutee</th>
-                        <th className="text-left px-4 py-3">Subject</th>
-                        <th className="text-left px-4 py-3">Specialization</th>
-                        <th className="text-center px-4 py-3">Pre</th>
-                        <th className="text-center px-4 py-3">Post</th>
-                        <th className="text-center px-4 py-3">Avg Gain</th>
-                        <th className="text-center px-4 py-3">Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedSessions.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={8}
-                            className="px-4 py-6 text-center text-sm text-gray-500"
-                          >
-                            No sessions available for this tutor.
-                          </td>
-                        </tr>
-                      ) : (
-                        selectedSessions.map((session) => {
-                          const improvement = computeImprovement(
-                            session.pre_test_score,
-                            session.post_test_score,
-                            session.pre_test_total
-                          );
-                          return (
-                            <tr
-                              key={session.appointment_id || session.evaluation_id}
-                              className="border-t border-gray-100"
-                            >
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.date || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.student_name || "Unknown"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-700">
-                                {session.subject || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.topic || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.pre_test_score,
-                                  session.pre_test_total
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.post_test_score,
-                                  session.post_test_total
-                                )}
-                              </td>
-                              <td
-                                className={`px-4 py-3 text-center text-sm font-semibold ${
-                                  improvement === null || improvement >= 0
-                                    ? "text-green-600"
-                                    : "text-orange-600"
-                                }`}
-                              >
-                                {improvement === null
-                                  ? "+0.0%"
-                                  : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setNotesModal({
-                                      tutor_name: selectedTutor.tutor_name,
-                                      subject: session.subject,
-                                      topic: session.topic,
-                                      notes: session.tutor_notes || "",
-                                    })
-                                  }
-                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                                >
-                                  View
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {notesModal && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-800">Tutor Notes</h3>
-                  <button
-                    type="button"
-                    onClick={() => setNotesModal(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close notes"
-                  >
-                    x
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  {notesModal.tutor_name} - {notesModal.subject} - {notesModal.topic}
-                </p>
-                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 whitespace-pre-wrap">
-                  {notesModal.notes ? notesModal.notes : "No notes provided yet."}
-                </div>
-                <div className="mt-5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setNotesModal(null)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {rawModalOpen && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
-              <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl border border-gray-200 max-h-[85vh] overflow-y-auto">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h3 className="text-lg font-bold text-gray-800">
-                    <span className="text-green-600 font-semibold">
-                      {rawSessions.length}
-                    </span>{" "}
-                    Sessions Test Result (Raw)
+        {chartTutor && (
+          <div className="fixed inset-0 z-[75] flex items-start sm:items-center justify-center bg-black/30 px-4 py-6">
+            <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-gray-800">
+                    {chartTutor.tutor_name}
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setRawModalOpen(false)}
-                    className="text-xs font-semibold text-gray-500 hover:text-gray-700"
-                    aria-label="Close raw sessions"
-                  >
-                    Close
-                  </button>
+                  <p className="text-xs text-gray-500">
+                    {activeSubject === "All" ? "All subjects" : activeSubject} comparison
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setChartTutor(null)}
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Close chart"
+                >
+                  x
+                </button>
+              </div>
+
+              <div className="mt-5">
+                <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={chartSessions.map((session, idx) => ({
+                        name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
+                        pre: Number(session.pre_test_score) || 0,
+                        post: Number(session.post_test_score) || 0,
+                        preTotal: session.pre_test_total ?? "-",
+                        postTotal: session.post_test_total ?? "-",
+                        mastery: computeImprovement(
+                          session.pre_test_score,
+                          session.post_test_score,
+                          session.pre_test_total
+                        ) || 0,
+                      }))}
+                      margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                      <Legend />
+                      <Tooltip content={renderScoreTooltip} />
+                      <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
+                      <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
+                      <Line
+                        type="monotone"
+                        dataKey="mastery"
+                        stroke="#22c55e"
+                        strokeWidth={2}
+                        dot={false}
+                        name="Mastery"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-gray-200 overflow-x-auto">
-                  <table className="w-full text-sm min-w-[720px] sm:min-w-0">
-                    <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                      <tr>
-                        <th className="text-left px-4 py-3">Date</th>
-                        <th className="text-left px-4 py-3">Tutor</th>
-                        <th className="text-left px-4 py-3">Tutee</th>
-                        <th className="text-left px-4 py-3">Subject</th>
-                        <th className="text-left px-4 py-3">Specialization</th>
-                        <th className="text-center px-4 py-3">Pre</th>
-                        <th className="text-center px-4 py-3">Post</th>
-                        <th className="text-center px-4 py-3">Avg Gain</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rawPagedSessions.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={8}
-                            className="px-4 py-6 text-center text-sm text-gray-500"
-                          >
-                            No sessions available.
-                          </td>
-                        </tr>
-                      ) : (
-                        rawPagedSessions.map((session) => {
-                          const improvement = computeImprovement(
-                            session.pre_test_score,
-                            session.post_test_score,
-                            session.pre_test_total
-                          );
-                          return (
-                            <tr
-                              key={session.evaluation_id || session.appointment_id}
-                              className="border-t border-gray-100"
-                            >
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.date || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-700">
-                                {session.tutor_name || "Unknown"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.student_name || "Unknown"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-700">
-                                {session.subject || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-left text-gray-600">
-                                {session.topic || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.pre_test_score,
-                                  session.pre_test_total
-                                ) === "-" ? (
-                                  <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
-                                ) : (
-                                  formatScoreWithTotal(
-                                    session.pre_test_score,
-                                    session.pre_test_total
-                                  )
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-center text-gray-600">
-                                {formatScoreWithTotal(
-                                  session.post_test_score,
-                                  session.post_test_total
-                                ) === "-" ? (
-                                  <span className="inline-block h-4 w-6 rounded border border-gray-300 bg-white" />
-                                ) : (
-                                  formatScoreWithTotal(
-                                    session.post_test_score,
-                                    session.post_test_total
-                                  )
-                                )}
-                              </td>
-                              <td
-                                className={`px-4 py-3 text-center text-sm font-semibold ${
-                                  improvement === null || improvement >= 0
-                                    ? "text-green-600"
-                                    : "text-orange-600"
-                                }`}
-                              >
-                                {improvement === null
-                                  ? "+0.0%"
-                                  : `${improvement >= 0 ? "+" : "-"}${Math.abs(improvement).toFixed(1)}%`}
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {rawTotalPages > 1 && (
+                {chartTotalPages > 1 && (
                   <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
                     <button
                       type="button"
-                      className={`px-3 py-1 rounded border ${
-                        rawPageSafe === 1
+                      className={`px-3 py-1 rounded border ${chartPageSafe === 1
                           ? "text-gray-400 border-gray-200 cursor-not-allowed"
                           : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                      }`}
-                      disabled={rawPageSafe === 1}
-                      onClick={() => setRawPage((prev) => Math.max(prev - 1, 1))}
+                        }`}
+                      disabled={chartPageSafe === 1}
+                      onClick={() => setChartPage((prev) => Math.max(prev - 1, 1))}
                     >
                       Previous
                     </button>
                     <span className="text-xs text-gray-500">
-                      Page {rawPageSafe} of {rawTotalPages}
+                      Page {chartPageSafe} of {chartTotalPages}
                     </span>
                     <button
                       type="button"
-                      className={`px-3 py-1 rounded border ${
-                        rawPageSafe === rawTotalPages
+                      className={`px-3 py-1 rounded border ${chartPageSafe === chartTotalPages
                           ? "text-gray-400 border-gray-200 cursor-not-allowed"
                           : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                      }`}
-                      disabled={rawPageSafe === rawTotalPages}
-                      onClick={() => setRawPage((prev) => Math.min(prev + 1, rawTotalPages))}
+                        }`}
+                      disabled={chartPageSafe === chartTotalPages}
+                      onClick={() => setChartPage((prev) => Math.min(prev + 1, chartTotalPages))}
                     >
                       Next
                     </button>
@@ -1091,105 +1184,10 @@ const SessionAnalytics = () => {
                 )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {chartTutor && (
-            <div className="fixed inset-0 z-[75] flex items-start sm:items-center justify-center bg-black/30 px-4 py-6">
-              <div className="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-gray-800">
-                      {chartTutor.tutor_name}
-                    </h3>
-                    <p className="text-xs text-gray-500">
-                      {activeSubject === "All" ? "All subjects" : activeSubject} comparison
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setChartTutor(null)}
-                    className="text-gray-500 hover:text-gray-700"
-                    aria-label="Close chart"
-                  >
-                    x
-                  </button>
-                </div>
-
-                <div className="mt-5">
-                    <div className="relative mt-4 h-[260px] rounded-lg border border-gray-200 bg-white p-3">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart
-                          data={chartSessions.map((session, idx) => ({
-                          name: `Session ${(chartPageSafe - 1) * 10 + idx + 1}`,
-                          pre: Number(session.pre_test_score) || 0,
-                          post: Number(session.post_test_score) || 0,
-                          preTotal: session.pre_test_total ?? "-",
-                          postTotal: session.post_test_total ?? "-",
-                          mastery: computeImprovement(
-                            session.pre_test_score,
-                            session.post_test_score,
-                            session.pre_test_total
-                          ) || 0,
-                        }))}
-                        margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                          <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                          <Legend />
-                          <Tooltip content={renderScoreTooltip} />
-                          <Bar dataKey="pre" fill="#9ca3af" name="Pre-Test" />
-                          <Bar dataKey="post" fill="#0ea5e9" name="Post-Test" />
-                          <Line
-                          type="monotone"
-                          dataKey="mastery"
-                          stroke="#22c55e"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Mastery"
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {chartTotalPages > 1 && (
-                    <div className="mt-4 flex items-center justify-end gap-2 text-sm text-gray-600">
-                      <button
-                        type="button"
-                        className={`px-3 py-1 rounded border ${
-                          chartPageSafe === 1
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                        }`}
-                        disabled={chartPageSafe === 1}
-                        onClick={() => setChartPage((prev) => Math.max(prev - 1, 1))}
-                      >
-                        Previous
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        Page {chartPageSafe} of {chartTotalPages}
-                      </span>
-                      <button
-                        type="button"
-                        className={`px-3 py-1 rounded border ${
-                          chartPageSafe === chartTotalPages
-                            ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "text-[#6b5b2e] border-[#d9c98a] hover:border-[#181718]"
-                        }`}
-                        disabled={chartPageSafe === chartTotalPages}
-                        onClick={() => setChartPage((prev) => Math.min(prev + 1, chartTotalPages))}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
+      </div>
     </div>
   );
 };

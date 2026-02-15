@@ -1183,7 +1183,7 @@ const MessageSystem = ({ roleLabel = "Tutee" }) => {
 
                 <div className="border-t border-gray-100" />
 
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-4 max-h-[500px] overflow-y-auto pr-2">
                   {viewArchive ? (
                     <div className="text-sm text-gray-500">Empty chat.</div>
                   ) : loading ? (

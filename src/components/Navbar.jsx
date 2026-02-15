@@ -7,6 +7,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +39,23 @@ const Navbar = () => {
     };
 
     fetchLogo();
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSectionClick = (e, sectionId) => {
@@ -108,18 +126,29 @@ const Navbar = () => {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link 
-                className="text-gray-700 hover:text-blue-600 px-4 py-2 text-sm font-medium transition-all duration-300"
-                to="/login"
-              >
-                Login
-              </Link>
-              <Link 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                to="/register"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                <Link 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  to="/dashboard"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link 
+                  className="text-gray-700 hover:text-blue-600 px-4 py-2 text-sm font-medium transition-all duration-300"
+                  to="/login"
+                >
+                  Login
+                </Link>
+              )}
+              {!isAuthenticated && (
+                <Link 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                  to="/register"
+                >
+                  Get Started
+                </Link>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -158,18 +187,29 @@ const Navbar = () => {
               </a>
             ))}
             <div className="pt-4 pb-3 border-t border-gray-200">
-              <Link 
-                className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium transition-colors duration-200"
-                to="/login"
-              >
-                Login
-              </Link>
-              <Link 
-                className="bg-blue-600 hover:bg-blue-700 inline-block text-white px-3 py-2 text-base font-medium rounded-lg mt-2 transition-all duration-300"
-                to="/register"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                <Link 
+                  className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium transition-colors duration-200"
+                  to="/dashboard"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link 
+                    className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium transition-colors duration-200"
+                    to="/login"
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    className="bg-blue-600 hover:bg-blue-700 inline-block text-white px-3 py-2 text-base font-medium rounded-md mt-2 transition-all duration-300"
+                    to="/register"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
