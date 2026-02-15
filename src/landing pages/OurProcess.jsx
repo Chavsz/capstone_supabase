@@ -23,9 +23,9 @@ const OurProcess = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
+            transition={{ duration: 0.8}}
             viewport={{ once: true }}
             className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
           >
@@ -41,9 +41,9 @@ const OurProcess = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8}}
             viewport={{ once: true }}
             className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
           >
@@ -59,9 +59,9 @@ const OurProcess = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: 0.8}}
             viewport={{ once: true }}
             className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
           >
@@ -77,9 +77,9 @@ const OurProcess = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ duration: 0.8}}
             viewport={{ once: true }}
             className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-500 transition-all duration-500 group hover:translate-y-[-5px]"
           >
